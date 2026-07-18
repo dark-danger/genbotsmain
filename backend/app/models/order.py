@@ -1,0 +1,125 @@
+"""Order, Payment, Invoice, Shipping, and Coupon models."""
+import uuid
+from datetime import datetime, timezone
+from sqlalchemy import (Boolean, Column, DateTime, Enum, ForeignKey, Integer, String, Text, Numeric, JSON)
+from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.orm import relationship
+from app.core.database import Base
+
+class Order(Base):
+    __tablename__ = "orders"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_number = Column(String(50), unique=True, nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True, index=True)
+    status = Column(Enum("pending","confirmed","processing","shipped","delivered","cancelled","refunded", name="order_status"), default="pending", nullable=False)
+    payment_status = Column(Enum("pending","paid","failed","refunded", name="payment_status"), default="pending", nullable=False)
+    subtotal = Column(Numeric(12,2), nullable=False)
+    tax_amount = Column(Numeric(10,2), default=0)
+    shipping_amount = Column(Numeric(10,2), default=0)
+    discount_amount = Column(Numeric(10,2), default=0)
+    total_amount = Column(Numeric(12,2), nullable=False)
+    coupon_id = Column(UUID(as_uuid=True), ForeignKey("coupons.id", ondelete="SET NULL"), nullable=True)
+    coupon_code = Column(String(50), nullable=True)
+    shipping_name = Column(String(200), nullable=False)
+    shipping_phone = Column(String(20), nullable=False)
+    shipping_address_line1 = Column(String(255), nullable=False)
+    shipping_address_line2 = Column(String(255), nullable=True)
+    shipping_city = Column(String(100), nullable=False)
+    shipping_state = Column(String(100), nullable=False)
+    shipping_postal_code = Column(String(20), nullable=False)
+    shipping_country = Column(String(100), default="India")
+    payment_method = Column(Enum("razorpay","stripe","cod","upi", name="payment_method_type"), nullable=True)
+    payment_id = Column(String(255), nullable=True)
+    customer_note = Column(Text, nullable=True)
+    admin_note = Column(Text, nullable=True)
+    confirmed_at = Column(DateTime(timezone=True), nullable=True)
+    shipped_at = Column(DateTime(timezone=True), nullable=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    cancelled_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    user = relationship("User", back_populates="orders")
+    items = relationship("OrderItem", back_populates="order", cascade="all, delete-orphan")
+    payments = relationship("Payment", back_populates="order", cascade="all, delete-orphan")
+    invoice = relationship("Invoice", back_populates="order", uselist=False)
+    shipping_details = relationship("Shipping", back_populates="order", uselist=False)
+    coupon = relationship("Coupon")
+
+class OrderItem(Base):
+    __tablename__ = "order_items"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="SET NULL"), nullable=True)
+    variant_id = Column(UUID(as_uuid=True), ForeignKey("product_variants.id", ondelete="SET NULL"), nullable=True)
+    product_name = Column(String(300), nullable=False)
+    product_sku = Column(String(100), nullable=False)
+    product_image = Column(String(500), nullable=True)
+    variant_name = Column(String(200), nullable=True)
+    quantity = Column(Integer, nullable=False)
+    unit_price = Column(Numeric(10,2), nullable=False)
+    total_price = Column(Numeric(12,2), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    order = relationship("Order", back_populates="items")
+    product = relationship("Product")
+    variant = relationship("ProductVariant", back_populates="order_items")
+
+class Payment(Base):
+    __tablename__ = "payments"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, index=True)
+    payment_method = Column(String(50), nullable=False)
+    gateway_payment_id = Column(String(255), nullable=True)
+    gateway_order_id = Column(String(255), nullable=True)
+    gateway_signature = Column(String(500), nullable=True)
+    amount = Column(Numeric(12,2), nullable=False)
+    currency = Column(String(10), default="INR")
+    status = Column(Enum("initiated","success","failed","refunded", name="gateway_payment_status"), default="initiated", nullable=False)
+    metadata_json = Column(JSON, nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    order = relationship("Order", back_populates="payments")
+
+class Invoice(Base):
+    __tablename__ = "invoices"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True)
+    invoice_number = Column(String(50), unique=True, nullable=False, index=True)
+    pdf_url = Column(String(500), nullable=True)
+    amount = Column(Numeric(12,2), nullable=False)
+    tax_amount = Column(Numeric(10,2), default=0)
+    total_amount = Column(Numeric(12,2), nullable=False)
+    issued_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    order = relationship("Order", back_populates="invoice")
+
+class Shipping(Base):
+    __tablename__ = "shipping"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    order_id = Column(UUID(as_uuid=True), ForeignKey("orders.id", ondelete="CASCADE"), nullable=False, unique=True)
+    carrier = Column(String(100), nullable=True)
+    tracking_number = Column(String(200), nullable=True)
+    tracking_url = Column(String(500), nullable=True)
+    estimated_delivery = Column(DateTime(timezone=True), nullable=True)
+    shipped_at = Column(DateTime(timezone=True), nullable=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    status = Column(Enum("preparing","shipped","in_transit","out_for_delivery","delivered","returned", name="shipping_status"), default="preparing", nullable=False)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)
+    order = relationship("Order", back_populates="shipping_details")
+
+class Coupon(Base):
+    __tablename__ = "coupons"
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    code = Column(String(50), unique=True, nullable=False, index=True)
+    description = Column(Text, nullable=True)
+    discount_type = Column(Enum("percentage","fixed", name="discount_type"), nullable=False)
+    discount_value = Column(Numeric(10,2), nullable=False)
+    min_order_amount = Column(Numeric(10,2), nullable=True)
+    max_discount_amount = Column(Numeric(10,2), nullable=True)
+    max_uses = Column(Integer, nullable=True)
+    used_count = Column(Integer, default=0)
+    is_active = Column(Boolean, default=True, nullable=False)
+    starts_at = Column(DateTime(timezone=True), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    created_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), nullable=False)
+    updated_at = Column(DateTime(timezone=True), default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc), nullable=False)

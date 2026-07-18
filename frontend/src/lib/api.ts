@@ -1,0 +1,150 @@
+import axios from "axios";
+
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+
+export const api = axios.create({
+  baseURL: API_BASE_URL,
+  headers: { "Content-Type": "application/json" },
+  timeout: 15000,
+});
+
+// Request interceptor - attach JWT
+api.interceptors.request.use((config) => {
+  if (typeof window !== "undefined") {
+    const token = localStorage.getItem("access_token");
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+  }
+  return config;
+});
+
+// Response interceptor - handle token refresh
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const originalRequest = error.config;
+    if (error.response?.status === 401 && !originalRequest._retry) {
+      originalRequest._retry = true;
+      try {
+        const refreshToken = localStorage.getItem("refresh_token");
+        if (refreshToken) {
+          const res = await axios.post(`${API_BASE_URL}/auth/refresh`, {
+            refresh_token: refreshToken,
+          });
+          const { access_token, refresh_token } = res.data;
+          localStorage.setItem("access_token", access_token);
+          localStorage.setItem("refresh_token", refresh_token);
+          originalRequest.headers.Authorization = `Bearer ${access_token}`;
+          return api(originalRequest);
+        }
+      } catch {
+        localStorage.removeItem("access_token");
+        localStorage.removeItem("refresh_token");
+        if (typeof window !== "undefined") {
+          window.location.href = "/auth/login";
+        }
+      }
+    }
+    return Promise.reject(error);
+  }
+);
+
+// Auth API
+export const authApi = {
+  register: (data: Record<string, string>) => api.post("/auth/register", data),
+  login: (data: { email: string; password: string }) => api.post("/auth/login", data),
+  getMe: () => api.get("/auth/me"),
+  updateMe: (data: Record<string, string>) => api.patch("/auth/me", data),
+  changePassword: (data: { current_password: string; new_password: string }) =>
+    api.post("/auth/change-password", data),
+};
+
+// Products API
+export const productsApi = {
+  list: (params?: Record<string, string | number | boolean>) =>
+    api.get("/products", { params }),
+  featured: (limit = 8) => api.get("/products/featured", { params: { limit } }),
+  getBySlug: (slug: string) => api.get(`/products/${slug}`),
+  create: (data: Record<string, unknown>) => api.post("/products", data),
+  update: (id: string, data: Record<string, unknown>) => api.patch(`/products/${id}`, data),
+  delete: (id: string) => api.delete(`/products/${id}`),
+};
+
+// Blog API
+export const blogApi = {
+  list: (params?: Record<string, string | number>) => api.get("/blog", { params }),
+  getBySlug: (slug: string) => api.get(`/blog/${slug}`),
+  categories: () => api.get("/blog/categories"),
+  create: (data: Record<string, unknown>) => api.post("/blog", data),
+};
+
+// Software API
+export const softwareApi = {
+  list: () => api.get("/software"),
+  getBySlug: (slug: string) => api.get(`/software/${slug}`),
+  versions: (id: string) => api.get(`/software/${id}/versions`),
+  create: (data: Record<string, unknown>) => api.post("/software", data),
+};
+
+// Services API
+export const servicesApi = {
+  list: () => api.get("/services"),
+  getBySlug: (slug: string) => api.get(`/services/${slug}`),
+  bookConsultation: (data: Record<string, unknown>) => api.post("/services/consultation", data),
+};
+
+// Projects API
+export const projectsApi = {
+  list: (params?: Record<string, string>) => api.get("/projects", { params }),
+  getBySlug: (slug: string) => api.get(`/projects/${slug}`),
+};
+
+// Training API
+export const trainingApi = {
+  list: (params?: Record<string, string>) => api.get("/training", { params }),
+  getBySlug: (slug: string) => api.get(`/training/${slug}`),
+  enroll: (courseId: string) => api.post(`/training/${courseId}/enroll`),
+};
+
+// CMS API
+export const cmsApi = {
+  getPage: (pageKey: string) => api.get(`/cms/pages/${pageKey}`),
+  getSettings: () => api.get("/cms/settings"),
+};
+
+// Public API
+export const publicApi = {
+  testimonials: () => api.get("/testimonials"),
+  faqs: (category?: string) => api.get("/faqs", { params: category ? { category } : {} }),
+  newsletter: (email: string) => api.post("/newsletter", { email }),
+  contact: (data: Record<string, string>) => api.post("/contact", data),
+};
+
+// Careers API
+export const careersApi = {
+  list: () => api.get("/careers"),
+  getBySlug: (slug: string) => api.get(`/careers/${slug}`),
+  apply: (careerId: string, data: FormData) => api.post(`/careers/${careerId}/apply`, data),
+};
+
+// Support API
+export const supportApi = {
+  listTickets: () => api.get("/support/tickets"),
+  createTicket: (data: Record<string, string>) => api.post("/support/tickets", data),
+  addMessage: (ticketId: string, message: string) =>
+    api.post(`/support/tickets/${ticketId}/messages`, { message }),
+};
+
+// Admin API
+export const adminApi = {
+  dashboard: () => api.get("/admin/dashboard"),
+  users: (params?: Record<string, string | number>) => api.get("/admin/users", { params }),
+  updateUser: (id: string, data: Record<string, unknown>) => api.patch(`/admin/users/${id}`, data),
+  orders: (params?: Record<string, string | number>) => api.get("/admin/orders", { params }),
+  updateOrderStatus: (id: string, status: string) =>
+    api.patch(`/admin/orders/${id}/status?status=${status}`),
+  inquiries: () => api.get("/admin/inquiries"),
+  tickets: (status?: string) => api.get("/admin/tickets", { params: status ? { status } : {} }),
+  subscribers: () => api.get("/admin/subscribers"),
+};
