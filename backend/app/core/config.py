@@ -72,6 +72,31 @@ class Settings(BaseSettings):
             return [i.strip() for i in v.split(",")]
         return v
 
+    @field_validator("DATABASE_URL", mode="before")
+    @classmethod
+    def sanitize_database_url(cls, v: str) -> str:
+        if not v:
+            return v
+        # Convert sync postgres schemes to asyncpg
+        if v.startswith("postgres://"):
+            v = v.replace("postgres://", "postgresql+asyncpg://", 1)
+        elif v.startswith("postgresql://") and not v.startswith("postgresql+asyncpg://"):
+            v = v.replace("postgresql://", "postgresql+asyncpg://", 1)
+
+        # Safely URL-encode password if it contains special characters
+        protocol_split = v.split("://", 1)
+        if len(protocol_split) == 2:
+            protocol, rest = protocol_split
+            if "@" in rest:
+                creds, host = rest.rsplit("@", 1)
+                if ":" in creds:
+                    user, password = creds.split(":", 1)
+                    from urllib.parse import quote_plus, unquote
+                    decoded_password = unquote(password)
+                    encoded_password = quote_plus(decoded_password)
+                    v = f"{protocol}://{user}:{encoded_password}@{host}"
+        return v
+
     class Config:
         env_file = ".env"
         case_sensitive = True
