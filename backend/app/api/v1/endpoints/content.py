@@ -211,6 +211,14 @@ async def book_consultation(data: ConsultationBookingCreate, db: DbSession):
     booking = ConsultationBooking(**data.model_dump())
     db.add(booking)
     await db.flush()
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="New Consultation Booking",
+        message=f"Consultation booked by {booking.name} ({booking.email})",
+        notification_type="consultation",
+        link="/admin/settings"
+    )
     return MessageResponse(message="Consultation booked successfully")
 
 # ─── Projects ────────────────────────────────────────────────────
@@ -292,6 +300,27 @@ async def create_course(data: TrainingCourseCreate, db: DbSession, admin: AdminU
     db.add(course)
     await db.flush()
     return course
+
+@training_router.put("/{id}", response_model=TrainingCourseResponse)
+async def update_course(id: UUID, data: TrainingCourseCreate, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(TrainingCourse).where(TrainingCourse.id == id))
+    course = result.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(course, k, v)
+    await db.flush()
+    return course
+
+@training_router.delete("/{id}", response_model=MessageResponse)
+async def delete_course(id: UUID, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(TrainingCourse).where(TrainingCourse.id == id))
+    course = result.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Course not found")
+    await db.delete(course)
+    await db.flush()
+    return MessageResponse(message="Course deleted successfully")
 
 @training_router.post("/{course_id}/enroll", response_model=MessageResponse)
 async def enroll_course(course_id: UUID, db: DbSession, user: CurrentUser):
@@ -389,6 +418,14 @@ async def submit_contact(data: ContactInquiryCreate, db: DbSession):
     inquiry = ContactInquiry(**data.model_dump())
     db.add(inquiry)
     await db.flush()
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="New Contact Inquiry",
+        message=f"Inquiry from {inquiry.name}: {inquiry.subject or 'No Subject'}",
+        notification_type="contact",
+        link="/admin/settings"
+    )
     return MessageResponse(message="Inquiry submitted successfully")
 
 # ─── Careers ─────────────────────────────────────────────────────
@@ -440,6 +477,14 @@ async def create_ticket(data: SupportTicketCreate, db: DbSession, user: CurrentU
     ticket = SupportTicket(**data.model_dump(), user_id=user.id, ticket_number=ticket_number)
     db.add(ticket)
     await db.flush()
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="New Support Ticket",
+        message=f"Ticket {ticket_number} opened by {user.email}: {ticket.subject}",
+        notification_type="ticket",
+        link="/admin/settings"
+    )
     return ticket
 
 @support_router.post("/tickets/{ticket_id}/messages", response_model=TicketMessageResponse, status_code=201)

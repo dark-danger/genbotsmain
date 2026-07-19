@@ -31,6 +31,7 @@ async def list_products(
     sort_by: str = "created_at",
     sort_order: str = "desc",
     featured: bool = False,
+    status: str = "active",
 ):
     """List products with filtering, search, and pagination."""
     service = ProductService(db)
@@ -39,6 +40,7 @@ async def list_products(
         category_slug=category, brand_slug=brand,
         search=search, min_price=min_price, max_price=max_price,
         sort_by=sort_by, sort_order=sort_order, featured_only=featured,
+        status=status,
     )
     return result
 

@@ -150,6 +150,14 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
     if data.payment_method == "cod":
         order.status = "confirmed"
         await db.flush()
+        from app.utils.notifications import trigger_admin_notification
+        await trigger_admin_notification(
+            db,
+            title="New Order Received (COD)",
+            message=f"Order {order.order_number} created by {user.email} for ₹{total_amount}",
+            notification_type="order",
+            link="/admin/orders"
+        )
         return {
             "order_id": str(order.id),
             "order_number": order.order_number,
@@ -186,6 +194,15 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
     )
     db.add(payment)
     await db.flush()
+
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="New Order Initiated",
+        message=f"Order {order.order_number} initiated by {user.email} for ₹{total_amount} (Razorpay)",
+        notification_type="order",
+        link="/admin/orders"
+    )
 
     return {
         "order_id": str(order.id),
@@ -235,6 +252,15 @@ async def verify_payment(data: VerifyPaymentRequest, db: DbSession, user: Curren
         payment.status = "success"
 
     await db.flush()
+
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="Payment Verified",
+        message=f"Payment verified for Order {order.order_number} (₹{order.total_amount})",
+        notification_type="payment",
+        link="/admin/orders"
+    )
 
     return {
         "verified": True,

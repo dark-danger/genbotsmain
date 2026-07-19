@@ -27,6 +27,15 @@ async def register(data: UserRegister, db: DbSession):
     service = AuthService(db)
     try:
         user = await service.register(data)
+        from app.utils.notifications import trigger_admin_notification
+        await trigger_admin_notification(
+            db,
+            title="New User Registration",
+            message=f"New customer registered: {user.first_name} {user.last_name} ({user.email})",
+            notification_type="user",
+            link="/admin/users"
+        )
+        await db.commit()
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

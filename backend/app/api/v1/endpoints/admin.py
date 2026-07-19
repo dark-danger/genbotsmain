@@ -6,7 +6,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import DbSession, AdminUser
 from app.models.user import User
-from app.models.product import Product, Category, Brand
+from app.models.product import Product, Category, Brand, Review
 from app.models.order import Order, OrderItem, Coupon
 from app.schemas.order import CouponCreate, CouponResponse
 from app.models.content import BlogPost, Software, Project, Service, TrainingCourse
@@ -261,4 +261,122 @@ async def delete_coupon(id: UUID, db: DbSession, admin: AdminUser):
         details={"code": coupon.code}
     )
     return MessageResponse(message="Coupon deleted successfully")
+
+
+@router.get("/notifications")
+async def list_notifications(db: DbSession, admin: AdminUser):
+    """List all notifications for the authenticated admin."""
+    result = await db.execute(
+        select(Notification)
+        .where(Notification.user_id == admin.id)
+        .order_by(Notification.created_at.desc())
+    )
+    return result.scalars().all()
+
+
+@router.patch("/notifications/{id}/read")
+async def mark_notification_read(id: UUID, db: DbSession, admin: AdminUser):
+    """Mark a notification as read."""
+    result = await db.execute(
+        select(Notification).where(Notification.id == id, Notification.user_id == admin.id)
+    )
+    notif = result.scalar_one_or_none()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notif.is_read = True
+    await db.flush()
+    return {"message": "Notification marked as read", "is_read": True}
+
+
+@router.post("/notifications/mark-all-read")
+async def mark_all_notifications_read(db: DbSession, admin: AdminUser):
+    """Mark all notifications as read."""
+    from sqlalchemy import update
+    await db.execute(
+        update(Notification)
+        .where(Notification.user_id == admin.id)
+        .values(is_read=True)
+    )
+    await db.flush()
+    return {"message": "All notifications marked as read"}
+
+
+@router.delete("/notifications/{id}")
+async def delete_notification(id: UUID, db: DbSession, admin: AdminUser):
+    """Delete a notification."""
+    result = await db.execute(
+        select(Notification).where(Notification.id == id, Notification.user_id == admin.id)
+    )
+    notif = result.scalar_one_or_none()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    await db.delete(notif)
+    await db.flush()
+    return {"message": "Notification deleted successfully"}
+
+
+@router.get("/reviews")
+async def list_reviews(db: DbSession, admin: AdminUser):
+    """List all reviews for moderation."""
+    result = await db.execute(
+        select(Review)
+        .options(selectinload(Review.product), selectinload(Review.user))
+        .order_by(Review.created_at.desc())
+    )
+    reviews = result.scalars().all()
+    return [
+        {
+            "id": str(r.id),
+            "rating": r.rating,
+            "title": r.title,
+            "comment": r.comment,
+            "is_verified_purchase": r.is_verified_purchase,
+            "is_approved": r.is_approved,
+            "created_at": r.created_at.isoformat(),
+            "product_name": r.product.name if r.product else "Unknown Product",
+            "user_email": r.user.email if r.user else "Unknown User",
+        }
+        for r in reviews
+    ]
+
+
+@router.patch("/reviews/{id}/approve")
+async def approve_review(id: UUID, db: DbSession, admin: AdminUser):
+    """Approve a product review."""
+    result = await db.execute(select(Review).where(Review.id == id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    review.is_approved = True
+    await db.flush()
+    
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="approve_review",
+        resource_type="review",
+        resource_id=str(id),
+        details={"rating": review.rating}
+    )
+    return {"message": "Review approved successfully", "is_approved": True}
+
+
+@router.delete("/reviews/{id}")
+async def delete_review(id: UUID, db: DbSession, admin: AdminUser):
+    """Delete a review."""
+    result = await db.execute(select(Review).where(Review.id == id))
+    review = result.scalar_one_or_none()
+    if not review:
+        raise HTTPException(status_code=404, detail="Review not found")
+    await db.delete(review)
+    await db.flush()
+    
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="delete_review",
+        resource_type="review",
+        resource_id=str(id)
+    )
+    return MessageResponse(message="Review deleted successfully")
 

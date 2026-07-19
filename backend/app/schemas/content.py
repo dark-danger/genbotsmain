@@ -367,3 +367,18 @@ class SiteSettingUpdate(BaseModel):
     value: str
     value_type: str = "string"
     group: str = "general"
+
+class MediaFileResponse(BaseModel):
+    id: UUID
+    filename: str
+    original_filename: str
+    url: str
+    file_type: str
+    file_size: Optional[int] = None
+    mime_type: Optional[str] = None
+    alt_text: Optional[str] = None
+    folder: str
+    created_at: datetime
+
+    class Config:
+        from_attributes = True

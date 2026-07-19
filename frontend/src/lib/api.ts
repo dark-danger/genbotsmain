@@ -121,6 +121,7 @@ export const softwareApi = {
   create: (data: Record<string, unknown>) => adminAxios.post("/software", data),
   update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/software/${id}`, data),
   delete: (id: string) => adminAxios.delete(`/software/${id}`),
+  createVersion: (softwareId: string, data: Record<string, unknown>) => adminAxios.post(`/software/${softwareId}/versions`, data),
 };
 
 export const servicesApi = {
@@ -135,12 +136,18 @@ export const servicesApi = {
 export const projectsApi = {
   list: (params?: Record<string, string>) => api.get("/projects", { params }),
   getBySlug: (slug: string) => api.get(`/projects/${slug}`),
+  create: (data: Record<string, unknown>) => adminAxios.post("/projects", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/projects/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/projects/${id}`),
 };
 
 export const trainingApi = {
   list: (params?: Record<string, string>) => api.get("/training", { params }),
   getBySlug: (slug: string) => api.get(`/training/${slug}`),
   enroll: (courseId: string) => api.post(`/training/${courseId}/enroll`),
+  create: (data: Record<string, unknown>) => adminAxios.post("/training", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/training/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/training/${id}`),
 };
 
 export const cmsApi = {
@@ -212,4 +219,19 @@ export const adminApi = {
   createCoupon: (data: Record<string, unknown>) => adminAxios.post("/admin/coupons", data),
   updateCoupon: (id: string, data: Record<string, unknown>) => adminAxios.put(`/admin/coupons/${id}`, data),
   deleteCoupon: (id: string) => adminAxios.delete(`/admin/coupons/${id}`),
+  listNotifications: () => adminAxios.get("/admin/notifications"),
+  markNotificationRead: (id: string) => adminAxios.patch(`/admin/notifications/${id}/read`),
+  markAllNotificationsRead: () => adminAxios.post("/admin/notifications/mark-all-read"),
+  deleteNotification: (id: string) => adminAxios.delete(`/admin/notifications/${id}`),
+  reviews: () => adminAxios.get("/admin/reviews"),
+  approveReview: (id: string) => adminAxios.patch(`/admin/reviews/${id}/approve`),
+  deleteReview: (id: string) => adminAxios.delete(`/admin/reviews/${id}`),
+};
+
+export const mediaApi = {
+  upload: (formData: FormData) => adminAxios.post("/media/upload", formData, {
+    headers: { "Content-Type": "multipart/form-data" }
+  }),
+  list: (folder?: string) => adminAxios.get("/media", { params: folder ? { folder } : {} }),
+  delete: (id: string) => adminAxios.delete(`/media/${id}`),
 };

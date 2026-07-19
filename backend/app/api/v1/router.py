@@ -4,6 +4,7 @@ from fastapi import APIRouter
 from app.api.v1.endpoints.auth import router as auth_router
 from app.api.v1.endpoints.products import router as products_router
 from app.api.v1.endpoints.admin import router as admin_router
+from app.api.v1.endpoints.media import router as media_router
 from app.api.v1.endpoints.content import (
     blog_router, software_router, services_router,
     projects_router, training_router, cms_router,
@@ -18,6 +19,7 @@ api_router = APIRouter(prefix="/api/v1")
 api_router.include_router(auth_router)
 api_router.include_router(products_router)
 api_router.include_router(admin_router)
+api_router.include_router(media_router)
 api_router.include_router(orders_router)
 api_router.include_router(cart_router)
 api_router.include_router(wishlist_router)
