@@ -1,73 +1,115 @@
 "use client";
 
 import { useState, useEffect, useDeferredValue } from "react";
+import { useQuery, useMutation } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { productsData } from "@/lib/data";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle, ShoppingCart, Heart, Check } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
+import { productsApi, cartApi, wishlistApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth";
+import { useCartStore } from "@/store/cart";
 import Link from "next/link";
 
-const categories = [
-  { name: "All Categories", slug: "all", icon: "🌐" },
-  { name: "IoT Sensors", slug: "iot-sensors", icon: "🔌", count: 1 },
-  { name: "Arduino Products", slug: "arduino-products", icon: "🔧", count: 1 },
-  { name: "ESP32 Products", slug: "esp32-products", icon: "📡", count: 1 },
-  { name: "Robotics Kits", slug: "robotics-kits", icon: "🤖", count: 1 },
-];
-
-const brands = ["All", "GenBots", "Arduino", "Espressif"];
-
 export default function StorePage() {
+  const { token } = useAuthStore();
+  const { openCart } = useCartStore();
+
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
   const [selectedCategory, setSelectedCategory] = useState("all");
   const [selectedBrand, setSelectedBrand] = useState("All");
-  const [maxPrice, setMaxPrice] = useState(8000);
+  const [maxPrice, setMaxPrice] = useState(100000);
   const [sortBy, setSortBy] = useState("featured");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
   // Check URL params on initial load
   useEffect(() => {
     if (typeof window !== "undefined") {
       const params = new URLSearchParams(window.location.search);
       const cat = params.get("category");
-      if (cat) {
-        setSelectedCategory(cat);
-      }
+      if (cat) setSelectedCategory(cat);
     }
   }, []);
 
-  // Filter and Sort logic
-  const filteredProducts = productsData
-    .filter((product) => {
-      const matchesSearch =
-        product.name.toLowerCase().includes(deferredSearch.toLowerCase()) ||
-        product.description.toLowerCase().includes(deferredSearch.toLowerCase());
-      const matchesCategory =
-        selectedCategory === "all" || product.category === selectedCategory;
-      const matchesBrand =
-        selectedBrand === "All" || product.brand === selectedBrand;
-      const matchesPrice = product.price <= maxPrice;
+  // Fetch products from API
+  const { data: apiProducts, isLoading } = useQuery({
+    queryKey: ["storeProducts"],
+    queryFn: async () => {
+      const res = await productsApi.list({ page_size: 100 });
+      return res.data?.items || res.data || [];
+    },
+    staleTime: 30000,
+  });
 
+  const products: any[] = apiProducts || [];
+
+  // Extract unique categories and brands from data
+  const categories = [
+    { name: "All Categories", slug: "all", icon: "🌐" },
+    ...Array.from(new Set(products.map((p: any) => p.category?.slug).filter(Boolean))).map(
+      (slug) => {
+        const cat = products.find((p: any) => p.category?.slug === slug)?.category;
+        return { name: cat?.name || slug, slug: slug as string, icon: "📦" };
+      }
+    ),
+  ];
+
+  const brands = ["All", ...Array.from(new Set(products.map((p: any) => p.brand?.name).filter(Boolean)))];
+
+  // Add to cart mutation
+  const addToCartMutation = useMutation({
+    mutationFn: (productId: string) => cartApi.addItem({ product_id: productId, quantity: 1 }),
+    onSuccess: (_, productId) => {
+      setAddedIds((prev) => new Set(prev).add(productId));
+      setTimeout(() => {
+        setAddedIds((prev) => {
+          const next = new Set(prev);
+          next.delete(productId);
+          return next;
+        });
+      }, 2000);
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || "Failed to add to cart. Please log in.");
+    },
+  });
+
+  // Filter and Sort logic
+  const filteredProducts = products
+    .filter((product: any) => {
+      const matchesSearch =
+        product.name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
+        product.description?.toLowerCase().includes(deferredSearch.toLowerCase());
+      const matchesCategory =
+        selectedCategory === "all" || product.category?.slug === selectedCategory;
+      const matchesBrand =
+        selectedBrand === "All" || product.brand?.name === selectedBrand;
+      const matchesPrice = parseFloat(product.price) <= maxPrice;
       return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
     })
-    .sort((a, b) => {
-      if (sortBy === "price-low") return a.price - b.price;
-      if (sortBy === "price-high") return b.price - a.price;
-      if (sortBy === "rating") return b.rating - a.rating;
-      return 0; // Featured/Default
+    .sort((a: any, b: any) => {
+      if (sortBy === "price-low") return parseFloat(a.price) - parseFloat(b.price);
+      if (sortBy === "price-high") return parseFloat(b.price) - parseFloat(a.price);
+      if (sortBy === "rating") return (b.avg_rating || 0) - (a.avg_rating || 0);
+      return 0;
     });
 
   const clearFilters = () => {
     setSearch("");
     setSelectedCategory("all");
     setSelectedBrand("All");
-    setMaxPrice(8000);
+    setMaxPrice(100000);
     setSortBy("featured");
+  };
+
+  const getProductImage = (product: any) => {
+    if (product.images && product.images.length > 0) return product.images[0].url;
+    return null;
   };
 
   return (
@@ -75,7 +117,7 @@ export default function StorePage() {
       <Navbar />
       <main className="pt-24 pb-16 min-h-screen bg-background" id="main-content">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           {/* Header */}
           <ScrollReveal>
             <div className="mb-10 text-center md:text-left">
@@ -184,13 +226,13 @@ export default function StorePage() {
                 <div>
                   <div className="flex justify-between items-center mb-3">
                     <h3 className="font-semibold text-sm">Max Price</h3>
-                    <span className="text-sm font-bold text-primary">₹{maxPrice}</span>
+                    <span className="text-sm font-bold text-primary">₹{maxPrice.toLocaleString("en-IN")}</span>
                   </div>
                   <input
                     type="range"
                     min="500"
-                    max="8000"
-                    step="100"
+                    max="100000"
+                    step="500"
                     value={maxPrice}
                     onChange={(e) => setMaxPrice(parseInt(e.target.value))}
                     className="w-full accent-primary"
@@ -198,7 +240,7 @@ export default function StorePage() {
                   />
                   <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
                     <span>₹500</span>
-                    <span>₹8,000</span>
+                    <span>₹1,00,000</span>
                   </div>
                 </div>
               </div>
@@ -208,9 +250,9 @@ export default function StorePage() {
             <div className="flex-1">
               <div className="flex justify-between items-center mb-4">
                 <p className="text-sm text-muted-foreground">
-                  Showing {filteredProducts.length} of {productsData.length} products
+                  Showing {filteredProducts.length} of {products.length} products
                 </p>
-                {selectedCategory !== "all" || selectedBrand !== "All" || search || maxPrice < 8000 ? (
+                {selectedCategory !== "all" || selectedBrand !== "All" || search || maxPrice < 100000 ? (
                   <Badge variant="secondary" className="flex gap-1 items-center rounded-full px-3 py-1">
                     Filters Active
                     <X className="w-3 h-3 cursor-pointer ml-1 text-muted-foreground hover:text-foreground" onClick={clearFilters} />
@@ -218,51 +260,87 @@ export default function StorePage() {
                 ) : null}
               </div>
 
-              {filteredProducts.length > 0 ? (
+              {isLoading ? (
+                <div className="flex justify-center py-20">
+                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+                </div>
+              ) : filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-                  {filteredProducts.map((product) => (
-                    <Link
-                      key={product.slug}
-                      href={`/store/${product.slug}`}
+                  {filteredProducts.map((product: any) => (
+                    <div
+                      key={product.id}
                       className="glass-card group hover:glow-sm transition-all duration-300 hover:-translate-y-2 overflow-hidden flex flex-col"
                     >
-                      <div className="h-48 bg-muted flex items-center justify-center relative overflow-hidden">
-                        <img
-                          src={product.images[0]}
-                          alt={product.name}
-                          className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                          loading="lazy"
-                        />
-                        {product.badge && (
-                          <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-md gradient-bg text-white shadow-lg">
-                            {product.badge}
-                          </span>
-                        )}
-                      </div>
-                      <div className="p-5 flex-1 flex flex-col">
-                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
-                          {product.brand}
-                        </span>
-                        <h3 className="font-semibold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                          {product.name}
-                        </h3>
-                        <div className="flex items-center gap-1 mb-3 mt-auto">
-                          <Star className="w-4 h-4 text-yellow-500 fill-current" aria-hidden="true" />
-                          <span className="text-sm font-medium">{product.rating}</span>
-                          <span className="text-xs text-muted-foreground">({product.reviewsCount})</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className="text-lg font-bold gradient-text">
-                            ₹{product.price.toLocaleString("en-IN")}
-                          </span>
-                          {product.originalPrice && (
-                            <span className="text-xs text-muted-foreground line-through">
-                              ₹{product.originalPrice.toLocaleString("en-IN")}
+                      <Link href={`/store/${product.slug}`}>
+                        <div className="h-48 bg-muted flex items-center justify-center relative overflow-hidden">
+                          {getProductImage(product) ? (
+                            <img
+                              src={getProductImage(product)}
+                              alt={product.name}
+                              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                              loading="lazy"
+                            />
+                          ) : (
+                            <span className="text-4xl">📦</span>
+                          )}
+                          {product.is_featured && (
+                            <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-md gradient-bg text-white shadow-lg">
+                              Featured
                             </span>
                           )}
                         </div>
+                      </Link>
+                      <div className="p-5 flex-1 flex flex-col">
+                        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">
+                          {product.brand?.name || "GenBots"}
+                        </span>
+                        <Link href={`/store/${product.slug}`}>
+                          <h3 className="font-semibold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                            {product.name}
+                          </h3>
+                        </Link>
+                        <div className="flex items-center gap-1 mb-3 mt-auto">
+                          <Star className="w-4 h-4 text-yellow-500 fill-current" aria-hidden="true" />
+                          <span className="text-sm font-medium">{product.avg_rating || "0.0"}</span>
+                          <span className="text-xs text-muted-foreground">({product.review_count || 0})</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <span className="text-lg font-bold gradient-text">
+                              ₹{parseFloat(product.price).toLocaleString("en-IN")}
+                            </span>
+                            {product.compare_at_price && (
+                              <span className="text-xs text-muted-foreground line-through">
+                                ₹{parseFloat(product.compare_at_price).toLocaleString("en-IN")}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                        <div className="flex gap-2 mt-3">
+                          <Button
+                            size="sm"
+                            className="flex-1 gradient-bg text-white rounded-xl text-xs h-9"
+                            onClick={(e) => {
+                              e.preventDefault();
+                              if (!token) {
+                                window.location.href = "/auth/login";
+                                return;
+                              }
+                              addToCartMutation.mutate(product.id);
+                            }}
+                            disabled={addToCartMutation.isPending || product.stock_quantity <= 0}
+                          >
+                            {addedIds.has(product.id) ? (
+                              <><Check className="w-3 h-3 mr-1" /> Added</>
+                            ) : product.stock_quantity <= 0 ? (
+                              "Out of Stock"
+                            ) : (
+                              <><ShoppingCart className="w-3 h-3 mr-1" /> Add to Cart</>
+                            )}
+                          </Button>
+                        </div>
                       </div>
-                    </Link>
+                    </div>
                   ))}
                 </div>
               ) : (
@@ -347,13 +425,13 @@ export default function StorePage() {
               <div>
                 <div className="flex justify-between items-center mb-3">
                   <h3 className="font-semibold text-sm">Max Price</h3>
-                  <span className="text-sm font-bold text-primary">₹{maxPrice}</span>
+                  <span className="text-sm font-bold text-primary">₹{maxPrice.toLocaleString("en-IN")}</span>
                 </div>
                 <input
                   type="range"
                   min="500"
-                  max="8000"
-                  step="100"
+                  max="100000"
+                  step="500"
                   value={maxPrice}
                   onChange={(e) => setMaxPrice(parseInt(e.target.value))}
                   className="w-full accent-primary"

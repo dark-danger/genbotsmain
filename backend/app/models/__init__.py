@@ -2,7 +2,7 @@
 from app.models.user import User, Address, UserSession
 from app.models.product import (
     Category, Brand, Product, ProductImage, ProductVariant,
-    ProductSpecification, Review, Wishlist,
+    ProductSpecification, Review, Wishlist, CartItem,
 )
 from app.models.order import Order, OrderItem, Payment, Invoice, Shipping, Coupon
 from app.models.content import (
@@ -22,7 +22,7 @@ from app.models.cms import (
 __all__ = [
     "User", "Address", "UserSession",
     "Category", "Brand", "Product", "ProductImage", "ProductVariant",
-    "ProductSpecification", "Review", "Wishlist",
+    "ProductSpecification", "Review", "Wishlist", "CartItem",
     "Order", "OrderItem", "Payment", "Invoice", "Shipping", "Coupon",
     "BlogCategory", "BlogPost", "BlogComment",
     "Software", "SoftwareVersion", "SoftwareDownload",

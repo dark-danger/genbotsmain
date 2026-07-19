@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { Package, Heart, CreditCard, Settings, LogOut, ShoppingBag, MapPin, Download, Ticket, Bell, User } from "lucide-react";
@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/auth";
-import { ordersApi } from "@/lib/api";
+import { ordersApi, wishlistApi, cartApi } from "@/lib/api";
 import Link from "next/link";
 
 export default function CustomerDashboard() {
@@ -206,8 +206,13 @@ export default function CustomerDashboard() {
                   </div>
                 )}
                 
+                {/* WISHLIST TAB */}
+                {activeTab === "wishlist" && (
+                  <WishlistTab />
+                )}
+
                 {/* PLACEHOLDER TABS */}
-                {["wishlist", "addresses", "software"].includes(activeTab) && (
+                {["addresses", "software"].includes(activeTab) && (
                   <div className="text-center py-12">
                     <h2 className="text-2xl font-bold mb-2 capitalize">{activeTab.replace("-", " ")}</h2>
                     <p className="text-muted-foreground">This section is currently empty.</p>
@@ -220,5 +225,103 @@ export default function CustomerDashboard() {
       </main>
       <Footer />
     </>
+  );
+}
+
+// ── WishlistTab Component ────────────────────────────────
+function WishlistTab() {
+  const queryClient = useQueryClient();
+  const { token } = useAuthStore();
+
+  const { data: wishlistData, isLoading } = useQuery({
+    queryKey: ["myWishlist"],
+    queryFn: async () => {
+      const res = await wishlistApi.get();
+      return res.data;
+    },
+    enabled: !!token,
+  });
+
+  const removeMutation = useMutation({
+    mutationFn: (productId: string) => wishlistApi.remove(productId),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["myWishlist"] });
+    },
+  });
+
+  const addToCartMutation = useMutation({
+    mutationFn: (productId: string) => cartApi.addItem({ product_id: productId, quantity: 1 }),
+    onSuccess: () => {
+      alert("Added to cart!");
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || "Failed to add to cart");
+    },
+  });
+
+  if (isLoading) {
+    return (
+      <div className="flex justify-center py-12">
+        <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
+      </div>
+    );
+  }
+
+  const items = wishlistData?.items || [];
+
+  return (
+    <div>
+      <h2 className="text-2xl font-bold mb-6">My Wishlist</h2>
+      {items.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          {items.map((item: any) => (
+            <div key={item.id} className="border rounded-xl p-4 flex gap-4 items-center">
+              <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
+                {item.product_image ? (
+                  <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
+                ) : (
+                  <span className="text-2xl">📦</span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <Link href={`/store/${item.product_slug}`} className="font-semibold text-sm hover:text-primary transition-colors line-clamp-1">
+                  {item.product_name}
+                </Link>
+                <p className="text-lg font-bold gradient-text">₹{item.product_price?.toLocaleString("en-IN")}</p>
+                {!item.in_stock && <Badge variant="destructive" className="text-xs">Out of Stock</Badge>}
+              </div>
+              <div className="flex flex-col gap-2">
+                <Button
+                  size="sm"
+                  className="gradient-bg text-white rounded-lg text-xs"
+                  onClick={() => addToCartMutation.mutate(item.product_id)}
+                  disabled={!item.in_stock || addToCartMutation.isPending}
+                >
+                  <ShoppingBag className="w-3 h-3 mr-1" /> Add to Cart
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="rounded-lg text-xs text-destructive border-destructive/30"
+                  onClick={() => removeMutation.mutate(item.product_id)}
+                  disabled={removeMutation.isPending}
+                >
+                  <Heart className="w-3 h-3 mr-1" /> Remove
+                </Button>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <div className="text-center py-12 border-2 border-dashed border-border rounded-xl">
+          <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+          <h3 className="font-semibold mb-1">No items in wishlist</h3>
+          <p className="text-sm text-muted-foreground mb-4">Browse products and heart the ones you love.</p>
+          <Link href="/store">
+            <Button className="gradient-bg text-white rounded-xl">Browse Store</Button>
+          </Link>
+        </div>
+      )}
+    </div>
   );
 }

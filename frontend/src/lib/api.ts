@@ -164,11 +164,46 @@ export const adminApi = {
   deleteCoupon: (id: string) => api.delete(`/admin/coupons/${id}`),
 };
 
+// Cart API
+export const cartApi = {
+  get: () => api.get("/cart"),
+  addItem: (data: { product_id: string; quantity?: number; variant_id?: string }) =>
+    api.post("/cart/items", data),
+  updateItem: (itemId: string, quantity: number) =>
+    api.put(`/cart/items/${itemId}`, { quantity }),
+  removeItem: (itemId: string) => api.delete(`/cart/items/${itemId}`),
+  clear: () => api.delete("/cart"),
+};
+
+// Wishlist API
+export const wishlistApi = {
+  get: () => api.get("/wishlist"),
+  toggle: (productId: string) => api.post("/wishlist", { product_id: productId }),
+  remove: (productId: string) => api.delete(`/wishlist/${productId}`),
+  check: (productId: string) => api.get(`/wishlist/check/${productId}`),
+};
+
 // Orders API
 export const ordersApi = {
   myOrders: () => api.get("/orders/my-orders"),
-  createOrder: (data: { amount: number; currency?: string; receipt?: string }) => 
-    api.post("/orders/create-order", data),
-  verifyPayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
-    api.post("/orders/verify-payment", data),
+  getOrder: (orderId: string) => api.get(`/orders/${orderId}`),
+  createOrder: (data: {
+    shipping_name: string;
+    shipping_phone: string;
+    shipping_address_line1: string;
+    shipping_address_line2?: string;
+    shipping_city: string;
+    shipping_state: string;
+    shipping_postal_code: string;
+    shipping_country?: string;
+    customer_note?: string;
+    coupon_code?: string;
+    payment_method?: string;
+  }) => api.post("/orders", data),
+  verifyPayment: (data: {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
+    order_id: string;
+  }) => api.post("/orders/verify-payment", data),
 };

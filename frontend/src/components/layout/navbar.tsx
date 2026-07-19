@@ -12,6 +12,8 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
+import { useAuthStore } from "@/store/auth";
+import { useCartStore } from "@/store/cart";
 
 const mainNav = [
   { label: "Home", href: "/" },
@@ -33,12 +35,14 @@ export function Navbar() {
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
   const [mounted, setMounted] = useState(false);
+  const { user, isAuthenticated } = useAuthStore();
+  const { itemCount } = useCartStore();
 
   useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
-    window.addEventListener("scroll", handleScroll);
+    window.addEventListener("scroll", handleScroll, { passive: true });
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
@@ -138,17 +142,30 @@ export function Navbar() {
               </Button>
             )}
 
-            <Link href="/auth/login">
-              <Button variant="ghost" size="sm" className="hidden sm:flex gap-2 rounded-xl">
-                <LogIn className="w-4 h-4" />
-                Login
-              </Button>
-            </Link>
+            {mounted && isAuthenticated ? (
+              <Link href="/dashboard">
+                <Button variant="ghost" size="sm" className="hidden sm:flex gap-2 rounded-xl">
+                  <User className="w-4 h-4" />
+                  Dashboard
+                </Button>
+              </Link>
+            ) : (
+              <Link href="/auth/login">
+                <Button variant="ghost" size="sm" className="hidden sm:flex gap-2 rounded-xl">
+                  <LogIn className="w-4 h-4" />
+                  Login
+                </Button>
+              </Link>
+            )}
 
-            <Link href="/store">
-              <Button size="sm" className="gradient-bg text-white border-0 rounded-xl shadow-lg hover:shadow-xl transition-all hidden sm:flex gap-2">
+            <Link href="/cart" className="relative">
+              <Button size="icon" variant="ghost" className="rounded-xl">
                 <ShoppingCart className="w-4 h-4" />
-                Store
+                {mounted && itemCount > 0 && (
+                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full gradient-bg text-white text-[10px] font-bold flex items-center justify-center shadow-lg">
+                    {itemCount > 99 ? "99+" : itemCount}
+                  </span>
+                )}
               </Button>
             </Link>
 
