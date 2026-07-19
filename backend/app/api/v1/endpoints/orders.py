@@ -5,7 +5,8 @@ import hashlib
 import uuid
 from datetime import datetime, timezone
 
-import razorpay
+# razorpay is imported lazily inside _get_rz_client() to avoid
+# crashing the app on Vercel where pkg_resources is unavailable.
 from fastapi import APIRouter, HTTPException, Request, status
 from pydantic import BaseModel
 from sqlalchemy import select, func
@@ -21,9 +22,15 @@ router = APIRouter(prefix="/orders", tags=["Orders"])
 RAZORPAY_KEY_ID = os.getenv("RAZORPAY_KEY_ID")
 RAZORPAY_KEY_SECRET = os.getenv("RAZORPAY_KEY_SECRET")
 
-rz_client = None
-if RAZORPAY_KEY_ID and RAZORPAY_KEY_SECRET:
-    rz_client = razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+def _get_rz_client():
+    """Lazily initialise the Razorpay client to avoid import-time crashes."""
+    if not RAZORPAY_KEY_ID or not RAZORPAY_KEY_SECRET:
+        return None
+    try:
+        import razorpay  # noqa: PLC0415
+        return razorpay.Client(auth=(RAZORPAY_KEY_ID, RAZORPAY_KEY_SECRET))
+    except Exception:
+        return None
 
 
 # ── Request/Response Schemas ────────────────────────────────
@@ -167,6 +174,7 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
         }
 
     # 8. Create Razorpay order
+    rz_client = _get_rz_client()
     if not rz_client:
         raise HTTPException(status_code=500, detail="Razorpay credentials not configured")
 
