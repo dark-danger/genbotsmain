@@ -47,3 +47,5 @@ coverage/
 
 # Build
 *.whl
+.vercel
+.env*

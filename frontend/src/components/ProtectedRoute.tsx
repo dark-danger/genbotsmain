@@ -15,8 +15,15 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (!mounted) return;
+
     // 1. Check if user is logged in
     if (!token || !user) {
       setIsAuthorized(false);
@@ -35,7 +42,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
     // Authorized
     setIsAuthorized(true);
-  }, [user, token, router, pathname, allowedRoles]);
+  }, [mounted, user, token, router, pathname, allowedRoles]);
 
   // Show nothing or a loader while checking
   if (isAuthorized === null) {

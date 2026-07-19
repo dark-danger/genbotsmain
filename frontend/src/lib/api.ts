@@ -36,6 +36,7 @@ api.interceptors.response.use(
           const { access_token, refresh_token } = res.data;
           localStorage.setItem("access_token", access_token);
           localStorage.setItem("refresh_token", refresh_token);
+          useAuthStore.setState({ token: access_token });
           originalRequest.headers.Authorization = `Bearer ${access_token}`;
           return api(originalRequest);
         }
