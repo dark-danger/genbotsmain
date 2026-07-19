@@ -2,6 +2,9 @@
 import uuid
 from fastapi import APIRouter, HTTPException, status
 from loguru import logger
+import asyncio
+from collections import defaultdict
+from sqlalchemy.exc import IntegrityError
 
 from app.core.deps import DbSession, CurrentUser
 from app.core.security import get_password_hash, create_access_token
@@ -16,6 +19,7 @@ from pydantic import BaseModel
 
 router = APIRouter(prefix="/auth", tags=["Authentication"])
 
+_failed_attempts = defaultdict(int)
 
 @router.post("/register", response_model=UserResponse, status_code=status.HTTP_201_CREATED)
 async def register(data: UserRegister, db: DbSession):
@@ -26,6 +30,8 @@ async def register(data: UserRegister, db: DbSession):
         return user
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+    except IntegrityError:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")
 
 
 @router.post("/login", response_model=TokenResponse)
@@ -33,8 +39,13 @@ async def login(data: UserLogin, db: DbSession):
     """Authenticate user and return JWT tokens."""
     service = AuthService(db)
     try:
-        return await service.login(data.email, data.password)
+        token_response = await service.login(data.email, data.password)
+        _failed_attempts[data.email] = 0
+        return token_response
     except ValueError as e:
+        _failed_attempts[data.email] += 1
+        delay = min(5, _failed_attempts[data.email])
+        await asyncio.sleep(delay)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
 
 
@@ -84,7 +95,13 @@ async def admin_login(data: UserLogin, db: DbSession):
     try:
         token_response = await service.login(data.email, data.password)
     except ValueError as e:
+        _failed_attempts[data.email] += 1
+        delay = min(5, _failed_attempts[data.email])
+        await asyncio.sleep(delay)
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+
+    # Reset counter on successful login
+    _failed_attempts[data.email] = 0
 
     # Verify the user is admin/superadmin
     from app.core.security import verify_token
