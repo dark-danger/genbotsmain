@@ -38,7 +38,7 @@ class AuthService:
         await self.db.flush()
         return user
 
-    async def login(self, email: str, password: str) -> TokenResponse:
+    async def login(self, email: str, password: str, is_admin: bool = False) -> TokenResponse:
         result = await self.db.execute(select(User).where(User.email == email))
         user = result.scalar_one_or_none()
 
@@ -48,14 +48,22 @@ class AuthService:
         if not user.is_active:
             raise ValueError("Account is deactivated")
 
+        if is_admin and user.role not in ("admin", "superadmin", "staff"):
+            raise ValueError("Access denied. Admin privileges required.")
+        elif not is_admin and user.role not in ("customer",):
+            # If an admin tries to login as a customer, we could allow them, but the prompt says isolated.
+            raise ValueError("Admins must login via admin portal")
+
         user.last_login = datetime.now(timezone.utc)
         await self.db.flush()
 
+        audience = "admin" if is_admin else "customer"
         access_token = create_access_token(
             subject=str(user.id),
             extra_claims={"role": user.role, "email": user.email},
+            audience=audience,
         )
-        refresh_token = create_refresh_token(subject=str(user.id))
+        refresh_token = create_refresh_token(subject=str(user.id), audience=audience)
 
         return TokenResponse(
             access_token=access_token,
@@ -64,8 +72,9 @@ class AuthService:
             expires_in=settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60,
         )
 
-    async def refresh_token(self, refresh_token: str) -> TokenResponse:
-        payload = verify_token(refresh_token)
+    async def refresh_token(self, refresh_token: str, is_admin: bool = False) -> TokenResponse:
+        audience = "admin" if is_admin else "customer"
+        payload = verify_token(refresh_token, audience=audience)
         if not payload or payload.get("type") != "refresh":
             raise ValueError("Invalid refresh token")
 
@@ -79,8 +88,9 @@ class AuthService:
         new_access = create_access_token(
             subject=str(user.id),
             extra_claims={"role": user.role, "email": user.email},
+            audience=audience,
         )
-        new_refresh = create_refresh_token(subject=str(user.id))
+        new_refresh = create_refresh_token(subject=str(user.id), audience=audience)
 
         return TokenResponse(
             access_token=new_access,

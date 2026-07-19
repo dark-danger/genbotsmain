@@ -43,7 +43,7 @@ api.interceptors.response.use(
       } catch {
         useAuthStore.getState().logout();
         if (typeof window !== "undefined") {
-          window.location.href = "/user/login";
+          window.location.href = "/auth/login";
         }
       }
     }

@@ -31,18 +31,16 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
       return;
     }
 
-    // 2. Check if user has the required role
-    if (allowedRoles && allowedRoles.length > 0) {
-      if (!allowedRoles.includes(user.role)) {
-        setIsAuthorized(false);
-        router.push("/unauthorized"); // or redirect to home
-        return;
-      }
+    // 2. Customers only
+    if (user.role !== "customer") {
+      setIsAuthorized(false);
+      router.push("/unauthorized"); // or redirect to /admin/dashboard if they are admin
+      return;
     }
 
     // Authorized
     setIsAuthorized(true);
-  }, [mounted, user, token, router, pathname, allowedRoles]);
+  }, [mounted, user, token, router, pathname]);
 
   // Show nothing or a loader while checking
   if (isAuthorized === null) {

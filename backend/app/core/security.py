@@ -12,6 +12,7 @@ def create_access_token(
     subject: str,
     extra_claims: dict[str, Any] | None = None,
     expires_delta: timedelta | None = None,
+    audience: str = "customer",
 ) -> str:
     """Create a JWT access token."""
     if expires_delta:
@@ -28,6 +29,8 @@ def create_access_token(
         "jti": str(uuid4()),
         "type": "access",
     }
+    if audience:
+        to_encode["aud"] = audience
     if extra_claims:
         to_encode.update(extra_claims)
 
@@ -37,6 +40,7 @@ def create_access_token(
 def create_refresh_token(
     subject: str,
     expires_delta: timedelta | None = None,
+    audience: str = "customer",
 ) -> str:
     """Create a JWT refresh token."""
     if expires_delta:
@@ -52,15 +56,19 @@ def create_refresh_token(
         "iat": datetime.now(timezone.utc),
         "jti": str(uuid4()),
         "type": "refresh",
+        "aud": audience,
     }
 
     return jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
 
 
-def verify_token(token: str) -> Optional[dict]:
+def verify_token(token: str, audience: str | None = None) -> Optional[dict]:
     """Verify and decode a JWT token."""
     try:
-        payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
+        kwargs = {"algorithms": [settings.ALGORITHM]}
+        if audience:
+            kwargs["audience"] = audience
+        payload = jwt.decode(token, settings.SECRET_KEY, **kwargs)
         return payload
     except JWTError:
         return None

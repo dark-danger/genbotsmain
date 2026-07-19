@@ -13,11 +13,12 @@ from app.models.user import User
 security_scheme = HTTPBearer(auto_error=False)
 
 
-async def get_current_user(
-    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
-    db: Annotated[AsyncSession, Depends(get_db)],
+async def _get_user_by_token(
+    credentials: HTTPAuthorizationCredentials | None,
+    db: AsyncSession,
+    audience: str,
 ) -> User:
-    """Get the current authenticated user from JWT token."""
+    """Core function to validate token and fetch user."""
     if not credentials:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -25,7 +26,7 @@ async def get_current_user(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    payload = verify_token(credentials.credentials)
+    payload = verify_token(credentials.credentials, audience=audience)
     if payload is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -64,39 +65,54 @@ async def get_current_user(
     return user
 
 
-async def get_current_active_user(
-    current_user: Annotated[User, Depends(get_current_user)],
+async def get_current_customer(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User:
-    """Ensure user is active."""
-    return current_user
-
-
-async def get_admin_user(
-    current_user: Annotated[User, Depends(get_current_user)],
-) -> User:
-    """Ensure user has admin role."""
-    if current_user.role not in ("admin", "superadmin"):
+    """Get the current authenticated customer."""
+    user = await _get_user_by_token(credentials, db, audience="customer")
+    if user.role != "customer":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions",
+            detail="Customers only",
         )
-    return current_user
+    return user
+
+
+async def get_current_admin(
+    credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
+    db: Annotated[AsyncSession, Depends(get_db)],
+) -> User:
+    """Get the current authenticated admin."""
+    user = await _get_user_by_token(credentials, db, audience="admin")
+    if user.role not in ("admin", "superadmin", "staff"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Admin privileges required",
+        )
+    return user
 
 
 async def get_optional_user(
     credentials: Annotated[HTTPAuthorizationCredentials | None, Depends(security_scheme)],
     db: Annotated[AsyncSession, Depends(get_db)],
 ) -> User | None:
-    """Optionally get the current user (for pages accessible both ways)."""
+    """Optionally get the current user (customer or admin)."""
     if not credentials:
         return None
     try:
-        payload = verify_token(credentials.credentials)
+        # Try customer first, then admin
+        payload = verify_token(credentials.credentials, audience="customer")
+        if not payload:
+            payload = verify_token(credentials.credentials, audience="admin")
+            
         if payload is None or payload.get("type") != "access":
             return None
+            
         user_id = payload.get("sub")
         if not user_id:
             return None
+            
         result = await db.execute(select(User).where(User.id == user_id))
         user = result.scalar_one_or_none()
         if user and user.is_active:
@@ -107,8 +123,7 @@ async def get_optional_user(
 
 
 # Type aliases for cleaner dependency injection
-CurrentUser = Annotated[User, Depends(get_current_user)]
-ActiveUser = Annotated[User, Depends(get_current_active_user)]
-AdminUser = Annotated[User, Depends(get_admin_user)]
+CurrentCustomer = Annotated[User, Depends(get_current_customer)]
+CurrentAdmin = Annotated[User, Depends(get_current_admin)]
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 DbSession = Annotated[AsyncSession, Depends(get_db)]

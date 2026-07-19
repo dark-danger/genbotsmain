@@ -14,11 +14,35 @@ from app.models.cms import (
     Newsletter, ContactInquiry, SupportTicket, Testimonial, Partner, Client,
     Faq, MediaFile, AuditLog, Notification, Career, SiteSetting,
 )
-from app.schemas.auth import UserResponse, UserAdminUpdate
+from app.schemas.auth import UserResponse, UserAdminUpdate, UserLogin, TokenResponse
 from app.schemas.common import MessageResponse
 from app.utils.audit import log_audit_action
+from app.services.auth_service import AuthService
+from collections import defaultdict
+import asyncio
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
+
+_admin_failed_attempts = defaultdict(int)
+
+@router.post("/login", response_model=TokenResponse)
+async def admin_login(data: UserLogin, db: DbSession):
+    """Admin-only login endpoint."""
+    service = AuthService(db)
+    try:
+        token_response = await service.login(data.email, data.password, is_admin=True)
+        _admin_failed_attempts[data.email] = 0
+        return token_response
+    except ValueError as e:
+        _admin_failed_attempts[data.email] += 1
+        delay = min(5, _admin_failed_attempts[data.email])
+        await asyncio.sleep(delay)
+        raise HTTPException(status_code=401, detail=str(e))
+
+@router.get("/me", response_model=UserResponse)
+async def get_admin_me(current_admin: AdminUser):
+    """Get current authenticated admin profile."""
+    return current_admin
 
 
 @router.get("/dashboard")
