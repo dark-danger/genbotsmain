@@ -17,12 +17,56 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
   const [isAuthorized, setIsAuthorized] = useState<boolean | null>(null);
   const [mounted, setMounted] = useState(false);
 
+  const [hydrated, setHydrated] = useState(false);
+
   useEffect(() => {
     setMounted(true);
+    // Track Zustand hydration
+    const checkHydration = () => {
+      if (useAuthStore.persist.hasHydrated()) {
+        setHydrated(true);
+      } else {
+        const unsub = useAuthStore.persist.onHydrate(() => {});
+        const unsubFinish = useAuthStore.persist.onFinishHydration(() => {
+          setHydrated(true);
+        });
+        return () => {
+          unsub();
+          unsubFinish();
+        };
+      }
+    };
+    const cleanup = checkHydration();
+    return () => {
+      if (cleanup) cleanup();
+    };
   }, []);
 
   useEffect(() => {
-    if (!mounted) return;
+    if (!mounted || !hydrated) return;
+
+    // Decode JWT role
+    let jwtRole = null;
+    try {
+      if (token) {
+        const base64Url = token.split('.')[1];
+        const base64 = base64Url.replace(/-/g, '+').replace(/_/g, '/');
+        const jsonPayload = decodeURIComponent(
+          atob(base64)
+            .split('')
+            .map((c) => '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2))
+            .join('')
+        );
+        jwtRole = JSON.parse(jsonPayload).role;
+      }
+    } catch (e) {
+      console.error("JWT Decode error in ProtectedRoute:", e);
+    }
+
+    console.log("JWT role:", jwtRole);
+    console.log("/auth/me role:", user?.role);
+    console.log("Zustand/Auth store role:", user?.role);
+    console.log("ProtectedRoute received role:", user?.role);
 
     // 1. Check if user is logged in
     if (!token || !user) {
@@ -40,7 +84,7 @@ export function ProtectedRoute({ children, allowedRoles }: ProtectedRouteProps) 
 
     // Authorized
     setIsAuthorized(true);
-  }, [mounted, user, token, router, pathname]);
+  }, [mounted, hydrated, user, token, router, pathname]);
 
   // Show nothing or a loader while checking
   if (isAuthorized === null) {
