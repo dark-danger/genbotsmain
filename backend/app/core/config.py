@@ -74,8 +74,8 @@ class Settings(BaseSettings):
 
     @field_validator("DATABASE_URL", mode="before")
     @classmethod
-    def sanitize_database_url(cls, v: str) -> str:
-        if not v:
+    def sanitize_database_url(cls, v):
+        if not isinstance(v, str):
             return v
         # Convert sync postgres schemes to asyncpg
         if v.startswith("postgres://"):
