@@ -20,6 +20,7 @@ from app.models.cms import (
 )
 from app.schemas.content import *
 from app.schemas.common import PaginatedResponse, MessageResponse
+from app.utils.audit import log_audit_action
 
 # ─── Blog ────────────────────────────────────────────────────────
 blog_router = APIRouter(prefix="/blog", tags=["Blog"])
@@ -69,7 +70,31 @@ async def create_blog_post(data: BlogPostCreate, db: DbSession, admin: AdminUser
         post.slug = slugify(post.title)
     db.add(post)
     await db.flush()
+    await log_audit_action(db, admin.id, "create_blog", "blog", post.id, {"title": post.title})
     return post
+
+@blog_router.put("/{id}", response_model=BlogPostResponse)
+async def update_blog_post(id: UUID, data: BlogPostCreate, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(BlogPost).where(BlogPost.id == id))
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(post, k, v)
+    await db.flush()
+    await log_audit_action(db, admin.id, "update_blog", "blog", post.id, {"title": post.title})
+    return post
+
+@blog_router.delete("/{id}", response_model=MessageResponse)
+async def delete_blog_post(id: UUID, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(BlogPost).where(BlogPost.id == id))
+    post = result.scalar_one_or_none()
+    if not post:
+        raise HTTPException(status_code=404, detail="Blog post not found")
+    await db.delete(post)
+    await db.flush()
+    await log_audit_action(db, admin.id, "delete_blog", "blog", id, {"title": post.title})
+    return MessageResponse(message="Blog post deleted successfully")
 
 # ─── Software ────────────────────────────────────────────────────
 software_router = APIRouter(prefix="/software", tags=["Software"])
@@ -94,7 +119,31 @@ async def create_software(data: SoftwareCreate, db: DbSession, admin: AdminUser)
         sw.slug = slugify(sw.name)
     db.add(sw)
     await db.flush()
+    await log_audit_action(db, admin.id, "create_software", "software", sw.id, {"name": sw.name})
     return sw
+
+@software_router.put("/{id}", response_model=SoftwareResponse)
+async def update_software(id: UUID, data: SoftwareCreate, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Software).where(Software.id == id))
+    sw = result.scalar_one_or_none()
+    if not sw:
+        raise HTTPException(status_code=404, detail="Software entry not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(sw, k, v)
+    await db.flush()
+    await log_audit_action(db, admin.id, "update_software", "software", sw.id, {"name": sw.name})
+    return sw
+
+@software_router.delete("/{id}", response_model=MessageResponse)
+async def delete_software(id: UUID, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Software).where(Software.id == id))
+    sw = result.scalar_one_or_none()
+    if not sw:
+        raise HTTPException(status_code=404, detail="Software entry not found")
+    await db.delete(sw)
+    await db.flush()
+    await log_audit_action(db, admin.id, "delete_software", "software", id, {"name": sw.name})
+    return MessageResponse(message="Software entry deleted successfully")
 
 @software_router.get("/{software_id}/versions", response_model=list[SoftwareVersionResponse])
 async def list_software_versions(software_id: UUID, db: DbSession):
@@ -131,7 +180,31 @@ async def create_service(data: ServiceCreate, db: DbSession, admin: AdminUser):
         svc.slug = slugify(svc.name)
     db.add(svc)
     await db.flush()
+    await log_audit_action(db, admin.id, "create_service", "service", svc.id, {"name": svc.name})
     return svc
+
+@services_router.put("/{id}", response_model=ServiceResponse)
+async def update_service(id: UUID, data: ServiceCreate, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Service).where(Service.id == id))
+    svc = result.scalar_one_or_none()
+    if not svc:
+        raise HTTPException(status_code=404, detail="Service not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(svc, k, v)
+    await db.flush()
+    await log_audit_action(db, admin.id, "update_service", "service", svc.id, {"name": svc.name})
+    return svc
+
+@services_router.delete("/{id}", response_model=MessageResponse)
+async def delete_service(id: UUID, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Service).where(Service.id == id))
+    svc = result.scalar_one_or_none()
+    if not svc:
+        raise HTTPException(status_code=404, detail="Service not found")
+    await db.delete(svc)
+    await db.flush()
+    await log_audit_action(db, admin.id, "delete_service", "service", id, {"name": svc.name})
+    return MessageResponse(message="Service deleted successfully")
 
 @services_router.post("/consultation", response_model=MessageResponse, status_code=201)
 async def book_consultation(data: ConsultationBookingCreate, db: DbSession):
@@ -166,7 +239,31 @@ async def create_project(data: ProjectCreate, db: DbSession, admin: AdminUser):
         proj.slug = slugify(proj.title)
     db.add(proj)
     await db.flush()
+    await log_audit_action(db, admin.id, "create_project", "project", proj.id, {"title": proj.title})
     return proj
+
+@projects_router.put("/{id}", response_model=ProjectResponse)
+async def update_project(id: UUID, data: ProjectCreate, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Project).where(Project.id == id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(proj, k, v)
+    await db.flush()
+    await log_audit_action(db, admin.id, "update_project", "project", proj.id, {"title": proj.title})
+    return proj
+
+@projects_router.delete("/{id}", response_model=MessageResponse)
+async def delete_project(id: UUID, db: DbSession, admin: AdminUser):
+    result = await db.execute(select(Project).where(Project.id == id))
+    proj = result.scalar_one_or_none()
+    if not proj:
+        raise HTTPException(status_code=404, detail="Project not found")
+    await db.delete(proj)
+    await db.flush()
+    await log_audit_action(db, admin.id, "delete_project", "project", id, {"title": proj.title})
+    return MessageResponse(message="Project deleted successfully")
 
 # ─── Training ────────────────────────────────────────────────────
 training_router = APIRouter(prefix="/training", tags=["Training"])

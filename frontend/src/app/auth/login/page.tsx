@@ -4,31 +4,46 @@ import Link from "next/link";
 import { Bot, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authApi } from "@/lib/api";
+import { useAuthStore } from "@/store/auth";
 
 export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const loginStore = useAuthStore((state) => state.login);
+
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
+    const email = formData.get("email") as string;
+    const password = formData.get("password") as string;
+    
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: formData.get("email"), password: formData.get("password") }),
-      });
-      const data = await res.json();
-      if (res.ok) {
-        localStorage.setItem("access_token", data.access_token);
-        localStorage.setItem("refresh_token", data.refresh_token);
-        window.location.href = "/dashboard";
-      } else {
-        alert(data.detail || "Login failed");
-      }
-    } catch { alert("Connection error"); }
-    setLoading(false);
+      // 1. Get tokens
+      const res = await authApi.login({ email, password });
+      const { access_token, refresh_token } = res.data;
+      
+      // Store in localStorage for api.ts to use if needed (or zustand will handle access_token)
+      localStorage.setItem("refresh_token", refresh_token);
+      
+      // We must set the token in the store right away so that getMe() can use it via interceptor
+      // Zustand state update might be async depending on how it's used, but usually it's synchronous.
+      loginStore({ id: "", email: "", role: "user" } as any, access_token);
+      
+      // 2. Fetch user profile
+      const userRes = await authApi.getMe();
+      
+      // 3. Save proper user state
+      loginStore(userRes.data, access_token);
+      
+      window.location.href = "/dashboard";
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Login failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

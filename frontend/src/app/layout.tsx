@@ -6,6 +6,7 @@ import { Providers } from "@/components/providers";
 const inter = Inter({
   subsets: ["latin"],
   variable: "--font-sans",
+  display: "swap", // front.md: performance - avoid FOIT
 });
 
 export const metadata: Metadata = {
@@ -18,9 +19,11 @@ export const metadata: Metadata = {
   keywords: [
     "IoT", "Robotics", "AI", "Arduino", "ESP32", "Sensors",
     "STEM Kits", "Robotics Lab", "Home Automation", "GenBots",
+    "IoT Sensors India", "Robotics Kits India", "Lab Setup",
   ],
   authors: [{ name: "GenBots" }],
   creator: "GenBots",
+  metadataBase: new URL("https://genbots.in"),
   openGraph: {
     type: "website",
     locale: "en_IN",
@@ -38,6 +41,16 @@ export const metadata: Metadata = {
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
+  },
+  verification: {
+    google: "google-site-verification-code",
   },
 };
 
@@ -49,6 +62,13 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
+        {/* Accessibility: Skip to main content link */}
+        <a
+          href="#main-content"
+          className="sr-only focus:not-sr-only focus:absolute focus:top-4 focus:left-4 focus:z-[100] focus:px-4 focus:py-2 focus:bg-primary focus:text-primary-foreground focus:rounded-lg focus:shadow-lg"
+        >
+          Skip to main content
+        </a>
         <Providers>{children}</Providers>
       </body>
     </html>

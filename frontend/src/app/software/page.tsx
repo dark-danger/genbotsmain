@@ -1,9 +1,10 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Download, ExternalLink, Monitor, Star } from "lucide-react";
+import { Download, ExternalLink, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import type { Metadata } from "next";
+import Link from "next/link";
 
 export const metadata: Metadata = { title: "Software", description: "Download GenBots software - IDE, home automation app, IoT controllers, and firmware tools." };
 
@@ -34,7 +35,9 @@ export default function SoftwarePage() {
                   </div>
                   <div className="flex-1">
                     <div className="flex flex-wrap items-center gap-3 mb-2">
-                      <h2 className="text-xl font-bold">{sw.name}</h2>
+                      <h2 className="text-xl font-bold hover:text-primary transition-colors">
+                        <Link href={`/software/${sw.slug}`}>{sw.name}</Link>
+                      </h2>
                       <Badge variant="outline" className="rounded-full">{sw.category}</Badge>
                       <Badge className="gradient-bg text-white border-0 rounded-full">v{sw.version}</Badge>
                     </div>
@@ -50,7 +53,9 @@ export default function SoftwarePage() {
                       <span>🖥️ {sw.platforms.join(", ")}</span>
                     </div>
                     <div className="flex gap-3">
-                      <Button className="gradient-bg text-white rounded-xl"><Download className="w-4 h-4 mr-2" /> Download</Button>
+                      <Link href={`/software/${sw.slug}`}>
+                        <Button className="gradient-bg text-white rounded-xl"><Download className="w-4 h-4 mr-2" /> Download Options</Button>
+                      </Link>
                       <Button variant="outline" className="rounded-xl"><ExternalLink className="w-4 h-4 mr-2" /> Documentation</Button>
                     </div>
                   </div>

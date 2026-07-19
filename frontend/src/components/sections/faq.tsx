@@ -3,6 +3,7 @@ import { motion, useInView } from "framer-motion";
 import { useRef } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
+import { FaqJsonLd } from "@/components/seo/JsonLd";
 
 const faqs = [
   { q: "What payment methods do you accept?", a: "We accept Razorpay (UPI, cards, net banking), Stripe, and Cash on Delivery for orders across India." },
@@ -18,11 +19,13 @@ export function FaqSection() {
   const isInView = useInView(ref, { once: true, margin: "-50px" });
 
   return (
-    <section ref={ref} id="faq" className="py-24">
+    <section ref={ref} id="faq" className="py-24" aria-labelledby="faq-heading">
+      {/* SEO: FAQ Schema.org JSON-LD */}
+      <FaqJsonLd faqs={faqs.map(f => ({ question: f.q, answer: f.a }))} />
       <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8">
         <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} className="text-center mb-14">
           <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">FAQ</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked <span className="gradient-text">Questions</span></h2>
+          <h2 id="faq-heading" className="text-3xl md:text-4xl font-bold mb-4">Frequently Asked <span className="gradient-text">Questions</span></h2>
         </motion.div>
         <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: 0.2 }}>
           <Accordion className="space-y-3">

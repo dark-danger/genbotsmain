@@ -13,6 +13,7 @@ from app.schemas.product import (
 )
 from app.schemas.common import PaginatedResponse, MessageResponse
 from app.services.product_service import ProductService
+from app.utils.audit import log_audit_action
 
 router = APIRouter(prefix="/products", tags=["Products"])
 
@@ -63,7 +64,16 @@ async def get_product(slug: str, db: DbSession):
 async def create_product(data: ProductCreate, db: DbSession, admin: AdminUser):
     """Create a new product (admin only)."""
     service = ProductService(db)
-    return await service.create_product(data)
+    product = await service.create_product(data)
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="create_product",
+        resource_type="product",
+        resource_id=product.id,
+        details={"name": product.name, "sku": product.sku}
+    )
+    return product
 
 
 @router.patch("/{product_id}", response_model=ProductResponse)
@@ -73,6 +83,14 @@ async def update_product(product_id: UUID, data: dict, db: DbSession, admin: Adm
     product = await service.update_product(product_id, data)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="update_product",
+        resource_type="product",
+        resource_id=product.id,
+        details={"updates": data}
+    )
     return product
 
 
@@ -83,4 +101,11 @@ async def delete_product(product_id: UUID, db: DbSession, admin: AdminUser):
     deleted = await service.delete_product(product_id)
     if not deleted:
         raise HTTPException(status_code=404, detail="Product not found")
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="delete_product",
+        resource_type="product",
+        resource_id=product_id
+    )
     return MessageResponse(message="Product deleted successfully")

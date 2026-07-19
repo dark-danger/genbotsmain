@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Bot, Eye, EyeOff, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { authApi } from "@/lib/api";
 
 export default function RegisterPage() {
   const [showPassword, setShowPassword] = useState(false);
@@ -14,19 +15,21 @@ export default function RegisterPage() {
     setLoading(true);
     const fd = new FormData(e.currentTarget);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1"}/auth/register`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email: fd.get("email"), password: fd.get("password"),
-          first_name: fd.get("first_name"), last_name: fd.get("last_name"),
-          phone: fd.get("phone") || undefined,
-        }),
-      });
-      if (res.ok) { window.location.href = "/auth/login?registered=true"; }
-      else { const data = await res.json(); alert(data.detail || "Registration failed"); }
-    } catch { alert("Connection error"); }
-    setLoading(false);
+      const data: Record<string, string> = {
+        email: fd.get("email") as string,
+        password: fd.get("password") as string,
+        first_name: fd.get("first_name") as string,
+        last_name: fd.get("last_name") as string,
+      };
+      if (fd.get("phone")) data.phone = fd.get("phone") as string;
+      
+      await authApi.register(data);
+      window.location.href = "/auth/login?registered=true";
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Registration failed");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

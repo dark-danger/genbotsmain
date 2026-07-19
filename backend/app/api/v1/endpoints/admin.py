@@ -7,7 +7,8 @@ from sqlalchemy.orm import selectinload
 from app.core.deps import DbSession, AdminUser
 from app.models.user import User
 from app.models.product import Product, Category, Brand
-from app.models.order import Order, OrderItem
+from app.models.order import Order, OrderItem, Coupon
+from app.schemas.order import CouponCreate, CouponResponse
 from app.models.content import BlogPost, Software, Project, Service, TrainingCourse
 from app.models.cms import (
     Newsletter, ContactInquiry, SupportTicket, Testimonial, Partner, Client,
@@ -15,6 +16,7 @@ from app.models.cms import (
 )
 from app.schemas.auth import UserResponse, UserAdminUpdate
 from app.schemas.common import MessageResponse
+from app.utils.audit import log_audit_action
 
 router = APIRouter(prefix="/admin", tags=["Admin"])
 
@@ -75,6 +77,14 @@ async def update_user(user_id: UUID, data: UserAdminUpdate, db: DbSession, admin
     for key, value in update_data.items():
         setattr(user, key, value)
     await db.flush()
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="update_user",
+        resource_type="user",
+        resource_id=user_id,
+        details={"updates": update_data}
+    )
     return user
 
 
@@ -100,8 +110,17 @@ async def update_order_status(order_id: UUID, status: str, db: DbSession, admin:
     order = result.scalar_one_or_none()
     if not order:
         raise HTTPException(status_code=404, detail="Order not found")
+    old_status = order.status
     order.status = status
     await db.flush()
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="update_order_status",
+        resource_type="order",
+        resource_id=order_id,
+        details={"old_status": old_status, "new_status": status}
+    )
     return {"message": "Order status updated", "status": status}
 
 
@@ -122,8 +141,100 @@ async def list_all_tickets(db: DbSession, admin: AdminUser, status: str | None =
     return result.scalars().all()
 
 
+from app.schemas.audit import AuditLogResponse
+
 @router.get("/subscribers")
 async def list_subscribers(db: DbSession, admin: AdminUser):
     """List newsletter subscribers."""
     result = await db.execute(select(Newsletter).order_by(Newsletter.subscribed_at.desc()))
     return result.scalars().all()
+
+
+@router.get("/logs", response_model=list[AuditLogResponse])
+async def list_audit_logs(
+    db: DbSession,
+    admin: AdminUser,
+    page: int = Query(1, ge=1),
+    page_size: int = Query(20, ge=1, le=100),
+    user_id: UUID | None = None,
+    action: str | None = None,
+    resource_type: str | None = None,
+):
+    """List audit logs with filtering."""
+    query = select(AuditLog)
+    if user_id:
+        query = query.where(AuditLog.user_id == user_id)
+    if action:
+        query = query.where(AuditLog.action == action)
+    if resource_type:
+        query = query.where(AuditLog.resource_type == resource_type)
+    
+    query = query.order_by(AuditLog.created_at.desc()).offset((page - 1) * page_size).limit(page_size)
+    result = await db.execute(query)
+    return result.scalars().all()
+
+
+@router.get("/coupons", response_model=list[CouponResponse])
+async def list_coupons(db: DbSession, admin: AdminUser):
+    """List all coupons."""
+    result = await db.execute(select(Coupon).order_by(Coupon.created_at.desc()))
+    return result.scalars().all()
+
+
+@router.post("/coupons", response_model=CouponResponse, status_code=201)
+async def create_coupon(data: CouponCreate, db: DbSession, admin: AdminUser):
+    """Create a coupon."""
+    coupon = Coupon(**data.model_dump(exclude_unset=True))
+    db.add(coupon)
+    await db.flush()
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="create_coupon",
+        resource_type="coupon",
+        resource_id=coupon.id,
+        details={"code": coupon.code}
+    )
+    return coupon
+
+
+@router.put("/coupons/{id}", response_model=CouponResponse)
+async def update_coupon(id: UUID, data: CouponCreate, db: DbSession, admin: AdminUser):
+    """Update a coupon."""
+    result = await db.execute(select(Coupon).where(Coupon.id == id))
+    coupon = result.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    for k, v in data.model_dump(exclude_unset=True).items():
+        setattr(coupon, k, v)
+    await db.flush()
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="update_coupon",
+        resource_type="coupon",
+        resource_id=coupon.id,
+        details={"code": coupon.code}
+    )
+    return coupon
+
+
+@router.delete("/coupons/{id}", response_model=MessageResponse)
+async def delete_coupon(id: UUID, db: DbSession, admin: AdminUser):
+    """Delete a coupon."""
+    result = await db.execute(select(Coupon).where(Coupon.id == id))
+    coupon = result.scalar_one_or_none()
+    if not coupon:
+        raise HTTPException(status_code=404, detail="Coupon not found")
+    await db.delete(coupon)
+    await db.flush()
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="delete_coupon",
+        resource_type="coupon",
+        resource_id=id,
+        details={"code": coupon.code}
+    )
+    return MessageResponse(message="Coupon deleted successfully")
+

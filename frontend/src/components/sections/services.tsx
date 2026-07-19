@@ -1,52 +1,91 @@
 "use client";
+
 import { motion, useInView } from "framer-motion";
-import { useRef } from "react";
+import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight, School, GraduationCap, Cpu, CircuitBoard, Brain, Factory } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
+import { School, GraduationCap, Cpu, CircuitBoard, Brain, Factory, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { gsap } from "gsap";
+import { ScrollTrigger } from "gsap/ScrollTrigger";
+
+if (typeof window !== "undefined") {
+  gsap.registerPlugin(ScrollTrigger);
+}
 
 const services = [
-  { name: "School Lab Setup", desc: "Complete robotics & IoT lab for K-12 schools", icon: School, color: "from-emerald-500 to-emerald-600" },
-  { name: "University Lab Setup", desc: "Innovation labs for higher education", icon: GraduationCap, color: "from-cyan-500 to-cyan-600" },
-  { name: "IoT Development", desc: "Custom IoT product design & development", icon: Cpu, color: "from-emerald-400 to-emerald-500" },
-  { name: "PCB Designing", desc: "Professional PCB design & manufacturing", icon: CircuitBoard, color: "from-cyan-400 to-cyan-500" },
-  { name: "AI Projects", desc: "Computer vision, NLP & edge AI solutions", icon: Brain, color: "from-emerald-500 to-cyan-500" },
-  { name: "Industrial Automation", desc: "Industry 4.0 & smart factory solutions", icon: Factory, color: "from-cyan-500 to-emerald-500" },
+  { name: "School Lab Setup", icon: School, desc: "Complete robotics & IoT lab for K-12 schools with equipment and training.", color: "from-emerald-500 to-emerald-600" },
+  { name: "University Labs", icon: GraduationCap, desc: "Innovation labs for universities with cutting-edge equipment.", color: "from-cyan-500 to-cyan-600" },
+  { name: "IoT Development", icon: Cpu, desc: "End-to-end custom IoT product development.", color: "from-emerald-400 to-emerald-500" },
+  { name: "PCB Design", icon: CircuitBoard, desc: "Professional PCB design and manufacturing services.", color: "from-teal-500 to-teal-600" },
+  { name: "AI Projects", icon: Brain, desc: "AI and ML project development for vision & edge computing.", color: "from-cyan-400 to-cyan-500" },
+  { name: "Industrial Automation", icon: Factory, desc: "Industry 4.0 smart factory solutions.", color: "from-emerald-600 to-emerald-700" },
 ];
 
 export function ServicesSection() {
-  const ref = useRef(null);
-  const isInView = useInView(ref, { once: true, margin: "-50px" });
+  const ref = useRef<HTMLDivElement>(null);
+  const gridRef = useRef<HTMLDivElement>(null);
+  const isInView = useInView(ref, { once: true, margin: "-100px" });
+
+  useEffect(() => {
+    if (!gridRef.current) return;
+    const cards = gridRef.current.children;
+    gsap.fromTo(
+      cards,
+      { opacity: 0, y: 50, rotateX: 10 },
+      {
+        opacity: 1,
+        y: 0,
+        rotateX: 0,
+        duration: 0.7,
+        stagger: 0.1,
+        ease: "power2.out",
+        scrollTrigger: {
+          trigger: gridRef.current,
+          start: "top 80%",
+          toggleActions: "play none none reverse",
+        },
+      }
+    );
+    return () => { ScrollTrigger.getAll().forEach((t) => t.kill()); };
+  }, []);
 
   return (
-    <section ref={ref} className="py-24 bg-muted/30">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-        <motion.div initial={{ opacity: 0, y: 20 }} animate={isInView ? { opacity: 1, y: 0 } : {}} className="text-center mb-14">
-          <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">Our Services</Badge>
-          <h2 className="text-3xl md:text-4xl font-bold mb-4">What We <span className="gradient-text">Offer</span></h2>
-          <p className="text-muted-foreground max-w-2xl mx-auto">End-to-end IoT, robotics, and AI solutions for education and industry.</p>
+    <section ref={ref} className="py-24 relative" aria-labelledby="services-heading">
+      <div className="absolute inset-0 bg-gradient-to-b from-transparent via-emerald-500/3 to-transparent" />
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 relative">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
+          transition={{ duration: 0.5 }}
+          className="text-center mb-14"
+        >
+          <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">🛠️ What We Do</Badge>
+          <h2 id="services-heading" className="text-3xl md:text-4xl font-bold mb-4">
+            Our <span className="gradient-text">Services</span>
+          </h2>
+          <p className="text-muted-foreground max-w-2xl mx-auto">
+            End-to-end IoT, robotics, and AI solutions for education and industry.
+          </p>
         </motion.div>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {services.map((svc, i) => (
-            <motion.div key={svc.name} initial={{ opacity: 0, y: 30 }} animate={isInView ? { opacity: 1, y: 0 } : {}} transition={{ delay: i * 0.08 }}>
-              <div className="glass-card p-6 h-full group hover:glow-sm hover:-translate-y-1 transition-all duration-300 cursor-pointer">
-                <div className={`w-12 h-12 rounded-xl bg-gradient-to-br ${svc.color} flex items-center justify-center mb-4 group-hover:scale-110 transition-transform`}>
-                  <svc.icon className="w-6 h-6 text-white" />
-                </div>
-                <h3 className="text-lg font-semibold mb-2">{svc.name}</h3>
-                <p className="text-sm text-muted-foreground mb-4">{svc.desc}</p>
-                <span className="text-sm text-primary font-medium inline-flex items-center gap-1 group-hover:gap-2 transition-all">
-                  Learn More <ArrowRight className="w-3.5 h-3.5" />
-                </span>
+
+        <div ref={gridRef} className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {services.map((svc) => (
+            <div
+              key={svc.name}
+              className="glass-card p-6 group hover:glow-sm transition-all duration-300 hover:-translate-y-1 cursor-pointer"
+            >
+              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${svc.color} flex items-center justify-center mb-5 group-hover:scale-110 transition-transform shadow-lg`}>
+                <svc.icon className="w-7 h-7 text-white" aria-hidden="true" />
               </div>
-            </motion.div>
+              <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors">{svc.name}</h3>
+              <p className="text-sm text-muted-foreground mb-5">{svc.desc}</p>
+              <Link href="/services" className="text-sm font-medium text-primary flex items-center group/link">
+                Learn More
+                <ArrowRight className="w-4 h-4 ml-1 group-hover/link:translate-x-1 transition-transform" aria-hidden="true" />
+              </Link>
+            </div>
           ))}
-        </div>
-        <div className="text-center mt-10">
-          <Link href="/services">
-            <Button variant="outline" size="lg" className="rounded-xl px-8">All Services <ArrowRight className="w-4 h-4 ml-2" /></Button>
-          </Link>
         </div>
       </div>
     </section>

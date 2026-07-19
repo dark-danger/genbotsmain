@@ -1,4 +1,5 @@
 import axios from "axios";
+import { useAuthStore } from "@/store/auth";
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
@@ -11,7 +12,7 @@ export const api = axios.create({
 // Request interceptor - attach JWT
 api.interceptors.request.use((config) => {
   if (typeof window !== "undefined") {
-    const token = localStorage.getItem("access_token");
+    const { token } = useAuthStore.getState();
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
@@ -39,8 +40,7 @@ api.interceptors.response.use(
           return api(originalRequest);
         }
       } catch {
-        localStorage.removeItem("access_token");
-        localStorage.removeItem("refresh_token");
+        useAuthStore.getState().logout();
         if (typeof window !== "undefined") {
           window.location.href = "/auth/login";
         }
@@ -77,6 +77,8 @@ export const blogApi = {
   getBySlug: (slug: string) => api.get(`/blog/${slug}`),
   categories: () => api.get("/blog/categories"),
   create: (data: Record<string, unknown>) => api.post("/blog", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/blog/${id}`, data),
+  delete: (id: string) => api.delete(`/blog/${id}`),
 };
 
 // Software API
@@ -85,6 +87,8 @@ export const softwareApi = {
   getBySlug: (slug: string) => api.get(`/software/${slug}`),
   versions: (id: string) => api.get(`/software/${id}/versions`),
   create: (data: Record<string, unknown>) => api.post("/software", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/software/${id}`, data),
+  delete: (id: string) => api.delete(`/software/${id}`),
 };
 
 // Services API
@@ -92,12 +96,18 @@ export const servicesApi = {
   list: () => api.get("/services"),
   getBySlug: (slug: string) => api.get(`/services/${slug}`),
   bookConsultation: (data: Record<string, unknown>) => api.post("/services/consultation", data),
+  create: (data: Record<string, unknown>) => api.post("/services", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/services/${id}`, data),
+  delete: (id: string) => api.delete(`/services/${id}`),
 };
 
 // Projects API
 export const projectsApi = {
   list: (params?: Record<string, string>) => api.get("/projects", { params }),
   getBySlug: (slug: string) => api.get(`/projects/${slug}`),
+  create: (data: Record<string, unknown>) => api.post("/projects", data),
+  update: (id: string, data: Record<string, unknown>) => api.put(`/projects/${id}`, data),
+  delete: (id: string) => api.delete(`/projects/${id}`),
 };
 
 // Training API
@@ -147,4 +157,18 @@ export const adminApi = {
   inquiries: () => api.get("/admin/inquiries"),
   tickets: (status?: string) => api.get("/admin/tickets", { params: status ? { status } : {} }),
   subscribers: () => api.get("/admin/subscribers"),
+  logs: (params?: Record<string, string | number>) => api.get("/admin/logs", { params }),
+  coupons: () => api.get("/admin/coupons"),
+  createCoupon: (data: Record<string, unknown>) => api.post("/admin/coupons", data),
+  updateCoupon: (id: string, data: Record<string, unknown>) => api.put(`/admin/coupons/${id}`, data),
+  deleteCoupon: (id: string) => api.delete(`/admin/coupons/${id}`),
+};
+
+// Orders API
+export const ordersApi = {
+  myOrders: () => api.get("/orders/my-orders"),
+  createOrder: (data: { amount: number; currency?: string; receipt?: string }) => 
+    api.post("/orders/create-order", data),
+  verifyPayment: (data: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) =>
+    api.post("/orders/verify-payment", data),
 };

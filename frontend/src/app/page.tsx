@@ -8,10 +8,12 @@ import { WhyChooseSection } from "@/components/sections/why-choose";
 import { TestimonialsSection } from "@/components/sections/testimonials";
 import { FaqSection } from "@/components/sections/faq";
 import { CtaSection } from "@/components/sections/cta";
+import { OrganizationJsonLd } from "@/components/seo/JsonLd";
 
 export default function HomePage() {
   return (
     <>
+      <OrganizationJsonLd />
       <Navbar />
       <main>
         <HeroSection />
