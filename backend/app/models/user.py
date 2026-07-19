@@ -41,7 +41,7 @@ class User(Base):
     orders = relationship("Order", back_populates="user", cascade="all, delete-orphan")
     reviews = relationship("Review", back_populates="user", cascade="all, delete-orphan")
     wishlists = relationship("Wishlist", back_populates="user", cascade="all, delete-orphan")
-    support_tickets = relationship("SupportTicket", back_populates="user", cascade="all, delete-orphan")
+    support_tickets = relationship("SupportTicket", back_populates="user", cascade="all, delete-orphan", foreign_keys="[SupportTicket.user_id]")
     notifications = relationship("Notification", back_populates="user", cascade="all, delete-orphan")
     blog_posts = relationship("BlogPost", back_populates="author")
     blog_comments = relationship("BlogComment", back_populates="user", cascade="all, delete-orphan")
