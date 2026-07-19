@@ -28,7 +28,7 @@ export default function AdminDashboard() {
     price: "",
     stock_quantity: "",
     description: "",
-    status: "published",
+    status: "active",
   });
 
   // Form State for Software
@@ -181,7 +181,7 @@ export default function AdminDashboard() {
         price: "",
         stock_quantity: "",
         description: "",
-        status: "published",
+        status: "active",
       });
     },
     onError: (err: any) => {
@@ -594,7 +594,7 @@ export default function AdminDashboard() {
                         onChange={(e) => setNewProduct({ ...newProduct, status: e.target.value })}
                         className="w-full h-10 p-2 rounded-md bg-background border border-border"
                       >
-                        <option value="published">Published</option>
+                        <option value="active">Published</option>
                         <option value="draft">Draft</option>
                       </select>
                     </div>

@@ -63,6 +63,8 @@ async def get_product(slug: str, db: DbSession):
 @router.post("", response_model=ProductResponse, status_code=status.HTTP_201_CREATED)
 async def create_product(data: ProductCreate, db: DbSession, admin: AdminUser):
     """Create a new product (admin only)."""
+    if data.status == "published":
+        data.status = "active"
     service = ProductService(db)
     product = await service.create_product(data)
     await log_audit_action(
@@ -79,6 +81,8 @@ async def create_product(data: ProductCreate, db: DbSession, admin: AdminUser):
 @router.patch("/{product_id}", response_model=ProductResponse)
 async def update_product(product_id: UUID, data: dict, db: DbSession, admin: AdminUser):
     """Update a product (admin only)."""
+    if data.get("status") == "published":
+        data["status"] = "active"
     service = ProductService(db)
     product = await service.update_product(product_id, data)
     if not product:
