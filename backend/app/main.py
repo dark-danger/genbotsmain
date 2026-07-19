@@ -18,6 +18,10 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down application")
 
 
+import os
+
+root_path = "/api/backend" if os.getenv("VERCEL") else ""
+
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
@@ -25,6 +29,7 @@ app = FastAPI(
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
     lifespan=lifespan,
+    root_path=root_path,
 )
 
 # CORS Middleware
