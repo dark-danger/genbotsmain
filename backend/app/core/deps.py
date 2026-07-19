@@ -125,5 +125,6 @@ async def get_optional_user(
 # Type aliases for cleaner dependency injection
 CurrentCustomer = Annotated[User, Depends(get_current_customer)]
 CurrentAdmin = Annotated[User, Depends(get_current_admin)]
+AdminUser = CurrentAdmin
 OptionalUser = Annotated[User | None, Depends(get_optional_user)]
 DbSession = Annotated[AsyncSession, Depends(get_db)]

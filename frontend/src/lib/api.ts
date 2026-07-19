@@ -97,26 +97,39 @@ export const authApi = {
 
 export const productsApi = {
   list: (params?: Record<string, string | number | boolean>) => api.get("/products", { params }),
-  featured: (limit = 8) => api.get("/products/featured", { params: { limit } }),
+  get: (id: string) => api.get(`/products/${id}`),
   getBySlug: (slug: string) => api.get(`/products/${slug}`),
+  create: (data: Record<string, unknown>) => adminAxios.post("/products", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.patch(`/products/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/products/${id}`),
+  featured: (limit = 8) => api.get("/products/featured", { params: { limit } }),
 };
 
 export const blogApi = {
   list: (params?: Record<string, string | number>) => api.get("/blog", { params }),
   getBySlug: (slug: string) => api.get(`/blog/${slug}`),
   categories: () => api.get("/blog/categories"),
+  create: (data: Record<string, unknown>) => adminAxios.post("/blog", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/blog/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/blog/${id}`),
 };
 
 export const softwareApi = {
   list: () => api.get("/software"),
   getBySlug: (slug: string) => api.get(`/software/${slug}`),
   versions: (id: string) => api.get(`/software/${id}/versions`),
+  create: (data: Record<string, unknown>) => adminAxios.post("/software", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/software/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/software/${id}`),
 };
 
 export const servicesApi = {
   list: () => api.get("/services"),
   getBySlug: (slug: string) => api.get(`/services/${slug}`),
   bookConsultation: (data: Record<string, unknown>) => api.post("/services/consultation", data),
+  create: (data: Record<string, unknown>) => adminAxios.post("/services", data),
+  update: (id: string, data: Record<string, unknown>) => adminAxios.put(`/services/${id}`, data),
+  delete: (id: string) => adminAxios.delete(`/services/${id}`),
 };
 
 export const projectsApi = {
