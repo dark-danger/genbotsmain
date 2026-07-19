@@ -2,7 +2,7 @@ import axios from "axios";
 import { useAuthStore } from "@/store/auth";
 import { useAdminAuthStore } from "@/store/adminAuth";
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_URL || "/api/backend/api/v1";
 
 // ── CUSTOMER AXIOS INSTANCE ─────────────────────────────────────────────
 export const api = axios.create({
