@@ -1,4 +1,4 @@
-import { ProtectedRoute } from "@/components/ProtectedRoute";
+import { AdminProtectedRoute } from "@/components/AdminProtectedRoute";
 
 export const metadata = {
   title: "Admin Dashboard | GenBots Enterprise",
@@ -11,8 +11,8 @@ export default function AdminLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ProtectedRoute allowedRoles={["admin", "superadmin"]}>
+    <AdminProtectedRoute>
       {children}
-    </ProtectedRoute>
+    </AdminProtectedRoute>
   );
 }
