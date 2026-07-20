@@ -38,7 +38,22 @@ export default function AdminLoginPage() {
       
       window.location.href = "/admin/dashboard";
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Admin Login failed");
+      const d = err.response?.data;
+      let msg: string;
+      if (!d) {
+        msg = err.message || "Admin login failed";
+      } else if (typeof d.detail === "string") {
+        msg = d.detail;
+      } else if (Array.isArray(d.detail)) {
+        msg = d.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ");
+      } else if (typeof d.detail === "object" && d.detail !== null) {
+        msg = JSON.stringify(d.detail);
+      } else if (typeof d === "string") {
+        msg = d;
+      } else {
+        msg = `HTTP ${err.response?.status}: ${JSON.stringify(d)}`;
+      }
+      alert(msg);
     } finally {
       setLoading(false);
     }

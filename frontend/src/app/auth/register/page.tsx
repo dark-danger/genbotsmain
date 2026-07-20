@@ -26,7 +26,23 @@ export default function RegisterPage() {
       await authApi.register(data);
       window.location.href = "/auth/login?registered=true";
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Registration failed");
+      const d = err.response?.data;
+      let msg: string;
+      if (!d) {
+        msg = err.message || "Registration failed";
+      } else if (typeof d.detail === "string") {
+        msg = d.detail;
+      } else if (Array.isArray(d.detail)) {
+        // FastAPI 422: detail is [{loc, msg, type}, ...]
+        msg = d.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ");
+      } else if (typeof d.detail === "object" && d.detail !== null) {
+        msg = JSON.stringify(d.detail);
+      } else if (typeof d === "string") {
+        msg = d;
+      } else {
+        msg = `HTTP ${err.response?.status}: ${JSON.stringify(d)}`;
+      }
+      alert(msg);
     } finally {
       setLoading(false);
     }
