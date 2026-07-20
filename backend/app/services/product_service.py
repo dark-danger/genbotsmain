@@ -65,7 +65,7 @@ class ProductService:
             self.db.add(spec)
 
         await self.db.flush()
-        return product
+        return await self.get_product_by_id(product.id)
 
     async def get_product_by_slug(self, slug: str) -> Optional[Product]:
         result = await self.db.execute(
