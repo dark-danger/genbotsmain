@@ -90,3 +90,16 @@ async def readiness_check():
 
 # Include API routes (AFTER health routes are added to api_router)
 app.include_router(api_router)
+
+
+# Register root-level health/readyz fallbacks for local integration tests and monitoring
+@app.get("/health", tags=["Health"])
+@app.get("/healthz", tags=["Health"])
+async def root_health_check():
+    return await health_check()
+
+
+@app.get("/readyz", tags=["Health"])
+async def root_readiness_check():
+    return await readiness_check()
+

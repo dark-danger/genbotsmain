@@ -38,6 +38,8 @@ async def register(data: UserRegister, db: DbSession):
         await db.commit()
         return user
     except ValueError as e:
+        if "already registered" in str(e).lower():
+            raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(e))
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
     except IntegrityError:
         raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail="Email already registered")

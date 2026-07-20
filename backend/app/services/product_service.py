@@ -184,7 +184,11 @@ class ProductService:
     async def get_featured_products(self, limit: int = 8):
         result = await self.db.execute(
             select(Product)
-            .options(selectinload(Product.images), selectinload(Product.category))
+            .options(
+                selectinload(Product.images),
+                selectinload(Product.category),
+                selectinload(Product.brand),
+            )
             .where(Product.status == "active", Product.is_featured == True)
             .order_by(Product.created_at.desc())
             .limit(limit)
