@@ -38,7 +38,7 @@ export function ScrollReveal({
       right: { x: -distance, y: 0 },
     };
 
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       el,
       { opacity: 0, ...dirMap[direction] },
       {
@@ -58,7 +58,8 @@ export function ScrollReveal({
     );
 
     return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      tween.scrollTrigger?.kill();
+      tween.kill();
     };
   }, [direction, delay, duration, distance]);
 
@@ -82,7 +83,7 @@ export function Parallax({ children, speed = 0.5, className = "" }: ParallaxProp
     const el = ref.current;
     if (!el) return;
 
-    gsap.to(el, {
+    const tween = gsap.to(el, {
       y: () => speed * 100,
       ease: "none",
       scrollTrigger: {
@@ -94,7 +95,8 @@ export function Parallax({ children, speed = 0.5, className = "" }: ParallaxProp
     });
 
     return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      tween.scrollTrigger?.kill();
+      tween.kill();
     };
   }, [speed]);
 
@@ -121,7 +123,7 @@ export function StaggerReveal({
     if (!el) return;
 
     const items = el.children;
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       items,
       { opacity: 0, y: 40 },
       {
@@ -139,7 +141,8 @@ export function StaggerReveal({
     );
 
     return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      tween.scrollTrigger?.kill();
+      tween.kill();
     };
   }, [stagger]);
 

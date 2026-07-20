@@ -48,28 +48,32 @@ async def get_admin_me(current_admin: AdminUser):
 @router.get("/dashboard")
 async def get_dashboard_stats(db: DbSession, admin: AdminUser):
     """Get admin dashboard analytics."""
-    total_users = (await db.execute(select(func.count(User.id)))).scalar()
-    total_products = (await db.execute(select(func.count(Product.id)))).scalar()
-    total_orders = (await db.execute(select(func.count(Order.id)))).scalar()
-    total_revenue = (await db.execute(select(func.sum(Order.total_amount)).where(Order.payment_status == "paid"))).scalar() or 0
-    pending_orders = (await db.execute(select(func.count(Order.id)).where(Order.status == "pending"))).scalar()
-    total_blog_posts = (await db.execute(select(func.count(BlogPost.id)))).scalar()
-    total_software = (await db.execute(select(func.count(Software.id)))).scalar()
-    total_tickets = (await db.execute(select(func.count(SupportTicket.id)).where(SupportTicket.status == "open"))).scalar()
-    total_subscribers = (await db.execute(select(func.count(Newsletter.id)))).scalar()
-    total_inquiries = (await db.execute(select(func.count(ContactInquiry.id)).where(ContactInquiry.is_read == False))).scalar()
+    query = select(
+        select(func.count(User.id)).scalar_subquery().label("total_users"),
+        select(func.count(Product.id)).scalar_subquery().label("total_products"),
+        select(func.count(Order.id)).scalar_subquery().label("total_orders"),
+        select(func.coalesce(func.sum(Order.total_amount), 0)).where(Order.payment_status == "paid").scalar_subquery().label("total_revenue"),
+        select(func.count(Order.id)).where(Order.status == "pending").scalar_subquery().label("pending_orders"),
+        select(func.count(BlogPost.id)).scalar_subquery().label("total_blog_posts"),
+        select(func.count(Software.id)).scalar_subquery().label("total_software"),
+        select(func.count(SupportTicket.id)).where(SupportTicket.status == "open").scalar_subquery().label("open_tickets"),
+        select(func.count(Newsletter.id)).scalar_subquery().label("total_subscribers"),
+        select(func.count(ContactInquiry.id)).where(ContactInquiry.is_read == False).scalar_subquery().label("unread_inquiries")
+    )
+    result = (await db.execute(query)).fetchone()
+    stats = result._asdict()
 
     return {
-        "total_users": total_users,
-        "total_products": total_products,
-        "total_orders": total_orders,
-        "total_revenue": float(total_revenue),
-        "pending_orders": pending_orders,
-        "total_blog_posts": total_blog_posts,
-        "total_software": total_software,
-        "open_tickets": total_tickets,
-        "total_subscribers": total_subscribers,
-        "unread_inquiries": total_inquiries,
+        "total_users": stats["total_users"],
+        "total_products": stats["total_products"],
+        "total_orders": stats["total_orders"],
+        "total_revenue": float(stats["total_revenue"]),
+        "pending_orders": stats["pending_orders"],
+        "total_blog_posts": stats["total_blog_posts"],
+        "total_software": stats["total_software"],
+        "open_tickets": stats["open_tickets"],
+        "total_subscribers": stats["total_subscribers"],
+        "unread_inquiries": stats["unread_inquiries"],
     }
 
 

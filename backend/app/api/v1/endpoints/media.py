@@ -90,7 +90,7 @@ async def upload_file(
                 # Open with PIL
                 img = Image.open(file.file)
                 # Strip EXIF and save optimized image
-                img.save(temp_path, optimize=True, quality=85)
+                img.save(temp_path, format=img.format, optimize=True, quality=85)
                 success = True
             else:
                 # Direct stream copy for non-image assets

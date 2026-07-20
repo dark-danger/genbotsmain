@@ -30,7 +30,7 @@ export function ServicesSection() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = gridRef.current.children;
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       cards,
       { opacity: 0, y: 50, rotateX: 10 },
       {
@@ -47,7 +47,10 @@ export function ServicesSection() {
         },
       }
     );
-    return () => { ScrollTrigger.getAll().forEach((t) => t.kill()); };
+    return () => {
+      tween.scrollTrigger?.kill();
+      tween.kill();
+    };
   }, []);
 
   return (

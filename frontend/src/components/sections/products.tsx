@@ -23,7 +23,7 @@ export function ProductsSection() {
   useEffect(() => {
     if (!gridRef.current) return;
     const cards = gridRef.current.children;
-    gsap.fromTo(
+    const tween = gsap.fromTo(
       cards,
       { opacity: 0, y: 60, scale: 0.95 },
       {
@@ -42,7 +42,8 @@ export function ProductsSection() {
     );
 
     return () => {
-      ScrollTrigger.getAll().forEach((t) => t.kill());
+      tween.scrollTrigger?.kill();
+      tween.kill();
     };
   }, []);
 

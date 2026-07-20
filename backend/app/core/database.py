@@ -12,7 +12,10 @@ from app.core.config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     echo=settings.DEBUG,
-    poolclass=NullPool,
+    pool_size=5,
+    max_overflow=5,
+    pool_recycle=300,
+    pool_pre_ping=True,
     connect_args={
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,
