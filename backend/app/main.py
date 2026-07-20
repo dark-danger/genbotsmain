@@ -44,9 +44,13 @@ app.add_middleware(
 
 from fastapi.staticfiles import StaticFiles
 
-# Create uploads directory if not exists
-os.makedirs("uploads", exist_ok=True)
-app.mount("/uploads", StaticFiles(directory="uploads"), name="uploads")
+# On Vercel the working directory is read-only; use /tmp which is always writable.
+UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+except Exception as _mount_err:
+    logger.warning(f"Could not mount /uploads static directory: {_mount_err}")
 
 # Include API routes
 app.include_router(api_router)

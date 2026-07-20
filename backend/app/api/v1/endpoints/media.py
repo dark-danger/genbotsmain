@@ -17,8 +17,12 @@ from app.utils.audit import log_audit_action
 
 router = APIRouter(prefix="/media", tags=["Media"])
 
-UPLOAD_DIR = "uploads"
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+# On Vercel the working directory is read-only; /tmp is the only writable location.
+UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except Exception:
+    pass
 
 # Helper to verify magic bytes for safety
 def is_safe_file(file_content: bytes, filename: str) -> bool:
