@@ -60,6 +60,17 @@ export default function AdminDashboard() {
   const [specKey, setSpecKey] = useState("");
   const [specValue, setSpecValue] = useState("");
 
+  // --- SHARED ERROR EXTRACTOR ---
+  const extractErr = (err: any, fallback = "An error occurred"): string => {
+    const d = err?.response?.data;
+    if (!d) return err?.message || fallback;
+    if (typeof d.detail === "string") return d.detail;
+    if (Array.isArray(d.detail)) return d.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ");
+    if (typeof d.detail === "object" && d.detail !== null) return JSON.stringify(d.detail);
+    if (typeof d === "string") return d;
+    return `HTTP ${err?.response?.status}: ${JSON.stringify(d)}`;
+  };
+
   // --- FORM STATE FOR SOFTWARE & VERSIONS ---
   const [newSoftware, setNewSoftware] = useState({
     name: "",
@@ -269,8 +280,9 @@ export default function AdminDashboard() {
       alert("Product added successfully!");
       setNewProduct(initialProductState);
     },
-    onError: (err: any) => alert(err.response?.data?.detail || "Failed to create product")
+    onError: (err: any) => alert(extractErr(err, "Failed to create product"))
   });
+
 
   const updateProductMutation = useMutation({
     mutationFn: async ({ id, data }: { id: string; data: any }) => (await productsApi.update(id, data)).data,
@@ -281,8 +293,9 @@ export default function AdminDashboard() {
       alert("Product updated successfully!");
       setEditingProduct(null);
     },
-    onError: (err: any) => alert(err.response?.data?.detail || "Failed to update product")
+    onError: (err: any) => alert(extractErr(err, "Failed to update product"))
   });
+
 
   const deleteProductMutation = useMutation({
     mutationFn: async (id: string) => (await productsApi.delete(id)).data,
@@ -292,7 +305,7 @@ export default function AdminDashboard() {
       queryClient.invalidateQueries({ queryKey: ["adminArchivedProducts"] });
       alert("Product permanently deleted!");
     },
-    onError: (err: any) => alert(err.response?.data?.detail || "Failed to delete product")
+    onError: (err: any) => alert(extractErr(err, "Failed to delete product"))
   });
 
   const createSoftwareMutation = useMutation({
@@ -806,11 +819,21 @@ export default function AdminDashboard() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (editingProduct) {
-                        const { id, ...data } = editingProduct;
+                        const { id, glb_url, usdz_url, ...data } = editingProduct;
                         updateProductMutation.mutate({ id, data });
                       } else {
+                        // Strip fields not in backend schema; coerce types.
+                        const { glb_url, usdz_url, tags: rawTags, dimensions: rawDims, ...rest } = newProduct;
+                        const tagsArray = rawTags
+                          ? rawTags.split(",").map((t: string) => t.trim()).filter(Boolean)
+                          : [];
+                        const dims = (rawDims.length && rawDims.width && rawDims.height)
+                          ? rawDims
+                          : undefined;
                         createProductMutation.mutate({
-                          ...newProduct,
+                          ...rest,
+                          tags: tagsArray.length ? tagsArray : undefined,
+                          dimensions: dims,
                           price: parseFloat(newProduct.price),
                           compare_at_price: newProduct.compare_at_price ? parseFloat(newProduct.compare_at_price) : null,
                           stock_quantity: parseInt(newProduct.stock_quantity || "0"),
