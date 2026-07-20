@@ -1,5 +1,6 @@
 """GenBots Enterprise Platform - FastAPI Application Entry Point."""
 from contextlib import asynccontextmanager
+import os
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
@@ -18,16 +19,17 @@ async def lifespan(app: FastAPI):
     logger.info("Shutting down application")
 
 
-import os
-
 root_path = "/api/backend" if os.getenv("VERCEL") else ""
 
 app = FastAPI(
     title=settings.APP_NAME,
     version=settings.APP_VERSION,
     description="GenBots Enterprise Platform - IoT, Robotics & AI Solutions",
-    docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None,
+    # Vercel strips /api/backend → FastAPI sees /api/v1/...
+    # docs_url must sit under /api/v1/ so /api/backend/api/v1/docs resolves.
+    docs_url="/api/v1/docs" if settings.DEBUG else None,
+    redoc_url="/api/v1/redoc" if settings.DEBUG else None,
+    openapi_url="/api/v1/openapi.json",
     lifespan=lifespan,
     root_path=root_path,
 )
@@ -52,12 +54,12 @@ try:
 except Exception as _mount_err:
     logger.warning(f"Could not mount /uploads static directory: {_mount_err}")
 
-# Include API routes
-app.include_router(api_router)
-
-
-@app.get("/health", tags=["Health"])
-@app.get("/healthz", tags=["Health"])
+# ── Health endpoints under /api/v1 ─────────────────────────────────────────
+# Vercel rewrites /api/backend(.*) → backend service, stripping /api/backend.
+# So GET /api/backend/api/v1/health arrives at FastAPI as GET /api/v1/health.
+# These routes MUST be under api_router (prefix=/api/v1) to match.
+@api_router.get("/health", tags=["Health"])
+@api_router.get("/healthz", tags=["Health"])
 async def health_check():
     """Health check endpoint - confirms app is running."""
     return {
@@ -68,7 +70,7 @@ async def health_check():
     }
 
 
-@app.get("/readyz", tags=["Health"])
+@api_router.get("/readyz", tags=["Health"])
 async def readiness_check():
     """Readiness check - confirms app can connect to database."""
     from app.core.database import engine
@@ -84,3 +86,7 @@ async def readiness_check():
             content={"status": "not_ready", "database": db_status},
         )
     return {"status": "ready", "database": db_status}
+
+
+# Include API routes (AFTER health routes are added to api_router)
+app.include_router(api_router)
