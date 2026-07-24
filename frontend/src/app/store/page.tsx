@@ -46,7 +46,28 @@ export default function StorePage() {
     staleTime: 30000,
   });
 
-  const products: any[] = apiProducts || [];
+  // Import local data statically for crawler visibility / SSG fallback
+  const { productsData } = require("@/lib/data");
+
+  // Format local static data to match API schema representation for rendering fallback
+  const fallbackProducts = productsData.map((p: any) => ({
+    id: p.id,
+    name: p.name,
+    slug: p.slug,
+    price: p.price,
+    compare_at_price: p.originalPrice,
+    avg_rating: p.rating,
+    review_count: p.reviewsCount,
+    is_featured: p.badge === "Bestseller" || p.badge === "Hot",
+    brand: { name: p.brand || "GenBots" },
+    category: { name: p.category ? p.category.replace("-", " ") : "General", slug: p.category || "general" },
+    images: [{ url: p.images[0] }],
+    description: p.description,
+    specifications: p.features.map((f: string) => ({ key: "Feature", value: f })),
+    stock_quantity: 50,
+  }));
+
+  const products: any[] = (apiProducts && apiProducts.length > 0) ? apiProducts : fallbackProducts;
 
   // Extract unique categories and brands from data
   const categories = [
@@ -66,6 +87,11 @@ export default function StorePage() {
     mutationFn: (productId: string) => cartApi.addItem({ product_id: productId, quantity: 1 }),
     onSuccess: (_, productId) => {
       setAddedIds((prev) => new Set(prev).add(productId));
+      openCart();
+      // Dispatch custom cart-updated event or state trigger
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cart-updated"));
+      }
       setTimeout(() => {
         setAddedIds((prev) => {
           const next = new Set(prev);
@@ -75,7 +101,12 @@ export default function StorePage() {
       }, 2000);
     },
     onError: (err: any) => {
-      alert(err.response?.data?.detail || "Failed to add to cart. Please log in.");
+      if (err.response?.status === 401 || !token) {
+        alert("Please log in to add items to your cart.");
+        window.location.href = "/auth/login";
+        return;
+      }
+      alert(err.response?.data?.detail || "Failed to add to cart.");
     },
   });
 
@@ -260,11 +291,7 @@ export default function StorePage() {
                 ) : null}
               </div>
 
-              {isLoading ? (
-                <div className="flex justify-center py-20">
-                  <div className="w-8 h-8 border-4 border-primary border-t-transparent rounded-full animate-spin" />
-                </div>
-              ) : filteredProducts.length > 0 ? (
+              {filteredProducts.length > 0 ? (
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
                   {filteredProducts.map((product: any) => (
                     <div

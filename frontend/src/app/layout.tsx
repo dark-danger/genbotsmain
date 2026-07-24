@@ -11,11 +11,11 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "GenBots - Innovating the Future through IoT, Robotics & AI",
+    default: "GenBots: IoT, Robotics & AI Solutions Provider | India",
     template: "%s | GenBots",
   },
   description:
-    "GenBots is India's leading IoT, Robotics & AI solutions company. Shop premium Arduino, ESP32, sensors, robotics kits, and STEM products. Lab setup services for schools and universities.",
+    "GenBots delivers cutting-edge IoT, robotics, and AI solutions for industries, education, and innovation. Shop products, explore services, and join training programs.",
   keywords: [
     "IoT", "Robotics", "AI", "Arduino", "ESP32", "Sensors",
     "STEM Kits", "Robotics Lab", "Home Automation", "GenBots",
@@ -23,20 +23,32 @@ export const metadata: Metadata = {
   ],
   authors: [{ name: "GenBots" }],
   creator: "GenBots",
-  metadataBase: new URL("https://genbots.in"),
+  metadataBase: new URL("https://thegenbots.in"),
+  alternates: {
+    canonical: "/",
+  },
   openGraph: {
     type: "website",
     locale: "en_IN",
-    url: "https://genbots.in",
+    url: "https://thegenbots.in",
     siteName: "GenBots",
-    title: "GenBots - IoT, Robotics & AI Solutions",
+    title: "GenBots - IoT, Robotics & AI Solutions Provider",
     description: "Premium IoT & Robotics products for makers, students, and enterprises.",
+    images: [
+      {
+        url: "https://thegenbots.in/og-image.jpg",
+        width: 1200,
+        height: 630,
+        alt: "GenBots - IoT, Robotics & AI Solutions",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "GenBots - IoT, Robotics & AI",
+    title: "GenBots - IoT, Robotics & AI Solutions Provider",
     description: "Premium IoT & Robotics products for makers, students, and enterprises.",
     creator: "@genbots",
+    images: ["https://thegenbots.in/og-image.jpg"],
   },
   robots: {
     index: true,
@@ -54,14 +66,37 @@ export const metadata: Metadata = {
   },
 };
 
+import Script from "next/script";
+
+import { BackToTop } from "@/components/BackToTop";
+
 export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const gaId = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID || "G-YFGDV1JBD3";
+
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} antialiased`}>
+        {/* Google Analytics 4 Script Tag */}
+        <Script
+          src={`https://www.googletagmanager.com/gtag/js?id=${gaId}`}
+          strategy="afterInteractive"
+        />
+        <Script
+          id="google-analytics-init"
+          strategy="afterInteractive"
+        >
+          {`
+            window.dataLayer = window.dataLayer || [];
+            function gtag(){dataLayer.push(arguments);}
+            gtag('js', new Date());
+            gtag('config', '${gaId}');
+          `}
+        </Script>
+
         {/* Accessibility: Skip to main content link */}
         <a
           href="#main-content"
@@ -69,7 +104,10 @@ export default function RootLayout({
         >
           Skip to main content
         </a>
-        <Providers>{children}</Providers>
+        <Providers>
+          {children}
+          <BackToTop />
+        </Providers>
       </body>
     </html>
   );

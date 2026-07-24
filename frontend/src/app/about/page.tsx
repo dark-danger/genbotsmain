@@ -3,7 +3,10 @@ import { Footer } from "@/components/layout/footer";
 import { Award, Target, Eye, Heart, Users, Building, Lightbulb, Shield } from "lucide-react";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "About Us", description: "Learn about GenBots - India's leading IoT, Robotics & AI company." };
+export const metadata: Metadata = {
+  title: "About Us | GenBots India - Our Story & Mission",
+  description: "Learn about GenBots' journey to democratize technology education in India. Discover our core values, achievements, ISO certifications, and our mission to make IoT, robotics, and AI accessible to everyone.",
+};
 
 const values = [
   { icon: Lightbulb, title: "Innovation", desc: "Pushing boundaries in IoT and robotics" },

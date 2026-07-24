@@ -51,14 +51,39 @@ export default function ContactPage() {
                 <h2 className="text-xl font-bold mb-6">Send us a Message</h2>
                 <form className="space-y-5">
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div><label className="text-sm font-medium mb-1.5 block">Name</label><Input className="rounded-xl h-11" required /></div>
-                    <div><label className="text-sm font-medium mb-1.5 block">Email</label><Input type="email" className="rounded-xl h-11" required /></div>
+                    <div>
+                      <label htmlFor="contact-name" className="text-sm font-medium mb-1.5 block">
+                        Full Name
+                      </label>
+                      <Input id="contact-name" name="name" className="rounded-xl h-11" placeholder="Enter your full name" required />
+                    </div>
+                    <div>
+                      <label htmlFor="contact-email" className="text-sm font-medium mb-1.5 block">
+                        Email Address
+                      </label>
+                      <Input id="contact-email" name="email" type="email" className="rounded-xl h-11" placeholder="Enter your email address" required />
+                    </div>
                   </div>
                   <div className="grid sm:grid-cols-2 gap-4">
-                    <div><label className="text-sm font-medium mb-1.5 block">Phone</label><Input type="tel" className="rounded-xl h-11" /></div>
-                    <div><label className="text-sm font-medium mb-1.5 block">Subject</label><Input className="rounded-xl h-11" /></div>
+                    <div>
+                      <label htmlFor="contact-phone" className="text-sm font-medium mb-1.5 block">
+                        Phone Number
+                      </label>
+                      <Input id="contact-phone" name="phone" type="tel" className="rounded-xl h-11" placeholder="Enter your phone number" />
+                    </div>
+                    <div>
+                      <label htmlFor="contact-subject" className="text-sm font-medium mb-1.5 block">
+                        Subject
+                      </label>
+                      <Input id="contact-subject" name="subject" className="rounded-xl h-11" placeholder="Enter subject" />
+                    </div>
                   </div>
-                  <div><label className="text-sm font-medium mb-1.5 block">Message</label><Textarea rows={5} className="rounded-xl" required /></div>
+                  <div>
+                    <label htmlFor="contact-message" className="text-sm font-medium mb-1.5 block">
+                      Message
+                    </label>
+                    <Textarea id="contact-message" name="message" rows={5} className="rounded-xl" placeholder="Enter your message" required />
+                  </div>
                   <Button type="submit" className="gradient-bg text-white rounded-xl px-8 h-11">Send Message</Button>
                 </form>
               </div>

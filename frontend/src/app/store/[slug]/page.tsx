@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, use } from "react";
+import { useState, use, useEffect } from "react";
 import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -39,7 +39,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const [rating, setRating] = useState(5);
 
   // Fetch product from API
-  const { data: product, isLoading, error } = useQuery({
+  const { data: apiProduct, isLoading, error } = useQuery({
     queryKey: ["productDetail", slug],
     queryFn: async () => {
       const res = await productsApi.getBySlug(slug);
@@ -52,6 +52,35 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     },
     staleTime: 30000,
   });
+
+  // Fetch local data fallback for crawlability & SSG fallback
+  const { productsData } = require("@/lib/data");
+  const localProductRaw = productsData.find((p: any) => p.slug === slug);
+  const localProduct = localProductRaw ? {
+    id: localProductRaw.id,
+    name: localProductRaw.name,
+    slug: localProductRaw.slug,
+    price: localProductRaw.price.toString(),
+    compare_at_price: localProductRaw.originalPrice ? localProductRaw.originalPrice.toString() : null,
+    avg_rating: localProductRaw.rating,
+    review_count: localProductRaw.reviewsCount,
+    is_featured: localProductRaw.badge === "Bestseller" || localProductRaw.badge === "Hot",
+    brand: { name: localProductRaw.brand || "GenBots" },
+    category: { name: localProductRaw.category ? localProductRaw.category.replace("-", " ") : "General", slug: localProductRaw.category || "general" },
+    images: localProductRaw.images.map((url: string) => ({ url })),
+    description: localProductRaw.description,
+    specifications: localProductRaw.features.map((f: string) => ({ key: "Feature", value: f })),
+    stock_quantity: 50,
+  } : null;
+
+  const product = apiProduct || localProduct;
+
+  // Set default active image from fallback if not set
+  useEffect(() => {
+    if (product && !activeImage && product.images && product.images.length > 0) {
+      setActiveImage(product.images[0].url);
+    }
+  }, [product, activeImage]);
 
   // Check if product is in wishlist
   useQuery({
@@ -89,7 +118,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     },
   });
 
-  if (isLoading) {
+  if (isLoading && !product) {
     return (
       <>
         <Navbar />
@@ -104,7 +133,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     );
   }
 
-  if (error || !product) {
+  if ((error && !product) || !product) {
     return (
       <>
         <Navbar />
@@ -350,8 +379,8 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   </Button>
                 </div>
 
-                {/* Trust Badges */}
-                <div className="grid grid-cols-2 gap-3 mt-8 pt-6 border-t border-border">
+                {/* Trust & Security Badges */}
+                <div className="grid grid-cols-2 gap-3 mt-8 pt-6 border-t border-border trust-badges">
                   {[
                     { icon: Truck, label: "Free Shipping", sub: "Orders above ₹999" },
                     { icon: Shield, label: "1 Year Warranty", sub: "Quality guaranteed" },
@@ -367,6 +396,14 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     </div>
                   ))}
                 </div>
+
+                {/* Additional Trust Signals */}
+                <div className="mt-4 p-3 glass-card bg-emerald-500/5 border-emerald-500/20 rounded-xl flex items-center justify-between text-xs">
+                  <span className="flex items-center gap-1.5 font-medium text-emerald-600 dark:text-emerald-400">
+                    <Shield className="w-4 h-4" /> 256-Bit SSL Encrypted Checkout
+                  </span>
+                  <span className="text-muted-foreground">100% Guaranteed</span>
+                </div>
               </div>
             </ScrollReveal>
           </div>
@@ -376,13 +413,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
           {/* Reviews Section */}
           <ScrollReveal>
-            <div className="max-w-4xl mx-auto">
-              <h2 className="text-3xl font-bold mb-10 text-center">Customer <span className="gradient-text">Reviews</span></h2>
+            <section className="max-w-4xl mx-auto reviews">
+              <h2 className="text-3xl font-bold mb-10 text-center">What <span className="gradient-text">Customers Say</span></h2>
               
               {/* Review List */}
               <div className="space-y-6">
                 {(product.reviews && product.reviews.length > 0 ? product.reviews : placeholderReviews).map((review: any) => (
-                  <div key={review.id} className="glass-card p-6 hover:glow-sm transition-all">
+                  <div key={review.id} className="glass-card p-6 hover:glow-sm transition-all review-card">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
                         <Avatar className="w-10 h-10 bg-primary/20 text-primary flex items-center justify-center font-bold">
@@ -403,8 +440,15 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           </ScrollReveal>
+
+          {/* Policy Links footer */}
+          <div className="mt-16 text-center text-xs text-muted-foreground pt-8 border-t border-border policy-links">
+            <Link href="/refund" className="hover:text-primary transition-colors">Refund Policy</Link> |{" "}
+            <Link href="/terms" className="hover:text-primary transition-colors">Terms of Service</Link> |{" "}
+            <Link href="/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+          </div>
         </div>
       </main>
       <Footer />

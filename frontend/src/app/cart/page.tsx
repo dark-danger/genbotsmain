@@ -27,6 +27,16 @@ export default function CartPage() {
     staleTime: 0,
   });
 
+  useEffect(() => {
+    const handleCartUpdated = () => {
+      if (token) refetch();
+    };
+    if (typeof window !== "undefined") {
+      window.addEventListener("cart-updated", handleCartUpdated);
+      return () => window.removeEventListener("cart-updated", handleCartUpdated);
+    }
+  }, [token, refetch]);
+
   const updateMutation = useMutation({
     mutationFn: ({ itemId, quantity }: { itemId: string; quantity: number }) =>
       cartApi.updateItem(itemId, quantity),

@@ -5,7 +5,10 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import type { Metadata } from "next";
 
-export const metadata: Metadata = { title: "Services", description: "GenBots services: lab setup, IoT development, PCB design, AI projects, and industrial automation." };
+export const metadata: Metadata = {
+  title: "Professional IoT, Robotics & AI Services | GenBots",
+  description: "Explore GenBots professional services including school/university STEM lab setups, custom IoT development, professional PCB design, AI/ML engineering, and Industry 4.0 automation.",
+};
 
 const services = [
   { name: "School Lab Setup", slug: "school-lab-setup", icon: School, desc: "Complete robotics & IoT lab for K-12 schools with equipment, curriculum, and teacher training.", features: ["Lab Design & Layout", "Equipment Supply", "Teacher Training", "Curriculum Development", "Annual Maintenance", "Student Workshops"] },

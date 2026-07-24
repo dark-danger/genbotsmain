@@ -45,16 +45,21 @@ export function Footer() {
           <p className="text-muted-foreground mb-6 max-w-md mx-auto">
             Get the latest product updates, tutorials, and exclusive offers delivered to your inbox.
           </p>
-          <div className="flex gap-2 max-w-md mx-auto">
+          <form className="flex flex-col sm:flex-row gap-2 max-w-md mx-auto" onSubmit={(e) => e.preventDefault()}>
+            <label htmlFor="newsletter-email" className="sr-only">
+              Email Address
+            </label>
             <Input
+              id="newsletter-email"
               type="email"
-              placeholder="Enter your email"
-              className="rounded-xl bg-background/50"
+              placeholder="Enter your email address"
+              className="rounded-xl bg-background/50 flex-1"
+              required
             />
-            <Button className="gradient-bg text-white rounded-xl px-6 shrink-0">
+            <Button type="submit" className="gradient-bg text-white rounded-xl px-6 shrink-0">
               Subscribe <ArrowRight className="w-4 h-4 ml-1" />
             </Button>
-          </div>
+          </form>
         </div>
 
         {/* Footer Grid */}
