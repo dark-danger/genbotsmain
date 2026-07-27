@@ -81,11 +81,11 @@ export function Footer() {
               <a href="mailto:contact@genbots.in" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" /> contact@genbots.in
               </a>
-              <a href="tel:+919876543210" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                <Phone className="w-4 h-4" /> +91 98765 43210
+              <a href="tel:+91 9996171216" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Phone className="w-4 h-4" /> +91 99961 71216
               </a>
               <p className="flex items-start gap-2 text-sm text-muted-foreground">
-                <MapPin className="w-4 h-4 mt-0.5 shrink-0" /> Bangalore, Karnataka, India
+                <MapPin className="w-4 h-4 mt-0.5 shrink-0" /> Sonipat, Haryana, India
               </p>
             </div>
           </div>

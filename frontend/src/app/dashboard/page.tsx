@@ -61,7 +61,7 @@ export default function CustomerDashboard() {
       <main className="pt-24 pb-16 min-h-screen bg-muted/10" id="main-content">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex flex-col md:flex-row gap-8">
-            
+
             {/* Sidebar */}
             <div className="w-full md:w-64 shrink-0">
               <div className="glass-card p-6 mb-6 text-center">
@@ -79,17 +79,16 @@ export default function CustomerDashboard() {
                     <button
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
-                      className={`flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors ${
-                        activeTab === tab.id 
-                          ? "bg-primary/10 text-primary border-r-2 border-primary" 
+                      className={`flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
+                          ? "bg-primary/10 text-primary border-r-2 border-primary"
                           : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
+                        }`}
                       aria-current={activeTab === tab.id ? "page" : undefined}
                     >
                       <tab.icon className="w-4 h-4" aria-hidden="true" /> {tab.label}
                     </button>
                   ))}
-                  <button 
+                  <button
                     onClick={() => { logout(); window.location.href = "/"; }}
                     className="flex items-center gap-3 px-6 py-4 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors border-t border-border"
                   >
@@ -102,7 +101,7 @@ export default function CustomerDashboard() {
             {/* Main Content */}
             <div className="flex-1">
               <div className="glass-card p-6 md:p-8 min-h-[500px]">
-                
+
                 {/* ORDERS TAB */}
                 {activeTab === "orders" && (
                   <div>
@@ -123,11 +122,10 @@ export default function CustomerDashboard() {
                                 </p>
                               </div>
                               <div className="text-right">
-                                <Badge className={`capitalize ${
-                                  order.status === "delivered" ? "bg-green-500" :
-                                  order.status === "shipped" ? "bg-blue-500" :
-                                  order.status === "processing" ? "bg-yellow-500" : ""
-                                } text-white border-0`}>
+                                <Badge className={`capitalize ${order.status === "delivered" ? "bg-green-500" :
+                                    order.status === "shipped" ? "bg-blue-500" :
+                                      order.status === "processing" ? "bg-yellow-500" : ""
+                                  } text-white border-0`}>
                                   {order.status}
                                 </Badge>
                                 <p className="text-lg font-bold mt-1">₹{parseFloat(order.total_amount).toLocaleString("en-IN")}</p>
@@ -183,7 +181,7 @@ export default function CustomerDashboard() {
                     </div>
                   </div>
                 )}
-                
+
                 {/* SETTINGS TAB */}
                 {activeTab === "settings" && (
                   <div>
@@ -199,13 +197,13 @@ export default function CustomerDashboard() {
                       </div>
                       <div>
                         <label htmlFor="phone" className="text-sm font-medium mb-1.5 block">Phone</label>
-                        <Input id="phone" type="tel" placeholder="+91 98765 43210" className="rounded-xl" />
+                        <Input id="phone" type="tel" placeholder="+91 99961 71216" className="rounded-xl" />
                       </div>
                       <Button className="gradient-bg text-white rounded-xl">Save Changes</Button>
                     </div>
                   </div>
                 )}
-                
+
                 {/* WISHLIST TAB */}
                 {activeTab === "wishlist" && (
                   <WishlistTab />

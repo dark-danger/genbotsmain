@@ -28,7 +28,7 @@ def test_customer_registration_and_login(unique_email):
         "password": "Password@123",
         "first_name": "Test",
         "last_name": "User",
-        "phone": "9876543210"
+        "phone": " 9996171216"
     }
     response = httpx.post(f"{BASE_URL}/auth/register", json=payload, timeout=TIMEOUT)
     assert response.status_code == 201

@@ -24,9 +24,9 @@ export default function ContactPage() {
             <div className="space-y-6">
               {[
                 { icon: Mail, label: "Email", value: "contact@genbots.in", href: "mailto:contact@genbots.in" },
-                { icon: Phone, label: "Phone", value: "+91 98765 43210", href: "tel:+919876543210" },
-                { icon: MessageCircle, label: "WhatsApp", value: "+91 98765 43210", href: "https://wa.me/919876543210" },
-                { icon: MapPin, label: "Office", value: "GenBots Technology Park, Bangalore, Karnataka 560001, India" },
+                { icon: Phone, label: "Phone", value: "+91 99961 71216", href: "tel:+91 9996171216" },
+                { icon: MessageCircle, label: "WhatsApp", value: "+91 99961 71216", href: "https://wa.me/91 9996171216" },
+                { icon: MapPin, label: "Office", value: "GenBots Technology Park, Sonipat, Haryana, 131001, India" },
                 { icon: Clock, label: "Hours", value: "Mon-Sat: 9:00 AM - 6:00 PM IST" },
               ].map((item) => (
                 <div key={item.label} className="glass-card p-5 flex items-start gap-4">
@@ -93,8 +93,7 @@ export default function ContactPage() {
           {/* Map */}
           <div className="mt-12 glass-card overflow-hidden rounded-2xl h-[400px]">
             <iframe
-              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d248849.886539092!2d77.49085452891498!3d12.954517016586892!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3bae1670c9b44e6d%3A0xf8dfc3e8517e4fe0!2sBengaluru%2C%20Karnataka!5e0!3m2!1sen!2sin!4v1"
-              width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy"
+              src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d55879.93297716587!2d77.0000!3d28.9931!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x390dadd5b3d4f2e1%3A0x2a0d1f0b0d7b9d4c!2sSonipat%2C%20Haryana!5e0!3m2!1sen!2sin!4v1" width="100%" height="100%" style={{ border: 0 }} allowFullScreen loading="lazy"
               referrerPolicy="no-referrer-when-downgrade" title="GenBots Location"
             />
           </div>
