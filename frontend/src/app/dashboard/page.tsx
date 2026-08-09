@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/auth";
 import { ordersApi, wishlistApi, cartApi } from "@/lib/api";
+import { generateInvoice } from "@/lib/utils";
 import Link from "next/link";
 
 export default function CustomerDashboard() {
@@ -80,8 +81,8 @@ export default function CustomerDashboard() {
                       key={tab.id}
                       onClick={() => setActiveTab(tab.id)}
                       className={`flex items-center gap-3 px-6 py-4 text-sm font-medium transition-colors ${activeTab === tab.id
-                          ? "bg-primary/10 text-primary border-r-2 border-primary"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        ? "bg-primary/10 text-primary border-r-2 border-primary"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
                         }`}
                       aria-current={activeTab === tab.id ? "page" : undefined}
                     >
@@ -123,12 +124,15 @@ export default function CustomerDashboard() {
                               </div>
                               <div className="text-right">
                                 <Badge className={`capitalize ${order.status === "delivered" ? "bg-green-500" :
-                                    order.status === "shipped" ? "bg-blue-500" :
-                                      order.status === "processing" ? "bg-yellow-500" : ""
+                                  order.status === "shipped" ? "bg-blue-500" :
+                                    order.status === "processing" ? "bg-yellow-500" : ""
                                   } text-white border-0`}>
                                   {order.status}
                                 </Badge>
                                 <p className="text-lg font-bold mt-1">₹{parseFloat(order.total_amount).toLocaleString("en-IN")}</p>
+                                <Button size="sm" variant="outline" className="mt-2 text-xs h-8 w-full" onClick={() => generateInvoice(order)}>
+                                  <Download className="w-3 h-3 mr-1" /> Invoice
+                                </Button>
                               </div>
                             </div>
                             {order.items?.map((item: any) => (

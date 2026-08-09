@@ -49,3 +49,198 @@ export function getProductImage(product: any): string {
   return FALLBACK_IMAGES.default
 }
 
+export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_order") => {
+  const isInvoice = docType === "invoice";
+  const docTitle = isInvoice ? "TAX INVOICE" : "PURCHASE ORDER";
+  const docNumber = isInvoice
+    ? `INV-${(order.order_number || order.id?.slice(0, 8) || "").replace("GB-", "")}`
+    : `PO-${(order.order_number || order.id?.slice(0, 8) || "").replace("GB-", "")}`;
+  const orderDate = order.created_at
+    ? new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+    : new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+  const items = order.items || [];
+  const subtotal = parseFloat(order.subtotal || (order.total_amount * 100 / 118).toString());
+  const taxAmount = parseFloat(order.tax_amount || (subtotal * 0.18).toString());
+  const totalAmount = parseFloat(order.total_amount);
+  const shippingAmount = parseFloat(order.shipping_amount || "0");
+  const discountAmount = parseFloat(order.discount_amount || "0");
+
+  const itemsHtml = items.length > 0
+    ? items.map((item: any, i: number) => `
+      <tr>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${i + 1}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${item.product_name || "Product"}<br><span style="color:#6b7280;font-size:11px;">SKU: ${item.product_sku || "N/A"}</span></td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity || 1}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${parseFloat(item.unit_price || "0").toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+        <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${parseFloat(item.total_price || (item.unit_price * item.quantity).toString() || "0").toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+      </tr>
+    `).join("")
+    : `<tr><td colspan="5" style="padding:20px;text-align:center;color:#6b7280;">Order items details not available</td></tr>`;
+
+  return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${docTitle} - ${docNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1f2937; background: #fff; padding: 40px; }
+    .doc-container { max-width: 800px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #7c3aed; }
+    .logo-section h1 { font-size: 28px; font-weight: 800; color: #7c3aed; }
+    .logo-section p { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .doc-type { text-align: right; }
+    .doc-type h2 { font-size: 24px; font-weight: 700; color: #1f2937; letter-spacing: 2px; }
+    .doc-type .doc-num { font-size: 14px; color: #7c3aed; font-weight: 600; margin-top: 4px; }
+    .doc-type .doc-date { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .parties { display: flex; justify-content: space-between; margin-bottom: 32px; gap: 40px; }
+    .party { flex: 1; }
+    .party-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #7c3aed; font-weight: 700; margin-bottom: 8px; }
+    .party-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .party-detail { font-size: 12px; color: #4b5563; line-height: 1.6; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    thead { background: #f3f0ff; }
+    thead th { padding: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; font-weight: 700; text-align: left; border-bottom: 2px solid #7c3aed; }
+    thead th:nth-child(3), thead th:nth-child(4), thead th:nth-child(5) { text-align: right; }
+    thead th:nth-child(3) { text-align: center; }
+    .summary { display: flex; justify-content: flex-end; margin-bottom: 32px; }
+    .summary-table { width: 300px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+    .summary-row.total { border-top: 2px solid #7c3aed; padding-top: 12px; font-size: 16px; font-weight: 800; color: #7c3aed; }
+    .summary-row .label { color: #6b7280; }
+    .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .footer-grid { display: flex; justify-content: space-between; gap: 40px; }
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; font-weight: 700; margin-bottom: 8px; }
+    .footer-col p { font-size: 11px; color: #6b7280; line-height: 1.6; }
+    .stamp { margin-top: 40px; text-align: right; }
+    .stamp-box { display: inline-block; border: 2px dashed #7c3aed; border-radius: 8px; padding: 16px 32px; text-align: center; }
+    .stamp-box .auth { font-size: 10px; color: #6b7280; margin-top: 8px; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); font-size: 80px; color: rgba(124,58,237,0.04); font-weight: 900; letter-spacing: 8px; pointer-events: none; z-index: 0; }
+    .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; z-index: 99; }
+    .print-btn:hover { background: #6d28d9; }
+    @media print { .print-btn { display: none; } .watermark { display: none; } @page { margin: 20mm; } }
+  </style>
+</head>
+<body>
+  <div class="watermark">GENBOTS</div>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Download PDF</button>
+  <div class="doc-container">
+    <div class="header">
+      <div class="logo-section">
+        <h1>Gen<span style="color:#a855f7;">Bots</span></h1>
+        <p>IoT • Robotics • AI Solutions</p>
+        <p style="margin-top:8px;">GSTIN: 06AABCG1234A1Z5</p>
+      </div>
+      <div class="doc-type">
+        <h2>${docTitle}</h2>
+        <div class="doc-num">${docNumber}</div>
+        <div class="doc-date">Date: ${orderDate}</div>
+        <div class="doc-date">Order: ${order.order_number || "#" + (order.id?.slice(0, 8) || "")}</div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div class="party">
+        <div class="party-label">${isInvoice ? "From (Seller)" : "Buyer (GenBots)"}</div>
+        <div class="party-name">GenBots Technology Pvt Ltd</div>
+        <div class="party-detail">
+          GenBots Technology Park<br>
+          Sonipat, Haryana 131001, India<br>
+          Email: billing@genbots.in<br>
+          Phone: +91 99961 71216<br>
+          GSTIN: 06AABCG1234A1Z5
+        </div>
+      </div>
+      <div class="party">
+        <div class="party-label">${isInvoice ? "Bill To (Customer)" : "Vendor / Supplier"}</div>
+        <div class="party-name">${order.shipping_name || order.user?.first_name || order.user?.email?.split("@")[0] || "Customer"}</div>
+        <div class="party-detail">
+          ${order.shipping_address_line1 || "Address on file"}<br>
+          ${order.shipping_address_line2 ? order.shipping_address_line2 + "<br>" : ""}
+          ${order.shipping_city || ""} ${order.shipping_state || ""} ${order.shipping_postal_code || ""}<br>
+          ${order.shipping_country || "India"}<br>
+          ${order.shipping_phone ? "Phone: " + order.shipping_phone : ""}
+          ${order.user?.email ? "<br>Email: " + order.user.email : ""}
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Item Description</th>
+          <th style="width:80px;text-align:center;">Qty</th>
+          <th style="width:120px;text-align:right;">Unit Price</th>
+          <th style="width:120px;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div class="summary">
+      <div class="summary-table">
+        <div class="summary-row"><span class="label">Subtotal</span><span>₹${subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        <div class="summary-row"><span class="label">CGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        <div class="summary-row"><span class="label">SGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        ${shippingAmount > 0 ? `<div class="summary-row"><span class="label">Shipping</span><span>₹${shippingAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : `<div class="summary-row"><span class="label">Shipping</span><span style="color:#16a34a;">FREE</span></div>`}
+        ${discountAmount > 0 ? `<div class="summary-row"><span class="label">Discount</span><span style="color:#dc2626;">-₹${discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
+        <div class="summary-row total"><span>Total Amount</span><span>₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>Payment Info</h4>
+          <p>
+            Method: ${(order.payment_method || "Online").toUpperCase()}<br>
+            Status: ${(order.payment_status || "Pending").toUpperCase()}<br>
+            ${order.payment_id ? "Txn ID: " + order.payment_id : ""}
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Bank Details</h4>
+          <p>
+            GenBots Technology Pvt Ltd<br>
+            A/C No: 1234567890123456<br>
+            IFSC: HDFC0001234<br>
+            Bank: HDFC Bank, Sonipat
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Terms & Conditions</h4>
+          <p>
+            1. Goods once sold won't be taken back except defective.<br>
+            2. Payment due within 7 working days.<br>
+            3. Subject to Haryana jurisdiction.
+          </p>
+        </div>
+      </div>
+      <div class="stamp">
+        <div class="stamp-box">
+          <strong style="font-size:14px;color:#7c3aed;">GenBots Technology</strong>
+          <div class="auth">Authorized Signatory</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+};
+
+export const generateInvoice = (order: any) => {
+  const html = generateDocumentHtml(order, "invoice");
+  const win = window.open("", "_blank");
+  if (win) { win.document.write(html); win.document.close(); }
+};
+
+export const generatePurchaseOrder = (order: any) => {
+  const html = generateDocumentHtml(order, "purchase_order");
+  const win = window.open("", "_blank");
+  if (win) { win.document.write(html); win.document.close(); }
+};
+
