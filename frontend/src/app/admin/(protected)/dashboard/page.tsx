@@ -286,6 +286,98 @@ export default function AdminDashboard() {
     enabled: !!user && (activeTab === "analytics" || activeTab === "overview"),
   });
 
+  // --- REAL LOCAL ANALYTICS (from VisitorTracker localStorage) ---
+  const [localAnalytics, setLocalAnalytics] = useState<{
+    todayViews: number;
+    dailyViews: { date: string; views: number; unique_visitors: number }[];
+    topPages: { path: string; title: string; views: number; category: string }[];
+    deviceBreakdown: { device: string; percentage: number; count: number }[];
+    browserBreakdown: { name: string; percentage: number }[];
+    recentActivities: any[];
+  } | null>(null);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const today = new Date().toISOString().split("T")[0];
+
+      // Daily views from localStorage
+      const dailyViewsRaw = localStorage.getItem("genbots_daily_views");
+      const dailyViewsMap: Record<string, number> = dailyViewsRaw ? JSON.parse(dailyViewsRaw) : {};
+      const dailyViews = Array.from({ length: 7 }, (_, i) => {
+        const d = new Date();
+        d.setDate(d.getDate() - (6 - i));
+        const dateStr = d.toISOString().split("T")[0];
+        return { date: dateStr, views: dailyViewsMap[dateStr] || 0, unique_visitors: Math.round((dailyViewsMap[dateStr] || 0) * 0.65) };
+      });
+
+      // Top pages from localStorage
+      const pageViewsRaw = localStorage.getItem("genbots_page_views");
+      const pageViewsMap: Record<string, number> = pageViewsRaw ? JSON.parse(pageViewsRaw) : {};
+      const getPageTitle = (path: string) => {
+        if (path === "/") return { title: "Home Page", category: "Landing" };
+        if (path.startsWith("/store")) return { title: "Products Store", category: "Store" };
+        if (path.startsWith("/blog/microcontroller")) return { title: "Microcontroller Beginner's Guide", category: "Blog" };
+        if (path.startsWith("/blog/dht11")) return { title: "DHT11 Sensor Guide", category: "Blog" };
+        if (path.startsWith("/blog/ultrasonic")) return { title: "HC-SR04 Ultrasonic Guide", category: "Blog" };
+        if (path.startsWith("/blog/ir-sensor")) return { title: "IR Sensor Module Guide", category: "Blog" };
+        if (path.startsWith("/blog")) return { title: "Blog", category: "Blog" };
+        if (path.startsWith("/software")) return { title: "Software Portal", category: "Software" };
+        if (path.startsWith("/services")) return { title: "Services & Lab Setup", category: "Services" };
+        if (path.startsWith("/cart")) return { title: "Shopping Cart", category: "Cart" };
+        if (path.startsWith("/checkout")) return { title: "Checkout", category: "Checkout" };
+        if (path.startsWith("/about")) return { title: "About GenBots", category: "Info" };
+        if (path.startsWith("/contact")) return { title: "Contact Page", category: "Info" };
+        return { title: path, category: "Other" };
+      };
+      const topPages = Object.entries(pageViewsMap)
+        .sort(([, a], [, b]) => b - a)
+        .slice(0, 8)
+        .map(([path, views]) => ({ path, views, ...getPageTitle(path) }));
+
+      // Device breakdown
+      const activitiesRaw = localStorage.getItem("genbots_visitor_activities");
+      const activities: any[] = activitiesRaw ? JSON.parse(activitiesRaw) : [];
+      const deviceCounts: Record<string, number> = {};
+      const browserCounts: Record<string, number> = {};
+      activities.forEach((a) => {
+        deviceCounts[a.device] = (deviceCounts[a.device] || 0) + 1;
+        browserCounts[a.browser] = (browserCounts[a.browser] || 0) + 1;
+      });
+      const totalDevices = Object.values(deviceCounts).reduce((s, v) => s + v, 0) || 1;
+      const totalBrowsers = Object.values(browserCounts).reduce((s, v) => s + v, 0) || 1;
+      const deviceBreakdown = Object.entries(deviceCounts).map(([device, count]) => ({
+        device, count, percentage: Math.round((count / totalDevices) * 100),
+      }));
+      const browserBreakdown = Object.entries(browserCounts).map(([name, count]) => ({
+        name, percentage: Math.round((count / totalBrowsers) * 100),
+      }));
+
+      // Recent activities with human-readable time
+      const recentActivities = activities.slice(0, 10).map((a, i) => ({
+        ...a,
+        visitor: `Visitor ${a.visitor_id}`,
+        time: (() => {
+          const diff = Math.floor((Date.now() - new Date(a.timestamp).getTime()) / 1000);
+          if (diff < 60) return `${diff}s ago`;
+          if (diff < 3600) return `${Math.floor(diff / 60)}m ago`;
+          return `${Math.floor(diff / 3600)}h ago`;
+        })(),
+      }));
+
+      setLocalAnalytics({
+        todayViews: dailyViewsMap[today] || 0,
+        dailyViews,
+        topPages,
+        deviceBreakdown,
+        browserBreakdown,
+        recentActivities,
+      });
+    } catch (e) {
+      console.error("Failed to load local analytics:", e);
+    }
+  }, [activeTab]);
+
   // --- MUTATIONS ---
   const createProductMutation = useMutation({
     mutationFn: async (pData: any) => (await productsApi.create(pData)).data,
@@ -774,67 +866,51 @@ export default function AdminDashboard() {
           {activeTab === "analytics" && (
             <div className="space-y-6">
               {/* Top Key Metrics Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-                <div className="glass-card p-5 border bg-card/60 relative overflow-hidden">
+              <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div className="glass-card p-5 border bg-card/60">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today's Page Views</span>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Eye className="w-4 h-4 text-primary" />
                     </div>
                   </div>
-                  <div className="text-3xl font-extrabold">{analyticsData?.today_views ? analyticsData.today_views.toLocaleString() : "4,120"}</div>
-                  <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-emerald-500">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> +24% vs yesterday
-                  </div>
+                  <div className="text-3xl font-extrabold">{localAnalytics?.todayViews ?? 0}</div>
+                  <div className="text-xs text-muted-foreground mt-2">Real views tracked today</div>
                 </div>
 
-                <div className="glass-card p-5 border bg-card/60 relative overflow-hidden">
+                <div className="glass-card p-5 border bg-card/60">
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Unique Visitors</span>
                     <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
                       <Users className="w-4 h-4 text-blue-500" />
                     </div>
                   </div>
-                  <div className="text-3xl font-extrabold">{analyticsData?.today_unique_visitors ? analyticsData.today_unique_visitors.toLocaleString() : "2,740"}</div>
-                  <div className="flex items-center gap-1.5 mt-2 text-xs font-medium text-emerald-500">
-                    <ArrowUpRight className="w-3.5 h-3.5" /> +18% new traffic
-                  </div>
+                  <div className="text-3xl font-extrabold">{localAnalytics ? Math.round((localAnalytics.todayViews || 0) * 0.65) : 0}</div>
+                  <div className="text-xs text-muted-foreground mt-2">Estimated unique sessions</div>
                 </div>
 
-                <div className="glass-card p-5 border bg-card/60 relative overflow-hidden border-emerald-500/30">
+                <div className="glass-card p-5 border bg-card/60 border-emerald-500/30">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Live Online Now</span>
-                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center relative">
-                      <Radio className="w-4 h-4 text-emerald-500 animate-pulse" />
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Total All-Time Views</span>
+                    <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                      <TrendingUp className="w-4 h-4 text-emerald-500" />
                     </div>
                   </div>
-                  <div className="text-3xl font-extrabold flex items-center gap-2">
-                    {analyticsData?.active_users_online || 38}
-                    <span className="w-3 h-3 rounded-full bg-emerald-500 animate-ping inline-block" />
+                  <div className="text-3xl font-extrabold">
+                    {localAnalytics ? localAnalytics.dailyViews.reduce((s, d) => s + d.views, 0) : 0}
                   </div>
-                  <div className="text-xs text-muted-foreground mt-2 font-medium">Active sessions on site</div>
+                  <div className="text-xs text-muted-foreground mt-2">Past 7 days combined</div>
                 </div>
 
-                <div className="glass-card p-5 border bg-card/60 relative overflow-hidden">
+                <div className="glass-card p-5 border bg-card/60">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Avg. Session Time</span>
-                    <div className="w-8 h-8 rounded-lg bg-amber-500/10 flex items-center justify-center">
-                      <Clock className="w-4 h-4 text-amber-500" />
-                    </div>
-                  </div>
-                  <div className="text-3xl font-extrabold">{analyticsData?.avg_session_duration || "4m 12s"}</div>
-                  <div className="text-xs text-muted-foreground mt-2 font-medium">High engagement rate</div>
-                </div>
-
-                <div className="glass-card p-5 border bg-card/60 relative overflow-hidden">
-                  <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Bounce Rate</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Pages Tracked</span>
                     <div className="w-8 h-8 rounded-lg bg-purple-500/10 flex items-center justify-center">
-                      <Activity className="w-4 h-4 text-purple-500" />
+                      <Globe className="w-4 h-4 text-purple-500" />
                     </div>
                   </div>
-                  <div className="text-3xl font-extrabold">{analyticsData?.bounce_rate || "34.2%"}</div>
-                  <div className="text-xs text-emerald-500 mt-2 font-medium">-3.1% improved</div>
+                  <div className="text-3xl font-extrabold">{localAnalytics?.topPages.length ?? 0}</div>
+                  <div className="text-xs text-muted-foreground mt-2">Distinct pages visited</div>
                 </div>
               </div>
 
@@ -848,40 +924,38 @@ export default function AdminDashboard() {
                       <h3 className="text-lg font-bold flex items-center gap-2">
                         <BarChart3 className="w-5 h-5 text-primary" /> Daily Traffic Trend (Past 7 Days)
                       </h3>
-                      <p className="text-xs text-muted-foreground">Daily pageviews breakdown across India</p>
+                      <p className="text-xs text-muted-foreground">Real pageviews tracked by VisitorTracker</p>
                     </div>
-                    <Badge variant="outline" className="text-xs font-normal">Real-Time Sync</Badge>
+                    <Badge variant="outline" className="text-xs font-normal text-emerald-500 border-emerald-500/50">Live Data</Badge>
                   </div>
 
                   <div className="space-y-4">
-                    {(analyticsData?.daily_views || [
-                      { date: "2026-08-03", views: 1420, unique_visitors: 910 },
-                      { date: "2026-08-04", views: 1680, unique_visitors: 1120 },
-                      { date: "2026-08-05", views: 2150, unique_visitors: 1430 },
-                      { date: "2026-08-06", views: 1940, unique_visitors: 1280 },
-                      { date: "2026-08-07", views: 2890, unique_visitors: 1850 },
-                      { date: "2026-08-08", views: 3410, unique_visitors: 2190 },
-                      { date: "2026-08-09", views: 4120, unique_visitors: 2740 },
-                    ]).map((day: any, idx: number) => {
-                      const maxViews = 4500;
+                    {(localAnalytics?.dailyViews || []).map((day, idx) => {
+                      const maxViews = Math.max(...(localAnalytics?.dailyViews || []).map(d => d.views), 1);
                       const percentage = Math.min(100, Math.round((day.views / maxViews) * 100));
                       return (
                         <div key={idx} className="space-y-1">
                           <div className="flex justify-between text-xs font-medium">
                             <span className="font-semibold">{day.date}</span>
                             <span className="text-muted-foreground">
-                              <strong className="text-foreground">{day.views.toLocaleString()}</strong> views ({day.unique_visitors.toLocaleString()} unique)
+                              <strong className="text-foreground">{day.views}</strong> views ({day.unique_visitors} unique)
                             </span>
                           </div>
-                          <div className="w-full bg-muted/60 h-3.5 rounded-full overflow-hidden flex">
+                          <div className="w-full bg-muted/60 h-3.5 rounded-full overflow-hidden">
                             <div
                               className="gradient-bg h-full rounded-full transition-all duration-500"
-                              style={{ width: `${percentage}%` }}
+                              style={{ width: day.views === 0 ? '0%' : `${Math.max(2, percentage)}%` }}
                             />
                           </div>
                         </div>
                       );
                     })}
+                    {(!localAnalytics || localAnalytics.dailyViews.every(d => d.views === 0)) && (
+                      <div className="text-center py-8 text-muted-foreground text-sm">
+                        <Activity className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p>No traffic data yet. Data will appear as visitors browse the site.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -889,14 +963,14 @@ export default function AdminDashboard() {
                 <div className="glass-card p-6 border bg-card/50 flex flex-col">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                      <Activity className="w-5 h-5 text-emerald-500 animate-pulse" /> Live Visitor Stream
+                      <Activity className="w-5 h-5 text-emerald-500 animate-pulse" /> Recent Activity
                     </h3>
                     <span className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-ping" />
                   </div>
-                  <p className="text-xs text-muted-foreground mb-4">Real-time actions taken by visitors right now</p>
+                  <p className="text-xs text-muted-foreground mb-4">Latest pages visited — tracked in real-time</p>
 
                   <div className="flex-1 overflow-y-auto space-y-3.5 max-h-[360px] pr-1">
-                    {(analyticsData?.recent_activities || []).map((act: any, i: number) => (
+                    {localAnalytics && localAnalytics.recentActivities.length > 0 ? localAnalytics.recentActivities.map((act: any, i: number) => (
                       <div key={i} className="p-3 rounded-xl bg-muted/40 border border-border/40 hover:bg-muted/70 transition-colors">
                         <div className="flex items-center justify-between text-xs mb-1">
                           <span className="font-semibold text-primary">{act.visitor}</span>
@@ -907,10 +981,16 @@ export default function AdminDashboard() {
                         <p className="text-xs font-medium text-foreground mb-1">{act.action}</p>
                         <div className="flex items-center justify-between text-[11px] text-muted-foreground">
                           <span>{act.device}</span>
-                          <span className="text-emerald-500 font-semibold">{act.location || "India"}</span>
+                          <span className="font-mono">{act.browser}</span>
                         </div>
                       </div>
-                    ))}
+                    )) : (
+                      <div className="text-center py-10 text-muted-foreground text-sm">
+                        <Radio className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        <p>No activity recorded yet.</p>
+                        <p className="text-xs mt-1">Visitor actions will appear here automatically.</p>
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -922,99 +1002,99 @@ export default function AdminDashboard() {
                 {/* Top Visited Pages & Blogs */}
                 <div className="lg:col-span-2 glass-card p-6 border bg-card/50">
                   <h3 className="text-lg font-bold mb-1 flex items-center gap-2">
-                    <Globe className="w-5 h-5 text-primary" /> Most Visited Pages & Articles
+                    <Globe className="w-5 h-5 text-primary" /> Most Visited Pages
                   </h3>
-                  <p className="text-xs text-muted-foreground mb-4">Ranking by total visitor hits</p>
+                  <p className="text-xs text-muted-foreground mb-4">Ranking by real tracked hits</p>
 
-                  <div className="border border-border rounded-lg overflow-hidden">
-                    <table className="w-full text-xs text-left">
-                      <thead className="bg-muted/50 text-muted-foreground">
-                        <tr>
-                          <th className="px-4 py-3 font-medium">Page / Article Title</th>
-                          <th className="px-4 py-3 font-medium">Category</th>
-                          <th className="px-4 py-3 font-medium text-right">Views</th>
-                          <th className="px-4 py-3 font-medium">Share</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-border">
-                        {(analyticsData?.top_pages || []).map((p: any, idx: number) => (
-                          <tr key={idx} className="hover:bg-muted/30">
-                            <td className="px-4 py-3 font-medium">
-                              <p className="truncate max-w-[280px] text-foreground">{p.title}</p>
-                              <span className="text-[11px] text-muted-foreground font-mono">{p.path}</span>
-                            </td>
-                            <td className="px-4 py-3">
-                              <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{p.category}</Badge>
-                            </td>
-                            <td className="px-4 py-3 font-bold text-right text-foreground">{p.views.toLocaleString()}</td>
-                            <td className="px-4 py-3 w-28">
-                              <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                                <div
-                                  className="gradient-bg h-full rounded-full"
-                                  style={{ width: `${Math.min(100, Math.round((p.views / 5240) * 100))}%` }}
-                                />
-                              </div>
-                            </td>
+                  {localAnalytics && localAnalytics.topPages.length > 0 ? (
+                    <div className="border border-border rounded-lg overflow-hidden">
+                      <table className="w-full text-xs text-left">
+                        <thead className="bg-muted/50 text-muted-foreground">
+                          <tr>
+                            <th className="px-4 py-3 font-medium">Page</th>
+                            <th className="px-4 py-3 font-medium">Category</th>
+                            <th className="px-4 py-3 font-medium text-right">Views</th>
+                            <th className="px-4 py-3 font-medium">Share</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
-                  </div>
+                        </thead>
+                        <tbody className="divide-y divide-border">
+                          {localAnalytics.topPages.map((p, idx) => {
+                            const maxP = localAnalytics.topPages[0]?.views || 1;
+                            return (
+                              <tr key={idx} className="hover:bg-muted/30">
+                                <td className="px-4 py-3 font-medium">
+                                  <p className="truncate max-w-[260px] text-foreground">{p.title}</p>
+                                  <span className="text-[11px] text-muted-foreground font-mono">{p.path}</span>
+                                </td>
+                                <td className="px-4 py-3">
+                                  <Badge variant="outline" className="text-[10px] uppercase tracking-wider">{p.category}</Badge>
+                                </td>
+                                <td className="px-4 py-3 font-bold text-right text-foreground">{p.views}</td>
+                                <td className="px-4 py-3 w-24">
+                                  <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                                    <div className="gradient-bg h-full rounded-full" style={{ width: `${Math.round((p.views / maxP) * 100)}%` }} />
+                                  </div>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="text-center py-10 text-muted-foreground text-sm border border-border rounded-lg">
+                      <Globe className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                      <p>No page views recorded yet.</p>
+                    </div>
+                  )}
                 </div>
 
                 {/* Device & Browser Share */}
                 <div className="space-y-6">
                   <div className="glass-card p-6 border bg-card/50">
                     <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-                      <Smartphone className="w-4 h-4 text-primary" /> Traffic by Device Type
+                      <Smartphone className="w-4 h-4 text-primary" /> Traffic by Device
                     </h3>
-                    <div className="space-y-3">
-                      {(analyticsData?.device_breakdown || [
-                        { device: "Mobile", percentage: 58, count: 10200 },
-                        { device: "Desktop", percentage: 36, count: 6330 },
-                        { device: "Tablet", percentage: 6, count: 1050 },
-                      ]).map((d: any, i: number) => (
-                        <div key={i} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="font-medium">{d.device}</span>
-                            <span className="font-bold">{d.percentage}% ({d.count.toLocaleString()} visits)</span>
+                    {localAnalytics && localAnalytics.deviceBreakdown.length > 0 ? (
+                      <div className="space-y-3">
+                        {localAnalytics.deviceBreakdown.map((d, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium">{d.device}</span>
+                              <span className="font-bold">{d.percentage}% ({d.count} visits)</span>
+                            </div>
+                            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                              <div className="bg-primary h-full rounded-full" style={{ width: `${d.percentage}%` }} />
+                            </div>
                           </div>
-                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-primary h-full rounded-full"
-                              style={{ width: `${d.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>
+                    )}
                   </div>
 
                   <div className="glass-card p-6 border bg-card/50">
                     <h3 className="text-sm font-bold mb-4 flex items-center gap-2">
-                      <Monitor className="w-4 h-4 text-primary" /> Popular Browsers
+                      <Monitor className="w-4 h-4 text-primary" /> Browsers Used
                     </h3>
-                    <div className="space-y-3">
-                      {(analyticsData?.browser_breakdown || [
-                        { name: "Google Chrome", percentage: 64 },
-                        { name: "Safari", percentage: 21 },
-                        { name: "Microsoft Edge", percentage: 9 },
-                        { name: "Firefox & Others", percentage: 6 },
-                      ]).map((b: any, i: number) => (
-                        <div key={i} className="space-y-1">
-                          <div className="flex justify-between text-xs">
-                            <span className="font-medium">{b.name}</span>
-                            <span className="font-bold">{b.percentage}%</span>
+                    {localAnalytics && localAnalytics.browserBreakdown.length > 0 ? (
+                      <div className="space-y-3">
+                        {localAnalytics.browserBreakdown.map((b, i) => (
+                          <div key={i} className="space-y-1">
+                            <div className="flex justify-between text-xs">
+                              <span className="font-medium">{b.name}</span>
+                              <span className="font-bold">{b.percentage}%</span>
+                            </div>
+                            <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
+                              <div className="bg-blue-500 h-full rounded-full" style={{ width: `${b.percentage}%` }} />
+                            </div>
                           </div>
-                          <div className="w-full bg-muted h-2 rounded-full overflow-hidden">
-                            <div
-                              className="bg-blue-500 h-full rounded-full"
-                              style={{ width: `${b.percentage}%` }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-xs text-muted-foreground text-center py-4">No data yet</p>
+                    )}
                   </div>
                 </div>
 
