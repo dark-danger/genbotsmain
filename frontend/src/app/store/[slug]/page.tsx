@@ -52,27 +52,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     staleTime: 30000,
   });
 
-  // Fetch local data fallback for crawlability & SSG fallback
-  const { productsData } = require("@/lib/data");
-  const localProductRaw = productsData.find((p: any) => p.slug === slug);
-  const localProduct = localProductRaw ? {
-    id: localProductRaw.id,
-    name: localProductRaw.name,
-    slug: localProductRaw.slug,
-    price: localProductRaw.price.toString(),
-    compare_at_price: localProductRaw.originalPrice ? localProductRaw.originalPrice.toString() : null,
-    avg_rating: localProductRaw.rating,
-    review_count: localProductRaw.reviewsCount,
-    is_featured: localProductRaw.badge === "Bestseller" || localProductRaw.badge === "Hot",
-    brand: { name: localProductRaw.brand || "GenBots" },
-    category: { name: localProductRaw.category ? localProductRaw.category.replace("-", " ") : "General", slug: localProductRaw.category || "general" },
-    images: localProductRaw.images.map((url: string) => ({ url })),
-    description: localProductRaw.description,
-    specifications: localProductRaw.features.map((f: string) => ({ key: "Feature", value: f })),
-    stock_quantity: 50,
-  } : null;
-
-  const product = apiProduct || localProduct;
+  const product = apiProduct;
 
   // Set default active image from fallback if not set
   useEffect(() => {
@@ -178,11 +158,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     }
   };
 
-  const placeholderReviews = [
-    { id: 1, user: "Aarav Sharma", rating: 5, date: "2 days ago", comment: "Amazing kit! Built my first line-following robot in just 3 hours. The components are high quality." },
-    { id: 2, user: "Priya Patel", rating: 4, date: "1 week ago", comment: "Good value for money. The guidebook is very helpful, but I wish it had an extra motor driver." },
-    { id: 3, user: "Rahul Kumar", rating: 5, date: "2 weeks ago", comment: "Perfect for beginners. My students love this kit in our robotics club." },
-  ];
+  const placeholderReviews: any[] = [];
 
   return (
     <>

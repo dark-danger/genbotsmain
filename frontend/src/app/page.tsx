@@ -2,7 +2,6 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { HeroSection } from "@/components/sections/hero";
 import { StatsSection } from "@/components/sections/stats";
-import { ProductsSection } from "@/components/sections/products";
 import { ServicesSection } from "@/components/sections/services";
 import { WhyChooseSection } from "@/components/sections/why-choose";
 import { TestimonialsSection } from "@/components/sections/testimonials";
@@ -18,7 +17,6 @@ export default function HomePage() {
       <main>
         <HeroSection />
         <StatsSection />
-        <ProductsSection />
         <ServicesSection />
         <WhyChooseSection />
         <TestimonialsSection />

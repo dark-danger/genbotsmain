@@ -47,28 +47,7 @@ export default function StorePage() {
     staleTime: 30000,
   });
 
-  // Import local data statically for crawler visibility / SSG fallback
-  const { productsData } = require("@/lib/data");
-
-  // Format local static data to match API schema representation for rendering fallback
-  const fallbackProducts = productsData.map((p: any) => ({
-    id: p.id,
-    name: p.name,
-    slug: p.slug,
-    price: p.price,
-    compare_at_price: p.originalPrice,
-    avg_rating: p.rating,
-    review_count: p.reviewsCount,
-    is_featured: p.badge === "Bestseller" || p.badge === "Hot",
-    brand: { name: p.brand || "GenBots" },
-    category: { name: p.category ? p.category.replace("-", " ") : "General", slug: p.category || "general" },
-    images: [{ url: p.images[0] }],
-    description: p.description,
-    specifications: p.features.map((f: string) => ({ key: "Feature", value: f })),
-    stock_quantity: 50,
-  }));
-
-  const products: any[] = (apiProducts && apiProducts.length > 0) ? apiProducts : fallbackProducts;
+  const products: any[] = (apiProducts && apiProducts.length > 0) ? apiProducts : [];
 
   // Extract unique categories and brands from data
   const categories = [
