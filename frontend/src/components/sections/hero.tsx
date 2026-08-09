@@ -116,7 +116,7 @@ export function HeroSection() {
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
             Premium IoT &amp; Robotics products for makers, students, and enterprises.
-            Build. Learn. Innovate — with GenBots by your side.
+            Learn . Build . Innovate — with GenBots by your side.
           </motion.p>
 
           {/* CTA Buttons */}

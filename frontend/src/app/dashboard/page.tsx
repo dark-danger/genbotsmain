@@ -264,7 +264,7 @@ export default function CustomerDashboard() {
                       </div>
                       <div>
                         <label htmlFor="phone" className="text-sm font-medium mb-1.5 block">Phone</label>
-                        <Input id="phone" type="tel" placeholder="+91 99961 71216" className="rounded-xl" />
+                        <Input id="phone" type="tel" placeholder="+91 92 110 67540" className="rounded-xl" />
                       </div>
                       <Button className="gradient-bg text-white rounded-xl">Save Changes</Button>
                     </div>

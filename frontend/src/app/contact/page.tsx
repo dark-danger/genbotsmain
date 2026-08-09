@@ -24,8 +24,8 @@ export default function ContactPage() {
             <div className="space-y-6">
               {[
                 { icon: Mail, label: "Email", value: "contact@genbots.in", href: "mailto:contact@genbots.in" },
-                { icon: Phone, label: "Phone", value: "+91 99961 71216", href: "tel:+91 9996171216" },
-                { icon: MessageCircle, label: "WhatsApp", value: "+91 99961 71216", href: "https://wa.me/91 9996171216" },
+                { icon: Phone, label: "Phone", value: "+91 92 110 67540", href: "tel:+919211067540" },
+                { icon: MessageCircle, label: "WhatsApp", value: "+91 92 110 67540", href: "https://wa.me/919211067540" },
                 { icon: MapPin, label: "Office", value: "GenBots Technology Park, Sonipat, Haryana, 131001, India" },
                 { icon: Clock, label: "Hours", value: "Mon-Sat: 9:00 AM - 6:00 PM IST" },
               ].map((item) => (

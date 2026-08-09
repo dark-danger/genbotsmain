@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth";
+import { useAdminAuthStore } from "@/store/adminAuth";
 import {
   adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi
 } from "@/lib/api";
@@ -23,7 +24,7 @@ import { generateInvoice, generatePurchaseOrder } from "@/lib/utils";
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
   const queryClient = useQueryClient();
-  const { user, logout } = useAuthStore();
+  const { admin: user, logout } = useAdminAuthStore();
 
   // --- STATE FOR MEDIA UPLOADS ---
   const [uploadingFile, setUploadingFile] = useState(false);

@@ -54,25 +54,24 @@ export function Navbar() {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       transition={{ type: "spring", stiffness: 100, damping: 20 }}
-      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${
-        scrolled
+      className={`fixed top-0 left-0 right-0 z-50 transition-all duration-500 ${scrolled
           ? "bg-background/80 backdrop-blur-xl border-b border-border shadow-lg"
           : "bg-transparent"
-      }`}
+        }`}
     >
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 lg:h-20">
           {/* Logo */}
           <Link href="/" className="flex items-center gap-2 group">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform">
-              <Bot className="w-6 h-6 text-white" />
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform overflow-hidden">
+              <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
             </div>
             <div className="flex flex-col">
               <span className="text-xl font-bold tracking-tight">
                 Gen<span className="gradient-text">Bots</span>
               </span>
               <span className="text-[10px] text-muted-foreground -mt-1 hidden sm:block">
-                IoT • Robotics • AI
+                Learn . Build . Innovate
               </span>
             </div>
           </Link>
@@ -83,11 +82,10 @@ export function Navbar() {
               <Link
                 key={item.href}
                 href={item.href}
-                className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-primary/10 ${
-                  isActive(item.href)
+                className={`relative px-3 py-2 text-sm font-medium rounded-lg transition-all duration-200 hover:bg-primary/10 ${isActive(item.href)
                     ? "text-primary"
                     : "text-muted-foreground hover:text-foreground"
-                }`}
+                  }`}
               >
                 {item.label}
                 {isActive(item.href) && (
@@ -110,11 +108,10 @@ export function Navbar() {
                     <Link
                       key={item.href}
                       href={item.href}
-                      className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
-                        isActive(item.href)
+                      className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${isActive(item.href)
                           ? "text-primary bg-primary/10"
                           : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                      }`}
+                        }`}
                     >
                       {item.icon && <item.icon className="w-4 h-4" />}
                       {item.label}
@@ -180,8 +177,8 @@ export function Navbar() {
                 <div className="flex flex-col h-full">
                   <div className="p-6 border-b border-border">
                     <div className="flex items-center gap-2">
-                      <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                        <Bot className="w-6 h-6 text-white" />
+                      <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden">
+                        <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
                       </div>
                       <span className="text-xl font-bold">
                         Gen<span className="gradient-text">Bots</span>
@@ -194,11 +191,10 @@ export function Navbar() {
                         key={item.href}
                         href={item.href}
                         onClick={() => setMobileOpen(false)}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${
-                          isActive(item.href)
+                        className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive(item.href)
                             ? "bg-primary/10 text-primary font-medium"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                        }`}
+                          }`}
                       >
                         {item.icon && <item.icon className="w-5 h-5" />}
                         {item.label}

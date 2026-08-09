@@ -325,7 +325,7 @@ export default function CheckoutPage() {
                           name="shipping_phone"
                           value={form.shipping_phone}
                           onChange={handleFieldChange}
-                          placeholder="+91 99961 71216"
+                          placeholder="+91 92 110 67540"
                           required
                           className="rounded-xl"
                         />

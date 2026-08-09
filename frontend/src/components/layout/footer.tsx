@@ -67,22 +67,22 @@ export function Footer() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-                <Bot className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center overflow-hidden">
+                <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain bg-white" />
               </div>
               <span className="text-xl font-bold">
                 Gen<span className="gradient-text">Bots</span>
               </span>
             </Link>
             <p className="text-sm text-muted-foreground mb-4">
-              Innovating the Future through IoT, Robotics & AI. Building the next generation of connected technology.
+              Learn . Build . Innovate — Innovating the Future through IoT, Robotics & AI.
             </p>
             <div className="space-y-2">
               <a href="mailto:contact@genbots.in" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Mail className="w-4 h-4" /> contact@genbots.in
               </a>
-              <a href="tel:+91 9996171216" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                <Phone className="w-4 h-4" /> +91 99961 71216
+              <a href="tel:+919211067540" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Phone className="w-4 h-4" /> +91 92 110 67540
               </a>
               <p className="flex items-start gap-2 text-sm text-muted-foreground">
                 <MapPin className="w-4 h-4 mt-0.5 shrink-0" /> Sonipat, Haryana, India

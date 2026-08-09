@@ -148,7 +148,7 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
           GenBots Technology Park<br>
           Sonipat, Haryana 131001, India<br>
           Email: billing@genbots.in<br>
-          Phone: +91 99961 71216<br>
+          Phone: +91 92 110 67540<br>
           GSTIN: 06AABCG1234A1Z5
         </div>
       </div>
