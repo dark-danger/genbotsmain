@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
+import { getProductImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import Link from "next/link";
@@ -138,10 +139,7 @@ export default function StorePage() {
     setSortBy("featured");
   };
 
-  const getProductImage = (product: any) => {
-    if (product.images && product.images.length > 0) return product.images[0].url;
-    return null;
-  };
+
 
   return (
     <>
@@ -219,11 +217,10 @@ export default function StorePage() {
                       <button
                         key={cat.slug}
                         onClick={() => setSelectedCategory(cat.slug)}
-                        className={`flex items-center justify-between w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${
-                          selectedCategory === cat.slug
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
+                        className={`flex items-center justify-between w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${selectedCategory === cat.slug
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
                       >
                         <span className="flex items-center gap-2">
                           <span aria-hidden="true">{cat.icon}</span> {cat.name}
@@ -241,11 +238,10 @@ export default function StorePage() {
                       <button
                         key={b}
                         onClick={() => setSelectedBrand(b)}
-                        className={`flex items-center justify-between w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${
-                          selectedBrand === b
-                            ? "bg-primary/10 text-primary font-medium"
-                            : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                        }`}
+                        className={`flex items-center justify-between w-full text-left text-sm py-1.5 px-2 rounded-lg transition-colors ${selectedBrand === b
+                          ? "bg-primary/10 text-primary font-medium"
+                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                          }`}
                       >
                         <span>{b}</span>
                       </button>
@@ -411,11 +407,10 @@ export default function StorePage() {
                         setSelectedCategory(cat.slug);
                         setShowMobileFilters(false);
                       }}
-                      className={`flex items-center justify-between w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${
-                        selectedCategory === cat.slug
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex items-center justify-between w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${selectedCategory === cat.slug
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       <span className="flex items-center gap-2">
                         <span>{cat.icon}</span> {cat.name}
@@ -436,11 +431,10 @@ export default function StorePage() {
                         setSelectedBrand(b);
                         setShowMobileFilters(false);
                       }}
-                      className={`flex items-center justify-between w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${
-                        selectedBrand === b
-                          ? "bg-primary/10 text-primary font-medium"
-                          : "hover:bg-muted text-muted-foreground hover:text-foreground"
-                      }`}
+                      className={`flex items-center justify-between w-full text-left text-sm py-2 px-3 rounded-lg transition-colors ${selectedBrand === b
+                        ? "bg-primary/10 text-primary font-medium"
+                        : "hover:bg-muted text-muted-foreground hover:text-foreground"
+                        }`}
                     >
                       <span>{b}</span>
                     </button>

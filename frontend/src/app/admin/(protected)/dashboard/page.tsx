@@ -2,9 +2,9 @@
 
 import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { 
-  LayoutDashboard, Users, ShoppingCart, Package, Settings, 
-  LogOut, DollarSign, Plus, Trash, Edit2, 
+import {
+  LayoutDashboard, Users, ShoppingCart, Package, Settings,
+  LogOut, DollarSign, Plus, Trash, Edit2,
   Check, RefreshCw, Mail, HelpCircle, Shield, History,
   Cpu, Briefcase, BookOpen, Tag, Bell, MessageSquare, Download, Upload,
   Eye, Copy, Archive, RotateCcw, AlertTriangle, Star, CheckCircle, FileText,
@@ -15,8 +15,8 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth";
-import { 
-  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi 
+import {
+  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi
 } from "@/lib/api";
 
 export default function AdminDashboard() {
@@ -557,7 +557,7 @@ export default function AdminDashboard() {
       const fileUrl = res.data.url;
       setEditingProduct((prev: any) => ({
         ...prev,
-        images: isPrimary 
+        images: isPrimary
           ? [{ url: fileUrl, is_primary: true }, ...(prev.images || []).filter((i: any) => !i.is_primary)]
           : [...(prev.images || []), { url: fileUrl, is_primary: false }]
       }));
@@ -583,12 +583,12 @@ export default function AdminDashboard() {
       r.created_at
     ]);
 
-    const csvContent = "data:text/csv;charset=utf-8," 
+    const csvContent = "data:text/csv;charset=utf-8,"
       + [headers.join(","), ...rows.map((e: any) => e.join(","))].join("\n");
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `genbots_reviews_export_${new Date().toISOString().slice(0,10)}.csv`);
+    link.setAttribute("download", `genbots_reviews_export_${new Date().toISOString().slice(0, 10)}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -596,18 +596,214 @@ export default function AdminDashboard() {
 
   const unreadNotificationsCount = notifications?.filter((n: any) => !n.is_read).length || 0;
 
+  // --- INVOICE & PURCHASE ORDER GENERATION ---
+  const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_order") => {
+    const isInvoice = docType === "invoice";
+    const docTitle = isInvoice ? "TAX INVOICE" : "PURCHASE ORDER";
+    const docNumber = isInvoice
+      ? `INV-${(order.order_number || order.id.slice(0, 8)).replace("GB-", "")}`
+      : `PO-${(order.order_number || order.id.slice(0, 8)).replace("GB-", "")}`;
+    const orderDate = order.created_at
+      ? new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
+      : new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
+
+    const items = order.items || [];
+    const subtotal = parseFloat(order.subtotal || order.total_amount * 100 / 118);
+    const taxAmount = parseFloat(order.tax_amount || (subtotal * 0.18));
+    const totalAmount = parseFloat(order.total_amount);
+    const shippingAmount = parseFloat(order.shipping_amount || 0);
+    const discountAmount = parseFloat(order.discount_amount || 0);
+
+    const itemsHtml = items.length > 0
+      ? items.map((item: any, i: number) => `
+        <tr>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${i + 1}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${item.product_name || "Product"}<br><span style="color:#6b7280;font-size:11px;">SKU: ${item.product_sku || "N/A"}</span></td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:center;">${item.quantity || 1}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${parseFloat(item.unit_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+          <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;text-align:right;">₹${parseFloat(item.total_price || 0).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</td>
+        </tr>
+      `).join("")
+      : `<tr><td colspan="5" style="padding:20px;text-align:center;color:#6b7280;">Order items details not available</td></tr>`;
+
+    return `<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>${docTitle} - ${docNumber}</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; color: #1f2937; background: #fff; padding: 40px; }
+    .doc-container { max-width: 800px; margin: 0 auto; }
+    .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #7c3aed; }
+    .logo-section h1 { font-size: 28px; font-weight: 800; color: #7c3aed; }
+    .logo-section p { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .doc-type { text-align: right; }
+    .doc-type h2 { font-size: 24px; font-weight: 700; color: #1f2937; letter-spacing: 2px; }
+    .doc-type .doc-num { font-size: 14px; color: #7c3aed; font-weight: 600; margin-top: 4px; }
+    .doc-type .doc-date { font-size: 12px; color: #6b7280; margin-top: 2px; }
+    .parties { display: flex; justify-content: space-between; margin-bottom: 32px; gap: 40px; }
+    .party { flex: 1; }
+    .party-label { font-size: 10px; text-transform: uppercase; letter-spacing: 1.5px; color: #7c3aed; font-weight: 700; margin-bottom: 8px; }
+    .party-name { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .party-detail { font-size: 12px; color: #4b5563; line-height: 1.6; }
+    table { width: 100%; border-collapse: collapse; margin-bottom: 24px; }
+    thead { background: #f3f0ff; }
+    thead th { padding: 12px; font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; font-weight: 700; text-align: left; border-bottom: 2px solid #7c3aed; }
+    thead th:nth-child(3), thead th:nth-child(4), thead th:nth-child(5) { text-align: right; }
+    thead th:nth-child(3) { text-align: center; }
+    .summary { display: flex; justify-content: flex-end; margin-bottom: 32px; }
+    .summary-table { width: 300px; }
+    .summary-row { display: flex; justify-content: space-between; padding: 8px 0; font-size: 13px; }
+    .summary-row.total { border-top: 2px solid #7c3aed; padding-top: 12px; font-size: 16px; font-weight: 800; color: #7c3aed; }
+    .summary-row .label { color: #6b7280; }
+    .footer { margin-top: 40px; padding-top: 24px; border-top: 1px solid #e5e7eb; }
+    .footer-grid { display: flex; justify-content: space-between; gap: 40px; }
+    .footer-col h4 { font-size: 11px; text-transform: uppercase; letter-spacing: 1px; color: #7c3aed; font-weight: 700; margin-bottom: 8px; }
+    .footer-col p { font-size: 11px; color: #6b7280; line-height: 1.6; }
+    .stamp { margin-top: 40px; text-align: right; }
+    .stamp-box { display: inline-block; border: 2px dashed #7c3aed; border-radius: 8px; padding: 16px 32px; text-align: center; }
+    .stamp-box .auth { font-size: 10px; color: #6b7280; margin-top: 8px; }
+    .watermark { position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%) rotate(-30deg); font-size: 80px; color: rgba(124,58,237,0.04); font-weight: 900; letter-spacing: 8px; pointer-events: none; z-index: 0; }
+    .print-btn { position: fixed; bottom: 20px; right: 20px; padding: 12px 24px; background: #7c3aed; color: white; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; z-index: 99; }
+    .print-btn:hover { background: #6d28d9; }
+    @media print { .print-btn { display: none; } .watermark { display: none; } @page { margin: 20mm; } }
+  </style>
+</head>
+<body>
+  <div class="watermark">GENBOTS</div>
+  <button class="print-btn" onclick="window.print()">🖨️ Print / Download PDF</button>
+  <div class="doc-container">
+    <div class="header">
+      <div class="logo-section">
+        <h1>Gen<span style="color:#a855f7;">Bots</span></h1>
+        <p>IoT • Robotics • AI Solutions</p>
+        <p style="margin-top:8px;">GSTIN: 06AABCG1234A1Z5</p>
+      </div>
+      <div class="doc-type">
+        <h2>${docTitle}</h2>
+        <div class="doc-num">${docNumber}</div>
+        <div class="doc-date">Date: ${orderDate}</div>
+        <div class="doc-date">Order: ${order.order_number || "#" + order.id.slice(0, 8)}</div>
+      </div>
+    </div>
+
+    <div class="parties">
+      <div class="party">
+        <div class="party-label">${isInvoice ? "From (Seller)" : "Buyer (GenBots)"}</div>
+        <div class="party-name">GenBots Technology Pvt Ltd</div>
+        <div class="party-detail">
+          GenBots Technology Park<br>
+          Sonipat, Haryana 131001, India<br>
+          Email: billing@genbots.in<br>
+          Phone: +91 99961 71216<br>
+          GSTIN: 06AABCG1234A1Z5
+        </div>
+      </div>
+      <div class="party">
+        <div class="party-label">${isInvoice ? "Bill To (Customer)" : "Vendor / Supplier"}</div>
+        <div class="party-name">${order.shipping_name || order.user?.first_name || order.user?.email?.split("@")[0] || "Customer"}</div>
+        <div class="party-detail">
+          ${order.shipping_address_line1 || "Address on file"}<br>
+          ${order.shipping_address_line2 ? order.shipping_address_line2 + "<br>" : ""}
+          ${order.shipping_city || ""} ${order.shipping_state || ""} ${order.shipping_postal_code || ""}<br>
+          ${order.shipping_country || "India"}<br>
+          ${order.shipping_phone ? "Phone: " + order.shipping_phone : ""}
+          ${order.user?.email ? "<br>Email: " + order.user.email : ""}
+        </div>
+      </div>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th style="width:40px;">#</th>
+          <th>Item Description</th>
+          <th style="width:80px;text-align:center;">Qty</th>
+          <th style="width:120px;text-align:right;">Unit Price</th>
+          <th style="width:120px;text-align:right;">Amount</th>
+        </tr>
+      </thead>
+      <tbody>
+        ${itemsHtml}
+      </tbody>
+    </table>
+
+    <div class="summary">
+      <div class="summary-table">
+        <div class="summary-row"><span class="label">Subtotal</span><span>₹${subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        <div class="summary-row"><span class="label">CGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        <div class="summary-row"><span class="label">SGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        ${shippingAmount > 0 ? `<div class="summary-row"><span class="label">Shipping</span><span>₹${shippingAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : `<div class="summary-row"><span class="label">Shipping</span><span style="color:#16a34a;">FREE</span></div>`}
+        ${discountAmount > 0 ? `<div class="summary-row"><span class="label">Discount</span><span style="color:#dc2626;">-₹${discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
+        <div class="summary-row total"><span>Total Amount</span><span>₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <div class="footer-grid">
+        <div class="footer-col">
+          <h4>Payment Info</h4>
+          <p>
+            Method: ${(order.payment_method || "Online").toUpperCase()}<br>
+            Status: ${(order.payment_status || "Pending").toUpperCase()}<br>
+            ${order.payment_id ? "Txn ID: " + order.payment_id : ""}
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Bank Details</h4>
+          <p>
+            GenBots Technology Pvt Ltd<br>
+            A/C No: 1234567890123456<br>
+            IFSC: HDFC0001234<br>
+            Bank: HDFC Bank, Sonipat
+          </p>
+        </div>
+        <div class="footer-col">
+          <h4>Terms & Conditions</h4>
+          <p>
+            1. Goods once sold won't be taken back except defective.<br>
+            2. Payment due within 7 working days.<br>
+            3. Subject to Haryana jurisdiction.
+          </p>
+        </div>
+      </div>
+      <div class="stamp">
+        <div class="stamp-box">
+          <strong style="font-size:14px;color:#7c3aed;">GenBots Technology</strong>
+          <div class="auth">Authorized Signatory</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>`;
+  };
+
+  const generateInvoice = (order: any) => {
+    const html = generateDocumentHtml(order, "invoice");
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
+  const generatePurchaseOrder = (order: any) => {
+    const html = generateDocumentHtml(order, "purchase_order");
+    const win = window.open("", "_blank");
+    if (win) { win.document.write(html); win.document.close(); }
+  };
+
   if (!user) return null;
 
   return (
     <div className="flex h-screen bg-background overflow-hidden">
-      
+
       {/* Sidebar */}
       <div className="w-64 border-r border-border bg-card flex flex-col shrink-0">
         <div className="h-16 flex items-center px-6 border-b border-border gap-2">
           <Shield className="w-6 h-6 text-primary" />
           <span className="text-xl font-bold">Gen<span className="gradient-text">Bots</span> Admin</span>
         </div>
-        
+
         <div className="flex-1 overflow-y-auto py-4">
           <nav className="space-y-1 px-3">
             {[
@@ -629,14 +825,13 @@ export default function AdminDashboard() {
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
-                  activeTab === tab.id
-                    ? "bg-primary text-primary-foreground shadow-md"
-                    : "text-muted-foreground hover:bg-muted hover:text-foreground"
-                }`}
+                className={`w-full flex items-center justify-between px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${activeTab === tab.id
+                  ? "bg-primary text-primary-foreground shadow-md"
+                  : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                  }`}
               >
                 <div className="flex items-center gap-3">
-                  <tab.icon className="w-4 h-4" /> 
+                  <tab.icon className="w-4 h-4" />
                   <span>{tab.label}</span>
                 </div>
                 {tab.badge && tab.badge > 0 ? (
@@ -646,9 +841,9 @@ export default function AdminDashboard() {
             ))}
           </nav>
         </div>
-        
+
         <div className="p-4 border-t border-border">
-          <button 
+          <button
             onClick={() => { logout(); window.location.href = "/admin/login"; }}
             className="w-full flex items-center gap-3 px-3 py-2 text-sm font-medium text-destructive hover:bg-destructive/10 rounded-lg transition-colors"
           >
@@ -680,10 +875,10 @@ export default function AdminDashboard() {
             </div>
           </div>
         </header>
-        
+
         {/* Scrollable Content */}
         <main className="flex-1 overflow-y-auto p-8">
-          
+
           {/* OVERVIEW TAB */}
           {activeTab === "overview" && (
             <div className="space-y-6">
@@ -709,7 +904,7 @@ export default function AdminDashboard() {
                   ))}
                 </div>
               )}
-              
+
               {/* Recent Orders */}
               <div className="glass-card p-6 border bg-card/50">
                 <h3 className="text-lg font-bold mb-4">Recent Orders</h3>
@@ -767,19 +962,20 @@ export default function AdminDashboard() {
                           <th className="px-4 py-3 font-medium">Total Amount</th>
                           <th className="px-4 py-3 font-medium">Status</th>
                           <th className="px-4 py-3 font-medium">Update Status</th>
+                          <th className="px-4 py-3 font-medium">Documents</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {orders?.items?.map((order: any) => (
                           <tr key={order.id} className="hover:bg-muted/30">
-                            <td className="px-4 py-3 font-medium">#{order.id.slice(0, 8)}</td>
+                            <td className="px-4 py-3 font-medium">#{order.order_number || order.id.slice(0, 8)}</td>
                             <td className="px-4 py-3">{order.user?.email || "Guest"}</td>
                             <td className="px-4 py-3 font-medium">₹{order.total_amount}</td>
                             <td className="px-4 py-3">
                               <Badge className="capitalize">{order.status}</Badge>
                             </td>
                             <td className="px-4 py-3">
-                              <select 
+                              <select
                                 value={order.status}
                                 onChange={(e) => updateOrderStatusMutation.mutate({ orderId: order.id, status: e.target.value })}
                                 className="p-1 rounded bg-background border border-border text-xs"
@@ -790,6 +986,26 @@ export default function AdminDashboard() {
                                 <option value="delivered">Delivered</option>
                                 <option value="cancelled">Cancelled</option>
                               </select>
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex gap-1.5">
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="rounded-lg text-xs h-7 px-2 gap-1"
+                                  onClick={() => generateInvoice(order)}
+                                >
+                                  <FileText className="w-3 h-3" /> Invoice
+                                </Button>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="rounded-lg text-xs h-7 px-2 gap-1"
+                                  onClick={() => generatePurchaseOrder(order)}
+                                >
+                                  <Download className="w-3 h-3" /> PO
+                                </Button>
+                              </div>
                             </td>
                           </tr>
                         ))}
@@ -809,13 +1025,13 @@ export default function AdminDashboard() {
                 <div className="glass-card p-6 border bg-card/60 space-y-4">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="text-lg font-bold flex items-center gap-2">
-                      {editingProduct ? <Edit2 className="w-5 h-5 text-primary" /> : <Plus className="w-5 h-5 text-primary" />} 
+                      {editingProduct ? <Edit2 className="w-5 h-5 text-primary" /> : <Plus className="w-5 h-5 text-primary" />}
                       {editingProduct ? `Edit Product: ${editingProduct.name}` : "Product Details Builder"}
                     </h3>
                     <Button variant="ghost" size="sm" onClick={() => { setEditingProduct(null); setNewProduct(initialProductState); }}>Close form</Button>
                   </div>
 
-                  <form 
+                  <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (editingProduct) {
@@ -841,37 +1057,37 @@ export default function AdminDashboard() {
                           weight: newProduct.weight ? parseFloat(newProduct.weight) : null,
                         });
                       }
-                    }} 
+                    }}
                     className="space-y-4 text-sm"
                   >
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">Product Name</label>
-                        <Input 
+                        <Input
                           value={editingProduct ? editingProduct.name : newProduct.name}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, name: e.target.value })
                             : setNewProduct({ ...newProduct, name: e.target.value })
                           }
-                          required 
+                          required
                         />
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">SKU</label>
-                        <Input 
+                        <Input
                           value={editingProduct ? editingProduct.sku : newProduct.sku}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, sku: e.target.value })
                             : setNewProduct({ ...newProduct, sku: e.target.value })
                           }
-                          required 
+                          required
                         />
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">Status</label>
-                        <select 
+                        <select
                           value={editingProduct ? editingProduct.status : newProduct.status}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, status: e.target.value })
                             : setNewProduct({ ...newProduct, status: e.target.value })
                           }
@@ -888,22 +1104,22 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">Price (₹)</label>
-                        <Input 
+                        <Input
                           type="number" step="0.01"
                           value={editingProduct ? editingProduct.price : newProduct.price}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, price: e.target.value })
                             : setNewProduct({ ...newProduct, price: e.target.value })
                           }
-                          required 
+                          required
                         />
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">Compare At Price (Discount Reference)</label>
-                        <Input 
+                        <Input
                           type="number" step="0.01"
                           value={editingProduct ? editingProduct.compare_at_price : newProduct.compare_at_price}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, compare_at_price: e.target.value })
                             : setNewProduct({ ...newProduct, compare_at_price: e.target.value })
                           }
@@ -911,10 +1127,10 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">GST Tax Rate (%)</label>
-                        <Input 
+                        <Input
                           type="number"
                           value={editingProduct ? editingProduct.tax_rate : newProduct.tax_rate}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, tax_rate: e.target.value })
                             : setNewProduct({ ...newProduct, tax_rate: e.target.value })
                           }
@@ -922,10 +1138,10 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">Weight (kg)</label>
-                        <Input 
+                        <Input
                           type="number" step="0.001"
                           value={editingProduct ? editingProduct.weight : newProduct.weight}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, weight: e.target.value })
                             : setNewProduct({ ...newProduct, weight: e.target.value })
                           }
@@ -936,10 +1152,10 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">Stock Quantity</label>
-                        <Input 
+                        <Input
                           type="number"
                           value={editingProduct ? editingProduct.stock_quantity : newProduct.stock_quantity}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, stock_quantity: e.target.value })
                             : setNewProduct({ ...newProduct, stock_quantity: e.target.value })
                           }
@@ -947,10 +1163,10 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">Low Stock Threshold</label>
-                        <Input 
+                        <Input
                           type="number"
                           value={editingProduct ? editingProduct.low_stock_threshold : newProduct.low_stock_threshold}
-                          onChange={(e) => editingProduct 
+                          onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, low_stock_threshold: e.target.value })
                             : setNewProduct({ ...newProduct, low_stock_threshold: e.target.value })
                           }
@@ -958,10 +1174,10 @@ export default function AdminDashboard() {
                       </div>
                       <div className="flex gap-4 pt-6">
                         <label className="flex items-center gap-2 font-medium cursor-pointer">
-                          <input 
+                          <input
                             type="checkbox"
                             checked={editingProduct ? editingProduct.is_featured : newProduct.is_featured}
-                            onChange={(e) => editingProduct 
+                            onChange={(e) => editingProduct
                               ? setEditingProduct({ ...editingProduct, is_featured: e.target.checked })
                               : setNewProduct({ ...newProduct, is_featured: e.target.checked })
                             }
@@ -969,10 +1185,10 @@ export default function AdminDashboard() {
                           <span>Featured</span>
                         </label>
                         <label className="flex items-center gap-2 font-medium cursor-pointer">
-                          <input 
+                          <input
                             type="checkbox"
                             checked={editingProduct ? editingProduct.is_digital : newProduct.is_digital}
-                            onChange={(e) => editingProduct 
+                            onChange={(e) => editingProduct
                               ? setEditingProduct({ ...editingProduct, is_digital: e.target.checked })
                               : setNewProduct({ ...newProduct, is_digital: e.target.checked })
                             }
@@ -986,7 +1202,7 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">3D Viewer Model (GLB File URL / Upload)</label>
-                        <Input 
+                        <Input
                           placeholder="e.g. /uploads/models/pro.glb"
                           value={editingProduct ? (editingProduct.glb_url || "") : newProduct.glb_url}
                           onChange={(e) => editingProduct
@@ -997,7 +1213,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">Apple AR QuickLook (USDZ File URL)</label>
-                        <Input 
+                        <Input
                           placeholder="e.g. /uploads/models/pro.usdz"
                           value={editingProduct ? (editingProduct.usdz_url || "") : newProduct.usdz_url}
                           onChange={(e) => editingProduct
@@ -1014,18 +1230,18 @@ export default function AdminDashboard() {
                       <div className="flex flex-wrap gap-4 items-center">
                         <div>
                           <label className="text-[10px] text-muted-foreground block mb-1">Upload Primary Image</label>
-                          <input 
-                            type="file" accept="image/*" 
+                          <input
+                            type="file" accept="image/*"
                             onChange={(e) => editingProduct ? handleEditProductUpload(e, true) : handleFileUpload(e, "product-primary")}
-                            className="text-xs max-w-[200px]" 
+                            className="text-xs max-w-[200px]"
                           />
                         </div>
                         <div>
                           <label className="text-[10px] text-muted-foreground block mb-1">Upload Gallery Image</label>
-                          <input 
-                            type="file" accept="image/*" 
+                          <input
+                            type="file" accept="image/*"
                             onChange={(e) => editingProduct ? handleEditProductUpload(e, false) : handleFileUpload(e, "product-gallery")}
-                            className="text-xs max-w-[200px]" 
+                            className="text-xs max-w-[200px]"
                           />
                         </div>
                         {uploadingFile && <span className="text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Optimizing file...</span>}
@@ -1047,7 +1263,7 @@ export default function AdminDashboard() {
                       <div className="flex gap-2 mb-2">
                         <Input placeholder="Key (e.g. Battery Life)" value={specKey} onChange={(e) => setSpecKey(e.target.value)} className="h-8 text-xs" />
                         <Input placeholder="Value (e.g. 8 Hours)" value={specValue} onChange={(e) => setSpecValue(e.target.value)} className="h-8 text-xs" />
-                        <Button 
+                        <Button
                           type="button" size="sm" className="h-8 text-xs"
                           onClick={() => {
                             if (!specKey || !specValue) return;
@@ -1095,7 +1311,7 @@ export default function AdminDashboard() {
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">SEO Meta Title</label>
-                        <Input 
+                        <Input
                           value={editingProduct ? (editingProduct.meta_title || "") : newProduct.meta_title}
                           onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, meta_title: e.target.value })
@@ -1105,7 +1321,7 @@ export default function AdminDashboard() {
                       </div>
                       <div>
                         <label className="text-xs font-semibold block mb-1">SEO Meta Description</label>
-                        <Input 
+                        <Input
                           value={editingProduct ? (editingProduct.meta_description || "") : newProduct.meta_description}
                           onChange={(e) => editingProduct
                             ? setEditingProduct({ ...editingProduct, meta_description: e.target.value })
@@ -1117,13 +1333,13 @@ export default function AdminDashboard() {
 
                     <div className="space-y-2">
                       <label className="text-xs font-semibold block mb-1">Full Description (HTML or Raw Rich Text)</label>
-                      <Textarea 
+                      <Textarea
                         value={editingProduct ? editingProduct.description : newProduct.description}
-                        onChange={(e) => editingProduct 
+                        onChange={(e) => editingProduct
                           ? setEditingProduct({ ...editingProduct, description: e.target.value })
                           : setNewProduct({ ...newProduct, description: e.target.value })
                         }
-                        rows={3} 
+                        rows={3}
                       />
                     </div>
 
@@ -1261,7 +1477,7 @@ export default function AdminDashboard() {
                               </Badge>
                             </td>
                             <td className="px-4 py-3">
-                              <select 
+                              <select
                                 value={u.role}
                                 onChange={(e) => updateUserRoleMutation.mutate({ userId: u.id, role: e.target.value })}
                                 className="p-1 rounded bg-background border border-border text-xs"
@@ -1293,7 +1509,7 @@ export default function AdminDashboard() {
                     <Button variant="ghost" size="sm" onClick={() => setSelectedSoftwareForVersions(null)}>Close Releases Panel</Button>
                   </div>
 
-                  <form 
+                  <form
                     onSubmit={(e) => {
                       e.preventDefault();
                       createVersionMutation.mutate({
@@ -1312,8 +1528,8 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Platform OS</label>
-                      <select 
-                        value={newVersion.platform} 
+                      <select
+                        value={newVersion.platform}
                         onChange={(e) => setNewVersion({ ...newVersion, platform: e.target.value })}
                         className="w-full h-10 px-2 rounded-md bg-background border border-border"
                       >
@@ -1325,8 +1541,8 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Release Type</label>
-                      <select 
-                        value={newVersion.is_latest ? "latest" : "beta"} 
+                      <select
+                        value={newVersion.is_latest ? "latest" : "beta"}
                         onChange={(e) => setNewVersion({ ...newVersion, is_latest: e.target.value === "latest" })}
                         className="w-full h-10 px-2 rounded-md bg-background border border-border"
                       >
@@ -1342,7 +1558,7 @@ export default function AdminDashboard() {
                       <label className="text-xs font-semibold block mb-1">Download Link (URL / Upload file below)</label>
                       <Input value={newVersion.download_url} onChange={(e) => setNewVersion({ ...newVersion, download_url: e.target.value })} required />
                     </div>
-                    
+
                     <div className="md:col-span-3 border-t pt-2">
                       <label className="text-[10px] text-muted-foreground block mb-1">Direct Secure Executable Upload</label>
                       <input type="file" onChange={(e) => handleFileUpload(e, "software")} className="text-xs mb-2" />
@@ -1382,7 +1598,7 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Cpu className="w-5 h-5 text-primary" /> Create New Software Entry
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     createSoftwareMutation.mutate({
@@ -1392,29 +1608,29 @@ export default function AdminDashboard() {
                       is_free: newSoftware.is_free,
                       price: newSoftware.is_free ? null : parseFloat(newSoftware.price || "0"),
                     });
-                  }} 
+                  }}
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Software Name</label>
-                      <Input 
+                      <Input
                         value={newSoftware.name}
                         onChange={(e) => setNewSoftware({ ...newSoftware, name: e.target.value })}
-                        placeholder="e.g. GenOS Firmware" required 
+                        placeholder="e.g. GenOS Firmware" required
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Category</label>
-                      <Input 
+                      <Input
                         value={newSoftware.category}
                         onChange={(e) => setNewSoftware({ ...newSoftware, category: e.target.value })}
-                        placeholder="e.g. Drivers" required 
+                        placeholder="e.g. Drivers" required
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Pricing Mode</label>
-                      <select 
+                      <select
                         value={newSoftware.is_free ? "true" : "false"}
                         onChange={(e) => setNewSoftware({ ...newSoftware, is_free: e.target.value === "true" })}
                         className="w-full h-10 p-2 rounded-md bg-background border border-border"
@@ -1427,20 +1643,20 @@ export default function AdminDashboard() {
                   {!newSoftware.is_free && (
                     <div className="space-y-2 max-w-xs">
                       <label className="text-sm font-medium">License Price (₹)</label>
-                      <Input 
+                      <Input
                         type="number"
                         value={newSoftware.price}
                         onChange={(e) => setNewSoftware({ ...newSoftware, price: e.target.value })}
-                        placeholder="e.g. 1999" required 
+                        placeholder="e.g. 1999" required
                       />
                     </div>
                   )}
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Description</label>
-                    <Textarea 
+                    <Textarea
                       value={newSoftware.description}
                       onChange={(e) => setNewSoftware({ ...newSoftware, description: e.target.value })}
-                      placeholder="Enter software details..." required 
+                      placeholder="Enter software details..." required
                     />
                   </div>
                   <Button type="submit" disabled={createSoftwareMutation.isPending}>
@@ -1483,8 +1699,8 @@ export default function AdminDashboard() {
                               <Button size="sm" variant="outline" onClick={() => setSelectedSoftwareForVersions(sw)} className="flex items-center gap-1">
                                 <Plus className="w-3.5 h-3.5" /> Versions
                               </Button>
-                              <Button 
-                                variant="destructive" 
+                              <Button
+                                variant="destructive"
                                 size="icon"
                                 onClick={() => {
                                   if (confirm("Delete software?")) {
@@ -1515,7 +1731,7 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Briefcase className="w-5 h-5 text-primary" /> Add New Service / Lab Setup
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     createServiceMutation.mutate({
@@ -1529,7 +1745,7 @@ export default function AdminDashboard() {
                       cta_link: newService.cta_link,
                       faqs: newService.faqs
                     });
-                  }} 
+                  }}
                   className="space-y-4 text-sm"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -1543,8 +1759,8 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Lucide Icon Class</label>
-                      <select 
-                        value={newService.icon} 
+                      <select
+                        value={newService.icon}
                         onChange={(e) => setNewService({ ...newService, icon: e.target.value })}
                         className="w-full h-10 px-2 rounded-md bg-background border border-border"
                       >
@@ -1654,10 +1870,10 @@ export default function AdminDashboard() {
               {/* Add/Edit Project Form */}
               <div className="glass-card p-6 border bg-card/50">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <Images className="w-5 h-5 text-primary" /> 
+                  <Images className="w-5 h-5 text-primary" />
                   {editingProject ? `Edit Gallery Item: ${editingProject.title}` : "Add Gallery / Lab Workshop Showcase"}
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (editingProject) {
@@ -1675,19 +1891,19 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Event / Workshop Title</label>
-                      <Input 
-                        value={editingProject ? editingProject.title : newProject.title} 
-                        onChange={(e) => editingProject 
+                      <Input
+                        value={editingProject ? editingProject.title : newProject.title}
+                        onChange={(e) => editingProject
                           ? setEditingProject({ ...editingProject, title: e.target.value })
                           : setNewProject({ ...newProject, title: e.target.value })
-                        } 
-                        required 
+                        }
+                        required
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Location / School / Client</label>
-                      <Input 
-                        value={editingProject ? (editingProject.client || "") : newProject.client} 
+                      <Input
+                        value={editingProject ? (editingProject.client || "") : newProject.client}
                         onChange={(e) => editingProject
                           ? setEditingProject({ ...editingProject, client: e.target.value })
                           : setNewProject({ ...newProject, client: e.target.value })
@@ -1696,9 +1912,9 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Showcase Category</label>
-                      <select 
+                      <select
                         value={editingProject ? editingProject.category : newProject.category}
-                        onChange={(e) => editingProject 
+                        onChange={(e) => editingProject
                           ? setEditingProject({ ...editingProject, category: e.target.value })
                           : setNewProject({ ...newProject, category: e.target.value })
                         }
@@ -1715,9 +1931,9 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Project Type</label>
-                      <select 
+                      <select
                         value={editingProject ? editingProject.project_type : newProject.project_type}
-                        onChange={(e) => editingProject 
+                        onChange={(e) => editingProject
                           ? setEditingProject({ ...editingProject, project_type: e.target.value })
                           : setNewProject({ ...newProject, project_type: e.target.value })
                         }
@@ -1730,9 +1946,9 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Status</label>
-                      <select 
+                      <select
                         value={editingProject ? editingProject.status : newProject.status}
-                        onChange={(e) => editingProject 
+                        onChange={(e) => editingProject
                           ? setEditingProject({ ...editingProject, status: e.target.value })
                           : setNewProject({ ...newProject, status: e.target.value })
                         }
@@ -1745,10 +1961,10 @@ export default function AdminDashboard() {
                     </div>
                     <div className="flex items-center pt-6 gap-2">
                       <label className="flex items-center gap-2 cursor-pointer font-medium">
-                        <input 
+                        <input
                           type="checkbox"
                           checked={editingProject ? editingProject.is_featured : newProject.is_featured}
-                          onChange={(e) => editingProject 
+                          onChange={(e) => editingProject
                             ? setEditingProject({ ...editingProject, is_featured: e.target.checked })
                             : setNewProject({ ...newProject, is_featured: e.target.checked })
                           }
@@ -1760,10 +1976,10 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="text-xs font-semibold block mb-1">Tags / Technologies Used (comma separated)</label>
-                    <Input 
-                      placeholder="e.g. Arduino, RoboKit v2, STEM Curriculum" 
+                    <Input
+                      placeholder="e.g. Arduino, RoboKit v2, STEM Curriculum"
                       value={editingProject ? (Array.isArray(editingProject.technologies) ? editingProject.technologies.join(", ") : "") : newProject.technologies}
-                      onChange={(e) => editingProject 
+                      onChange={(e) => editingProject
                         ? setEditingProject({ ...editingProject, technologies: e.target.value.split(",").map(t => t.trim()) })
                         : setNewProject({ ...newProject, technologies: e.target.value })
                       }
@@ -1780,9 +1996,9 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="text-xs font-semibold block mb-1">Short Description Summary</label>
-                    <Input 
+                    <Input
                       value={editingProject ? editingProject.short_description : newProject.short_description}
-                      onChange={(e) => editingProject 
+                      onChange={(e) => editingProject
                         ? setEditingProject({ ...editingProject, short_description: e.target.value })
                         : setNewProject({ ...newProject, short_description: e.target.value })
                       }
@@ -1791,13 +2007,13 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="text-xs font-semibold block mb-1">Detailed Event Highlights / Notes</label>
-                    <Textarea 
+                    <Textarea
                       value={editingProject ? editingProject.description : newProject.description}
-                      onChange={(e) => editingProject 
+                      onChange={(e) => editingProject
                         ? setEditingProject({ ...editingProject, description: e.target.value })
                         : setNewProject({ ...newProject, description: e.target.value })
                       }
-                      rows={3} 
+                      rows={3}
                     />
                   </div>
 
@@ -1862,10 +2078,10 @@ export default function AdminDashboard() {
               {/* Add/Edit Course Form */}
               <div className="glass-card p-6 border bg-card/50">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                  <GraduationCap className="w-5 h-5 text-primary" /> 
+                  <GraduationCap className="w-5 h-5 text-primary" />
                   {editingCourse ? `Edit Course: ${editingCourse.title}` : "Create New Training Course / Workshop Schedule"}
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     if (editingCourse) {
@@ -1884,33 +2100,33 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Course / Workshop Title</label>
-                      <Input 
-                        value={editingCourse ? editingCourse.title : newCourse.title} 
-                        onChange={(e) => editingCourse 
+                      <Input
+                        value={editingCourse ? editingCourse.title : newCourse.title}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, title: e.target.value })
                           : setNewCourse({ ...newCourse, title: e.target.value })
-                        } 
-                        required 
+                        }
+                        required
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Duration (e.g. 2 Days, 6 Weeks)</label>
-                      <Input 
-                        value={editingCourse ? (editingCourse.duration || "") : newCourse.duration} 
-                        onChange={(e) => editingCourse 
+                      <Input
+                        value={editingCourse ? (editingCourse.duration || "") : newCourse.duration}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, duration: e.target.value })
                           : setNewCourse({ ...newCourse, duration: e.target.value })
-                        } 
+                        }
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Category Domain</label>
-                      <Input 
-                        value={editingCourse ? editingCourse.category : newCourse.category} 
-                        onChange={(e) => editingCourse 
+                      <Input
+                        value={editingCourse ? editingCourse.category : newCourse.category}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, category: e.target.value })
                           : setNewCourse({ ...newCourse, category: e.target.value })
-                        } 
+                        }
                       />
                     </div>
                   </div>
@@ -1918,9 +2134,9 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Course Type</label>
-                      <select 
+                      <select
                         value={editingCourse ? editingCourse.course_type : newCourse.course_type}
-                        onChange={(e) => editingCourse 
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, course_type: e.target.value })
                           : setNewCourse({ ...newCourse, course_type: e.target.value })
                         }
@@ -1935,9 +2151,9 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Target Skill level</label>
-                      <select 
+                      <select
                         value={editingCourse ? editingCourse.level : newCourse.level}
-                        onChange={(e) => editingCourse 
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, level: e.target.value })
                           : setNewCourse({ ...newCourse, level: e.target.value })
                         }
@@ -1950,24 +2166,24 @@ export default function AdminDashboard() {
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Price (₹, Leave empty for Free)</label>
-                      <Input 
+                      <Input
                         type="number"
-                        value={editingCourse ? (editingCourse.price || "") : newCourse.price} 
-                        onChange={(e) => editingCourse 
+                        value={editingCourse ? (editingCourse.price || "") : newCourse.price}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, price: e.target.value })
                           : setNewCourse({ ...newCourse, price: e.target.value })
-                        } 
+                        }
                       />
                     </div>
                     <div>
                       <label className="text-xs font-semibold block mb-1">Max Seats Available</label>
-                      <Input 
+                      <Input
                         type="number"
-                        value={editingCourse ? (editingCourse.max_students || "") : newCourse.max_students} 
-                        onChange={(e) => editingCourse 
+                        value={editingCourse ? (editingCourse.max_students || "") : newCourse.max_students}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, max_students: e.target.value })
                           : setNewCourse({ ...newCourse, max_students: e.target.value })
-                        } 
+                        }
                       />
                     </div>
                   </div>
@@ -1975,12 +2191,12 @@ export default function AdminDashboard() {
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Instructor / Presenter Name</label>
-                      <Input 
-                        value={editingCourse ? (editingCourse.instructor || "") : newCourse.instructor} 
-                        onChange={(e) => editingCourse 
+                      <Input
+                        value={editingCourse ? (editingCourse.instructor || "") : newCourse.instructor}
+                        onChange={(e) => editingCourse
                           ? setEditingCourse({ ...editingCourse, instructor: e.target.value })
                           : setNewCourse({ ...newCourse, instructor: e.target.value })
-                        } 
+                        }
                       />
                     </div>
                     <div className="border border-dashed p-4 rounded bg-background/40">
@@ -1994,24 +2210,24 @@ export default function AdminDashboard() {
 
                   <div>
                     <label className="text-xs font-semibold block mb-1">Short Description Summary</label>
-                    <Input 
+                    <Input
                       value={editingCourse ? editingCourse.short_description : newCourse.short_description}
-                      onChange={(e) => editingCourse 
+                      onChange={(e) => editingCourse
                         ? setEditingCourse({ ...editingCourse, short_description: e.target.value })
                         : setNewCourse({ ...newCourse, short_description: e.target.value })
-                      } 
+                      }
                     />
                   </div>
 
                   <div>
                     <label className="text-xs font-semibold block mb-1">Detailed Course Curriculum / Syllabus Outline</label>
-                    <Textarea 
+                    <Textarea
                       value={editingCourse ? editingCourse.description : newCourse.description}
-                      onChange={(e) => editingCourse 
+                      onChange={(e) => editingCourse
                         ? setEditingCourse({ ...editingCourse, description: e.target.value })
                         : setNewCourse({ ...newCourse, description: e.target.value })
                       }
-                      rows={3} 
+                      rows={3}
                     />
                   </div>
 
@@ -2073,13 +2289,13 @@ export default function AdminDashboard() {
           {/* CMS & SUPPORT TAB */}
           {activeTab === "content" && (
             <div className="space-y-8">
-              
+
               {/* Home Page Content CMS */}
               <div className="glass-card p-6 border bg-card/50">
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Settings className="w-5 h-5 text-primary" /> Home Page CMS Configuration
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     saveCmsHomeMutation.mutate(cmsHome);
@@ -2126,25 +2342,25 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Plus className="w-5 h-5 text-primary" /> Create New Blog Post
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     createBlogMutation.mutate(newBlog);
-                  }} 
+                  }}
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Post Title</label>
-                      <Input 
+                      <Input
                         value={newBlog.title}
                         onChange={(e) => setNewBlog({ ...newBlog, title: e.target.value })}
-                        placeholder="e.g. The Future of Robotics Labs" required 
+                        placeholder="e.g. The Future of Robotics Labs" required
                       />
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Status</label>
-                      <select 
+                      <select
                         value={newBlog.status}
                         onChange={(e) => setNewBlog({ ...newBlog, status: e.target.value })}
                         className="w-full h-10 p-2 rounded-md bg-background border border-border"
@@ -2156,18 +2372,18 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Excerpt / Summary</label>
-                    <Input 
+                    <Input
                       value={newBlog.excerpt}
                       onChange={(e) => setNewBlog({ ...newBlog, excerpt: e.target.value })}
-                      placeholder="Brief summary..." required 
+                      placeholder="Brief summary..." required
                     />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Content (HTML or Markdown)</label>
-                    <Textarea 
+                    <Textarea
                       value={newBlog.content}
                       onChange={(e) => setNewBlog({ ...newBlog, content: e.target.value })}
-                      placeholder="Write article body..." rows={4} required 
+                      placeholder="Write article body..." rows={4} required
                     />
                   </div>
                   <Button type="submit">Create Post</Button>
@@ -2212,7 +2428,7 @@ export default function AdminDashboard() {
                 <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
                   <Tag className="w-5 h-5 text-primary" /> Create New Coupon
                 </h3>
-                <form 
+                <form
                   onSubmit={(e) => {
                     e.preventDefault();
                     createCouponMutation.mutate({
@@ -2224,7 +2440,7 @@ export default function AdminDashboard() {
                       max_uses: newCoupon.max_uses ? parseInt(newCoupon.max_uses) : null,
                       is_active: true,
                     });
-                  }} 
+                  }}
                   className="space-y-4"
                 >
                   <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -2234,7 +2450,7 @@ export default function AdminDashboard() {
                     </div>
                     <div className="space-y-2">
                       <label className="text-sm font-medium">Discount Type</label>
-                      <select 
+                      <select
                         value={newCoupon.discount_type}
                         onChange={(e) => setNewCoupon({ ...newCoupon, discount_type: e.target.value })}
                         className="w-full h-10 p-2 rounded-md bg-background border border-border"

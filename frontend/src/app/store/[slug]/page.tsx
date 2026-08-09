@@ -15,6 +15,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
+import { getProductImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 
@@ -45,9 +46,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       const res = await productsApi.getBySlug(slug);
       const data = res.data;
       // Set active image initially
-      if (data.images && data.images.length > 0) {
-        setActiveImage(data.images[0].url);
-      }
+      setActiveImage(getProductImage(data));
       return data;
     },
     staleTime: 30000,
@@ -77,8 +76,8 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
   // Set default active image from fallback if not set
   useEffect(() => {
-    if (product && !activeImage && product.images && product.images.length > 0) {
-      setActiveImage(product.images[0].url);
+    if (product && !activeImage) {
+      setActiveImage(getProductImage(product));
     }
   }, [product, activeImage]);
 
@@ -178,7 +177,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       <ProductJsonLd
         name={product.name}
         description={product.description || ""}
-        image={product.images?.[0]?.url || ""}
+        image={getProductImage(product)}
         sku={product.sku}
         price={parseFloat(product.price)}
         rating={product.avg_rating || 5}
@@ -188,7 +187,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
       <Navbar />
       <main className="min-h-screen bg-background pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          
+
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-6">
             <ol className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -202,7 +201,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
           {/* Product Section */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 mb-20">
-            
+
             {/* Images / 3D Viewer */}
             <ScrollReveal direction="left">
               <div className="space-y-4">
@@ -253,13 +252,13 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     )}
                   </div>
                 )}
-                
+
                 {/* Thumbnails */}
                 {!show3D && product.images && product.images.length > 1 && (
                   <div className="flex gap-3">
                     {product.images.map((img: any, idx: number) => (
-                      <button 
-                        key={idx} 
+                      <button
+                        key={idx}
                         onClick={() => setActiveImage(img.url)}
                         className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${activeImage === img.url ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
                         aria-label={`View image ${idx + 1}`}
@@ -280,7 +279,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     {product.brand?.name || "GenBots"}
                   </span>
-                  <button 
+                  <button
                     onClick={() => toggleWishlistMutation.mutate()}
                     className={`p-2 rounded-full border transition-colors ${wishlisted ? "bg-red-500/10 border-red-500 text-red-500" : "hover:bg-muted text-muted-foreground"}`}
                     aria-label="Toggle wishlist"
@@ -288,9 +287,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : ""}`} />
                   </button>
                 </div>
-                
+
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>
-                
+
                 {/* Rating */}
                 <div className="flex items-center gap-2 mb-6">
                   <div className="flex text-yellow-500" aria-label={`Rating: ${product.avg_rating || 5} out of 5`}>
@@ -302,7 +301,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     {product.avg_rating || "5.0"} ({product.review_count || placeholderReviews.length} reviews)
                   </span>
                 </div>
-                
+
                 {/* Price */}
                 <div className="flex items-baseline gap-3 mb-6">
                   <span className="text-3xl font-bold gradient-text">
@@ -319,7 +318,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                     </>
                   )}
                 </div>
-                
+
                 <p className="text-muted-foreground mb-8 leading-relaxed">{product.description}</p>
 
                 {/* Specifications */}
@@ -358,15 +357,15 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 </div>
 
                 <div className="flex flex-col sm:flex-row gap-3">
-                  <Button 
+                  <Button
                     className="flex-1 gradient-bg text-white rounded-xl h-11 text-sm font-medium"
                     onClick={handleBuyNow}
                     disabled={product.stock_quantity <= 0}
                   >
                     Buy Now
                   </Button>
-                  <Button 
-                    variant="outline" 
+                  <Button
+                    variant="outline"
                     className="flex-1 h-11 rounded-xl border-primary text-primary hover:bg-primary/10"
                     onClick={() => addToCartMutation.mutate({ quantity: qty })}
                     disabled={product.stock_quantity <= 0 || addToCartMutation.isPending}
@@ -415,7 +414,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           <ScrollReveal>
             <section className="max-w-4xl mx-auto reviews">
               <h2 className="text-3xl font-bold mb-10 text-center">What <span className="gradient-text">Customers Say</span></h2>
-              
+
               {/* Review List */}
               <div className="space-y-6">
                 {(product.reviews && product.reviews.length > 0 ? product.reviews : placeholderReviews).map((review: any) => (
