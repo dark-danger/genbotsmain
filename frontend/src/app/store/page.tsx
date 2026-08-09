@@ -4,7 +4,7 @@ import { useState, useEffect, useDeferredValue } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle, ShoppingCart, Heart, Check } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle, ShoppingCart, Heart, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -17,7 +17,7 @@ import Link from "next/link";
 
 export default function StorePage() {
   const { token } = useAuthStore();
-  const { openCart } = useCartStore();
+  const { openCart, items } = useCartStore();
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
@@ -109,6 +109,18 @@ export default function StorePage() {
       }
       alert(err.response?.data?.detail || "Failed to add to cart.");
     },
+  });
+
+  const removeFromCartMutation = useMutation({
+    mutationFn: (itemId: string) => cartApi.removeItem(itemId),
+    onSuccess: () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cart-updated"));
+      }
+    },
+    onError: (err: any) => {
+      alert("Failed to remove item.");
+    }
   });
 
   // Filter and Sort logic
@@ -340,27 +352,45 @@ export default function StorePage() {
                           </div>
                         </div>
                         <div className="flex gap-2 mt-3">
-                          <Button
-                            size="sm"
-                            className="flex-1 gradient-bg text-white rounded-xl text-xs h-9"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              if (!token) {
-                                window.location.href = "/auth/login";
-                                return;
-                              }
-                              addToCartMutation.mutate(product.id);
-                            }}
-                            disabled={addToCartMutation.isPending || product.stock_quantity <= 0}
-                          >
-                            {addedIds.has(product.id) ? (
-                              <><Check className="w-3 h-3 mr-1" /> Added</>
-                            ) : product.stock_quantity <= 0 ? (
-                              "Out of Stock"
-                            ) : (
-                              <><ShoppingCart className="w-3 h-3 mr-1" /> Add to Cart</>
-                            )}
-                          </Button>
+                          {items.find((i) => i.product_id === product.id) ? (
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="flex-1 rounded-xl text-xs h-9 border-destructive text-destructive hover:bg-destructive/10"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                const cartItem = items.find((i) => i.product_id === product.id);
+                                if (cartItem) {
+                                  removeFromCartMutation.mutate(cartItem.id);
+                                }
+                              }}
+                              disabled={removeFromCartMutation.isPending}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" /> Remove
+                            </Button>
+                          ) : (
+                            <Button
+                              size="sm"
+                              className="flex-1 gradient-bg text-white rounded-xl text-xs h-9"
+                              onClick={(e) => {
+                                e.preventDefault();
+                                if (!token) {
+                                  window.location.href = "/auth/login";
+                                  return;
+                                }
+                                addToCartMutation.mutate(product.id);
+                              }}
+                              disabled={addToCartMutation.isPending || product.stock_quantity <= 0}
+                            >
+                              {addedIds.has(product.id) ? (
+                                <><Check className="w-3 h-3 mr-1" /> Added</>
+                              ) : product.stock_quantity <= 0 ? (
+                                "Out of Stock"
+                              ) : (
+                                <><ShoppingCart className="w-3 h-3 mr-1" /> Add to Cart</>
+                              )}
+                            </Button>
+                          )}
                         </div>
                       </div>
                     </div>

@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Star, Package, Truck, Shield, RotateCcw, ShoppingCart, Heart, Check, Loader2 } from "lucide-react";
+import { Star, Package, Truck, Shield, RotateCcw, ShoppingCart, Heart, Check, Loader2, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -29,7 +29,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const { slug } = use(params);
   const router = useRouter();
   const { token } = useAuthStore();
-  const { openCart } = useCartStore();
+  const { openCart, items } = useCartStore();
 
   const [activeImage, setActiveImage] = useState("");
   const [show3D, setShow3D] = useState(false);
@@ -104,6 +104,18 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     onError: (err: any) => {
       alert(err.response?.data?.detail || "Failed to add to cart. Please log in.");
     },
+  });
+
+  const removeFromCartMutation = useMutation({
+    mutationFn: (itemId: string) => cartApi.removeItem(itemId),
+    onSuccess: () => {
+      if (typeof window !== "undefined") {
+        window.dispatchEvent(new Event("cart-updated"));
+      }
+    },
+    onError: (err: any) => {
+      alert("Failed to remove item.");
+    }
   });
 
   // Toggle wishlist mutation
@@ -364,18 +376,34 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   >
                     Buy Now
                   </Button>
-                  <Button
-                    variant="outline"
-                    className="flex-1 h-11 rounded-xl border-primary text-primary hover:bg-primary/10"
-                    onClick={() => addToCartMutation.mutate({ quantity: qty })}
-                    disabled={product.stock_quantity <= 0 || addToCartMutation.isPending}
-                  >
-                    {added ? (
-                      <><Check className="w-4 h-4 mr-2" /> Added</>
-                    ) : (
-                      <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
-                    )}
-                  </Button>
+                  {items.find((i) => i.product_id === product.id) ? (
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11 rounded-xl border-destructive text-destructive hover:bg-destructive/10"
+                      onClick={() => {
+                        const cartItem = items.find((i) => i.product_id === product.id);
+                        if (cartItem) {
+                          removeFromCartMutation.mutate(cartItem.id);
+                        }
+                      }}
+                      disabled={removeFromCartMutation.isPending}
+                    >
+                      <Trash2 className="w-4 h-4 mr-2" /> Remove from Cart
+                    </Button>
+                  ) : (
+                    <Button
+                      variant="outline"
+                      className="flex-1 h-11 rounded-xl border-primary text-primary hover:bg-primary/10"
+                      onClick={() => addToCartMutation.mutate({ quantity: qty })}
+                      disabled={product.stock_quantity <= 0 || addToCartMutation.isPending}
+                    >
+                      {added ? (
+                        <><Check className="w-4 h-4 mr-2" /> Added</>
+                      ) : (
+                        <><ShoppingCart className="w-4 h-4 mr-2" /> Add to Cart</>
+                      )}
+                    </Button>
+                  )}
                 </div>
 
                 {/* Trust & Security Badges */}

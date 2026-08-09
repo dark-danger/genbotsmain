@@ -193,9 +193,11 @@ export default function CustomerDashboard() {
                                   {order.status}
                                 </Badge>
                                 <p className="text-lg font-bold mt-1">₹{parseFloat(order.total_amount).toLocaleString("en-IN")}</p>
-                                <Button size="sm" variant="outline" className="mt-2 text-xs h-8 w-full" onClick={() => generateInvoice(order)}>
-                                  <Download className="w-3 h-3 mr-1" /> Invoice
-                                </Button>
+                                {(order.status === "delivered" || order.status === "shipped" || order.payment_status === "paid") && (
+                                  <Button size="sm" variant="outline" className="mt-2 text-xs h-8 w-full" onClick={() => generateInvoice(order)}>
+                                    <Download className="w-3 h-3 mr-1" /> Invoice
+                                  </Button>
+                                )}
                               </div>
                             </div>
                             {order.items?.map((item: any) => (
