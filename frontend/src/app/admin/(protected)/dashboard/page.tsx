@@ -8,7 +8,8 @@ import {
   Check, RefreshCw, Mail, HelpCircle, Shield, History,
   Cpu, Briefcase, BookOpen, Tag, Bell, MessageSquare, Download, Upload,
   Eye, Copy, Archive, RotateCcw, AlertTriangle, Star, CheckCircle, FileText,
-  Images, GraduationCap, TrendingUp, Activity, BarChart3, Radio, Smartphone, Monitor, Globe, Clock, ArrowUpRight
+  Images, GraduationCap, TrendingUp, Activity, BarChart3, Radio, Smartphone, Monitor, Globe, Clock, ArrowUpRight,
+  School, Phone, MapPin
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -730,6 +731,7 @@ export default function AdminDashboard() {
               { id: "users", icon: Users, label: "Users" },
               { id: "software", icon: Cpu, label: "Software Portal" },
               { id: "services", icon: Briefcase, label: "Services & Labs" },
+              { id: "lab_quotes", icon: School, label: "Lab Quote Requests" },
               { id: "gallery", icon: Images, label: "Gallery & Workshops" },
               { id: "training", icon: GraduationCap, label: "Training & Courses" },
               { id: "content", icon: BookOpen, label: "CMS & Support" },
@@ -2855,6 +2857,11 @@ export default function AdminDashboard() {
             </div>
           )}
 
+          {/* LAB QUOTE REQUESTS TAB */}
+          {activeTab === "lab_quotes" && (
+            <LabQuotesSection />
+          )}
+
         </main>
       </div>
     </div>
@@ -2914,6 +2921,161 @@ function GstToggleCard() {
       {!enabled && (
         <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-sm text-blue-600 dark:text-blue-400">
           ✅ No GST added — customers pay the exact product price without any tax.
+        </div>
+      )}
+    </div>
+  );
+}
+
+// ── Lab Quote Requests Section ──────────────────────────────
+function LabQuotesSection() {
+  const { data: inquiries, isLoading } = useQuery({
+    queryKey: ["adminLabQuotes"],
+    queryFn: async () => {
+      const res = await adminApi.inquiries();
+      return res.data;
+    },
+  });
+
+  // Filter only lab setup quote requests
+  const labQuotes = (inquiries || []).filter((inq: any) =>
+    inq.subject?.toLowerCase().includes("lab quote") ||
+    inq.message?.includes("[LAB SETUP QUOTE REQUEST]")
+  );
+
+  // Also show all other contact inquiries separately
+  const otherInquiries = (inquiries || []).filter((inq: any) =>
+    !(inq.subject?.toLowerCase().includes("lab quote") ||
+      inq.message?.includes("[LAB SETUP QUOTE REQUEST]"))
+  );
+
+  // Parse lab quote structured message
+  const parseQuoteDetails = (message: string) => {
+    const details: Record<string, string> = {};
+    const lines = message.split("\n");
+    lines.forEach((line: string) => {
+      if (line.includes("School/Institution:")) details.school = line.split("School/Institution:")[1]?.trim() || "";
+      if (line.includes("Contact Person:")) details.person = line.split("Contact Person:")[1]?.trim() || "";
+      if (line.includes("Email:")) details.email = line.split("Email:")[1]?.trim() || "";
+      if (line.includes("Phone:")) details.phone = line.split("Phone:")[1]?.trim() || "";
+      if (line.includes("Address:")) details.address = line.split("Address:")[1]?.trim() || "";
+      if (line.includes("Selected Package:")) details.package = line.split("Selected Package:")[1]?.trim() || "";
+    });
+    // Extract notes after the second separator
+    const notesSplit = message.split("Additional Notes/Requirements:");
+    if (notesSplit[1]) details.notes = notesSplit[1].trim();
+    return details;
+  };
+
+  if (isLoading) {
+    return <div className="flex justify-center p-12"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>;
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Lab Quote Requests */}
+      <div className="glass-card p-6 border bg-card/50">
+        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+          <School className="w-5 h-5 text-primary" /> Lab Setup Quote Requests
+          <Badge className="ml-2">{labQuotes.length}</Badge>
+        </h3>
+
+        {labQuotes.length === 0 ? (
+          <div className="text-center py-12 text-muted-foreground">
+            <School className="w-12 h-12 mx-auto mb-3 opacity-30" />
+            <p className="text-sm">No lab quote requests received yet.</p>
+            <p className="text-xs mt-1">They will appear here when schools submit the "Request a Quote" form on the Lab Setup page.</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {labQuotes.map((inq: any) => {
+              const d = parseQuoteDetails(inq.message || "");
+              return (
+                <div key={inq.id} className="border border-border rounded-xl p-5 bg-background/50 hover:border-primary/40 transition-colors">
+                  <div className="flex items-start justify-between mb-3">
+                    <div>
+                      <h4 className="font-bold text-base">{d.school || inq.name}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {new Date(inq.created_at).toLocaleString("en-IN", { dateStyle: "medium", timeStyle: "short" })}
+                      </p>
+                    </div>
+                    <Badge variant="outline" className="text-primary border-primary/40">
+                      {d.package || "General"}
+                    </Badge>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-sm">
+                    <div className="flex items-center gap-2">
+                      <Users className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span><strong>Contact:</strong> {d.person || inq.name}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Mail className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span><strong>Email:</strong> {d.email || inq.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Phone className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span><strong>Phone:</strong> {d.phone || inq.phone || "—"}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <MapPin className="w-4 h-4 text-muted-foreground shrink-0" />
+                      <span><strong>Address:</strong> {d.address || "—"}</span>
+                    </div>
+                  </div>
+
+                  {d.notes && d.notes !== "No additional comments provided." && (
+                    <div className="mt-3 p-3 bg-muted/50 rounded-lg text-sm">
+                      <strong className="text-xs text-muted-foreground">Additional Notes:</strong>
+                      <p className="text-foreground mt-1">{d.notes}</p>
+                    </div>
+                  )}
+
+                  <div className="mt-3 flex gap-2">
+                    <a href={`mailto:${d.email || inq.email}`} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
+                      <Mail className="w-3 h-3" /> Reply via Email
+                    </a>
+                    {(d.phone || inq.phone) && (
+                      <a href={`tel:${d.phone || inq.phone}`} className="inline-flex items-center gap-1 text-xs px-3 py-1.5 rounded-lg bg-emerald-500/10 text-emerald-600 hover:bg-emerald-500/20 transition-colors">
+                        <Phone className="w-3 h-3" /> Call
+                      </a>
+                    )}
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
+
+      {/* Other general inquiries */}
+      {otherInquiries.length > 0 && (
+        <div className="glass-card p-6 border bg-card/50">
+          <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
+            <Mail className="w-5 h-5 text-muted-foreground" /> Other Contact Inquiries
+            <Badge variant="secondary" className="ml-2">{otherInquiries.length}</Badge>
+          </h3>
+          <div className="border border-border rounded-lg overflow-hidden">
+            <table className="w-full text-sm text-left">
+              <thead className="bg-muted/50 text-muted-foreground">
+                <tr>
+                  <th className="px-4 py-3 font-medium">Name</th>
+                  <th className="px-4 py-3 font-medium">Email</th>
+                  <th className="px-4 py-3 font-medium">Subject</th>
+                  <th className="px-4 py-3 font-medium">Date</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {otherInquiries.map((inq: any) => (
+                  <tr key={inq.id} className="hover:bg-muted/30">
+                    <td className="px-4 py-3 font-medium">{inq.name}</td>
+                    <td className="px-4 py-3">{inq.email}</td>
+                    <td className="px-4 py-3 text-muted-foreground">{inq.subject || "—"}</td>
+                    <td className="px-4 py-3 text-xs">{new Date(inq.created_at).toLocaleDateString("en-IN")}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </div>
       )}
     </div>

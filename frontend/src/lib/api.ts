@@ -153,6 +153,7 @@ export const trainingApi = {
 export const cmsApi = {
   getPage: (pageKey: string) => api.get(`/cms/pages/${pageKey}`),
   getSettings: () => api.get("/cms/settings"),
+  contact: (data: Record<string, string>) => api.post("/contact", data),
 };
 
 export const publicApi = {
