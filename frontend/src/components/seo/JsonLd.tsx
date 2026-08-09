@@ -42,12 +42,12 @@ export function ProductJsonLd({
     },
     ...(rating && reviewCount
       ? {
-          aggregateRating: {
-            "@type": "AggregateRating",
-            ratingValue: rating.toString(),
-            reviewCount: reviewCount.toString(),
-          },
-        }
+        aggregateRating: {
+          "@type": "AggregateRating",
+          ratingValue: rating.toString(),
+          reviewCount: reviewCount.toString(),
+        },
+      }
       : {}),
   };
 
@@ -132,7 +132,7 @@ export function OrganizationJsonLd() {
     "@type": "Organization",
     name: "GenBots",
     url: "https://genbots.in",
-    logo: "https://genbots.in/logo.png",
+    logo: "https://genbots.in/logo.jpg",
     description:
       "India's leading IoT, Robotics & AI solutions company. Premium products for makers, students, and enterprises.",
     foundingDate: "2018",

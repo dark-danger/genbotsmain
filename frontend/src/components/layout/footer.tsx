@@ -68,7 +68,7 @@ export function Footer() {
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
               <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center overflow-hidden">
-                <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain bg-white" />
+                <img src="/logo.jpg" alt="GenBots Logo" className="w-full h-full object-contain bg-white" />
               </div>
               <span className="text-xl font-bold">
                 Gen<span className="gradient-text">Bots</span>
