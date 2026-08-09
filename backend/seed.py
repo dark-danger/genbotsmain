@@ -74,16 +74,7 @@ async def seed_database():
         await db.flush()
 
         # ── Products ─────────────────────────────────────────
-        products_data = [
-            {"name": "GenBots IoT Starter Kit", "slug": "genbots-iot-starter-kit", "sku": "GB-IOT-001", "price": 2499.00, "compare_at_price": 3499.00, "stock_quantity": 150, "category_id": cats[0].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "Complete IoT learning kit with 20+ sensors, ESP32, and project guide", "description": "The GenBots IoT Starter Kit is a comprehensive package designed for students, hobbyists, and professionals. Includes ESP32 board, 20+ sensors, breadboard, jumper wires, and a detailed project guide with 15 hands-on projects."},
-            {"name": "Arduino Uno R4 WiFi", "slug": "arduino-uno-r4-wifi", "sku": "ARD-UNO-R4W", "price": 1899.00, "compare_at_price": 2199.00, "stock_quantity": 200, "category_id": cats[1].id, "brand_id": brands[1].id, "status": "active", "is_featured": True, "short_description": "Official Arduino Uno R4 with built-in WiFi and BLE"},
-            {"name": "ESP32-S3 DevKit", "slug": "esp32-s3-devkit", "sku": "ESP-S3-DK", "price": 799.00, "stock_quantity": 300, "category_id": cats[2].id, "brand_id": brands[2].id, "status": "active", "is_featured": True, "short_description": "ESP32-S3 development board with AI acceleration"},
-            {"name": "GenBots Robotics Pro Kit", "slug": "genbots-robotics-pro-kit", "sku": "GB-ROB-PRO", "price": 4999.00, "compare_at_price": 6999.00, "stock_quantity": 75, "category_id": cats[3].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "Advanced robotics kit with 6-DOF arm, chassis, and AI vision module"},
-            {"name": "STEM Explorer Kit", "slug": "stem-explorer-kit", "sku": "GB-STEM-EXP", "price": 1999.00, "stock_quantity": 120, "category_id": cats[4].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "40+ STEM experiments for schools and learning centers"},
-            {"name": "AI Vision Module", "slug": "ai-vision-module", "sku": "GB-AI-VIS", "price": 3499.00, "stock_quantity": 50, "category_id": cats[5].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "Camera module with onboard AI for object detection and recognition"},
-            {"name": "Smart Home Hub", "slug": "smart-home-hub", "sku": "GB-SH-HUB", "price": 5999.00, "compare_at_price": 7499.00, "stock_quantity": 40, "category_id": cats[7].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "Central hub for GenBots home automation ecosystem"},
-            {"name": "Sensor Mega Pack (50 pcs)", "slug": "sensor-mega-pack", "sku": "GB-SEN-50", "price": 3999.00, "stock_quantity": 90, "category_id": cats[6].id, "brand_id": brands[0].id, "status": "active", "is_featured": True, "short_description": "Collection of 50 different sensors for Arduino and ESP32"},
-        ]
+        products_data = []
         for pd in products_data:
             p = Product(**pd, tax_rate=18.00)
             db.add(p)

@@ -174,9 +174,13 @@ class ProductService:
         return product
 
     async def delete_product(self, product_id: UUID) -> bool:
+        from app.models.product import CartItem, Wishlist
+        from sqlalchemy import delete
         product = await self.get_product_by_id(product_id)
         if not product:
             return False
+        await self.db.execute(delete(CartItem).where(CartItem.product_id == product_id))
+        await self.db.execute(delete(Wishlist).where(Wishlist.product_id == product_id))
         await self.db.delete(product)
         await self.db.flush()
         return True
