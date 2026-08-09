@@ -75,7 +75,10 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
     result = await db.execute(
         select(CartItem)
         .where(CartItem.user_id == user.id)
-        .options(selectinload(CartItem.product), selectinload(CartItem.variant))
+        .options(
+            selectinload(CartItem.product).selectinload(Product.images),
+            selectinload(CartItem.variant)
+        )
     )
     cart_items = result.scalars().all()
 

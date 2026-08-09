@@ -142,7 +142,9 @@ export default function CheckoutPage() {
       const razorpay = new window.Razorpay(options);
       razorpay.open();
     } catch (err: any) {
-      setErrorMsg(err.response?.data?.detail || "Failed to create order");
+      const d = err.response?.data?.detail;
+      const msg = typeof d === "string" ? d : err.message || "Failed to create order";
+      setErrorMsg(msg);
       setStep("error");
     } finally {
       setLoading(false);
