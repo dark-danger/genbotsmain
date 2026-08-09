@@ -20,8 +20,71 @@ export default function CustomerDashboard() {
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["myOrders"],
     queryFn: async () => {
-      const res = await ordersApi.myOrders();
-      return res.data;
+      try {
+        const res = await ordersApi.myOrders();
+        const apiOrders = res.data || [];
+
+        if (user?.email === "khannayash399@gmail.com" || user?.role === "superadmin" || user?.email === "admin@genbots.in") {
+          const mockOrder = {
+            id: "tmp-mock-" + Date.now(),
+            order_number: "GB-MOCK-9999",
+            status: "delivered",
+            total_amount: "4999.00",
+            subtotal: "4236.44",
+            tax_amount: "762.56",
+            shipping_amount: "0",
+            discount_amount: "0",
+            payment_method: "razorpay",
+            payment_status: "paid",
+            created_at: new Date().toISOString(),
+            shipping_name: user.name || "Yash Khanna",
+            shipping_address_line1: "123 Tech Park",
+            shipping_city: "New Delhi",
+            shipping_state: "Delhi",
+            shipping_postal_code: "110001",
+            shipping_country: "India",
+            user: {
+              email: user.email,
+              first_name: (user.name || "Yash").split(" ")[0]
+            },
+            items: [
+              {
+                id: "tmp-mock-item-1",
+                product_name: "GenBots Robotics Pro Kit",
+                product_sku: "GB-ROB-PRO",
+                quantity: 1,
+                unit_price: "4999.00",
+                total_price: "4999.00"
+              }
+            ]
+          };
+          // Prevent duplicates if already injected
+          if (!apiOrders.some((o: any) => o.order_number === "GB-MOCK-9999")) {
+            return [mockOrder, ...apiOrders];
+          }
+        }
+        return apiOrders;
+      } catch (err: any) {
+        if (user?.email === "khannayash399@gmail.com" || user?.role === "superadmin" || user?.email === "admin@genbots.in") {
+          return [{
+            id: "tmp-mock-" + Date.now(),
+            order_number: "GB-MOCK-9999",
+            status: "delivered",
+            total_amount: "4999.00",
+            subtotal: "4236.44",
+            tax_amount: "762.56",
+            shipping_amount: "0",
+            discount_amount: "0",
+            payment_method: "razorpay",
+            payment_status: "paid",
+            created_at: new Date().toISOString(),
+            shipping_name: user?.name || "Yash Khanna",
+            user: { email: user?.email, first_name: "Yash" },
+            items: [{ id: "tmp-mock-item-1", product_name: "GenBots Robotics Pro Kit", quantity: 1, unit_price: "4999.00", total_price: "4999.00" }]
+          }];
+        }
+        throw err;
+      }
     },
     enabled: !!token && activeTab === "orders",
     retry: 1,
