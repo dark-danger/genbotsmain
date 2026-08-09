@@ -27,7 +27,10 @@ async def get_cart(db: DbSession, user: CurrentUser):
     result = await db.execute(
         select(CartItem)
         .where(CartItem.user_id == user.id)
-        .options(selectinload(CartItem.product), selectinload(CartItem.variant))
+        .options(
+            selectinload(CartItem.product).selectinload(Product.images),
+            selectinload(CartItem.variant)
+        )
         .order_by(CartItem.created_at.desc())
     )
     items = result.scalars().all()
