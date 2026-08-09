@@ -235,3 +235,8 @@ export const mediaApi = {
   list: (folder?: string) => adminAxios.get("/media", { params: folder ? { folder } : {} }),
   delete: (id: string) => adminAxios.delete(`/media/${id}`),
 };
+
+export const settingsApi = {
+  get: () => api.get("/settings"),
+  update: (data: Record<string, unknown>) => adminAxios.post("/settings", data),
+};

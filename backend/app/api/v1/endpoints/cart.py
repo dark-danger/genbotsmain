@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from app.core.deps import DbSession, CurrentUser
 from app.models.product import CartItem, Product
+from app.api.v1.endpoints.settings import get_settings
 
 router = APIRouter(prefix="/cart", tags=["Cart"])
 
@@ -56,13 +57,17 @@ async def get_cart(db: DbSession, user: CurrentUser):
             "variant_name": item.variant.name if item.variant else None,
         })
 
+    settings = get_settings()
+    tax_rate = 18 if settings.get("enable_gst") else 0
+    tax_amount = round(total * (tax_rate / 100), 2)
+
     return {
         "items": cart_items,
         "item_count": sum(i["quantity"] for i in cart_items),
         "subtotal": total,
-        "tax_rate": 18,
-        "tax_amount": round(total * 0.18, 2),
-        "total": round(total * 1.18, 2),
+        "tax_rate": tax_rate,
+        "tax_amount": tax_amount,
+        "total": round(total + tax_amount, 2),
     }
 
 

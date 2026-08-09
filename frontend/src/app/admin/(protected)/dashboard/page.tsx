@@ -17,7 +17,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth";
 import { useAdminAuthStore } from "@/store/adminAuth";
 import {
-  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi
+  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi
 } from "@/lib/api";
 import { generateInvoice, generatePurchaseOrder } from "@/lib/utils";
 
@@ -2524,28 +2524,93 @@ export default function AdminDashboard() {
 
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
-            <div className="glass-card p-6 border bg-card/50 max-w-2xl">
-              <h3 className="text-lg font-bold mb-6">Global Settings Configuration</h3>
-              <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Settings saved!"); }}>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Platform / Site Name</label>
-                  <Input defaultValue="GenBots Enterprise Platform" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Support Email Address</label>
-                  <Input type="email" defaultValue="support@genbots.com" />
-                </div>
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">Default Currency</label>
-                  <Input defaultValue="INR (₹)" />
-                </div>
-                <Button type="submit">Save Configurations</Button>
-              </form>
+            <div className="space-y-6 max-w-2xl">
+              {/* GST Setting */}
+              <GstToggleCard />
+
+              {/* Other Settings */}
+              <div className="glass-card p-6 border bg-card/50">
+                <h3 className="text-lg font-bold mb-6">Platform Settings</h3>
+                <form className="space-y-4" onSubmit={(e) => { e.preventDefault(); alert("Settings saved!"); }}>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Platform / Site Name</label>
+                    <Input defaultValue="GenBots Enterprise Platform" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Support Email Address</label>
+                    <Input type="email" defaultValue="support@genbots.com" />
+                  </div>
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Default Currency</label>
+                    <Input defaultValue="INR (₹)" />
+                  </div>
+                  <Button type="submit">Save Configurations</Button>
+                </form>
+              </div>
             </div>
           )}
 
         </main>
       </div>
+    </div>
+  );
+}
+
+// ── GST Toggle Card ─────────────────────────────────────────
+function GstToggleCard() {
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["storeSettings"],
+    queryFn: async () => {
+      const res = await settingsApi.get();
+      return res.data;
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (enable_gst: boolean) => settingsApi.update({ enable_gst }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["storeSettings"] });
+    },
+  });
+
+  const enabled = settings?.enable_gst ?? false;
+
+  return (
+    <div className="glass-card p-6 border bg-card/50">
+      <div className="flex items-center justify-between">
+        <div>
+          <h3 className="text-lg font-bold mb-1">GST (18%) on Orders</h3>
+          <p className="text-sm text-muted-foreground">
+            {enabled
+              ? "GST is currently enabled — 18% is added to all orders and invoices."
+              : "GST is disabled — products are billed at the price set in backend (no tax added)."}
+          </p>
+        </div>
+        <button
+          onClick={() => mutation.mutate(!enabled)}
+          disabled={isLoading || mutation.isPending}
+          className={`relative w-14 h-7 rounded-full transition-colors duration-300 focus:outline-none ${enabled ? "bg-emerald-500" : "bg-muted-foreground/30"
+            }`}
+          aria-label="Toggle GST"
+        >
+          <span
+            className={`absolute top-0.5 left-0.5 w-6 h-6 bg-white rounded-full shadow transition-transform duration-300 ${enabled ? "translate-x-7" : "translate-x-0"
+              }`}
+          />
+        </button>
+      </div>
+      {enabled && (
+        <div className="mt-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-xl text-sm text-amber-600 dark:text-amber-400">
+          ⚠️ 18% GST will be added on top of the product price at checkout and shown on invoices.
+        </div>
+      )}
+      {!enabled && (
+        <div className="mt-4 p-3 bg-blue-500/10 border border-blue-500/30 rounded-xl text-sm text-blue-600 dark:text-blue-400">
+          ✅ No GST added — customers pay the exact product price without any tax.
+        </div>
+      )}
     </div>
   );
 }

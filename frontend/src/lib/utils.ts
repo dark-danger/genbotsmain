@@ -184,8 +184,9 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
     <div class="summary">
       <div class="summary-table">
         <div class="summary-row"><span class="label">Subtotal</span><span>₹${subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        ${taxAmount > 0 ? `
         <div class="summary-row"><span class="label">CGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-        <div class="summary-row"><span class="label">SGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
+        <div class="summary-row"><span class="label">SGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
         ${shippingAmount > 0 ? `<div class="summary-row"><span class="label">Shipping</span><span>₹${shippingAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : `<div class="summary-row"><span class="label">Shipping</span><span style="color:#16a34a;">FREE</span></div>`}
         ${discountAmount > 0 ? `<div class="summary-row"><span class="label">Discount</span><span style="color:#dc2626;">-₹${discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
         <div class="summary-row total"><span>Total Amount</span><span>₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>

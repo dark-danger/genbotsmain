@@ -15,6 +15,7 @@ from sqlalchemy.orm import selectinload
 from app.core.deps import DbSession, CurrentUser
 from app.models.product import CartItem, Product
 from app.models.order import Order, OrderItem, Payment
+from app.api.v1.endpoints.settings import get_settings
 
 router = APIRouter(prefix="/orders", tags=["Orders"])
 
@@ -111,7 +112,9 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
             "total_price": item_total,
         })
 
-    tax_amount = round(subtotal * 0.18, 2)
+    settings = get_settings()
+    tax_rate = 0.18 if settings.get("enable_gst") else 0.0
+    tax_amount = round(subtotal * tax_rate, 2)
     total_amount = round(subtotal + tax_amount, 2)
 
     # 3. Create Order in DB
