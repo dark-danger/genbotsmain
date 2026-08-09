@@ -177,48 +177,14 @@ export default function AdminDashboard() {
     enabled: !!user,
   });
 
-  const MOCK_ORDER = {
-    id: "tmp-mock-000000000000",
-    order_number: "GB-MOCK-9999",
-    status: "delivered",
-    total_amount: "4999.00",
-    subtotal: "4236.44",
-    tax_amount: "762.56",
-    shipping_amount: "0",
-    discount_amount: "0",
-    payment_method: "razorpay",
-    payment_status: "paid",
-    created_at: new Date().toISOString(),
-    shipping_name: "Yash Khanna",
-    shipping_address_line1: "123 Tech Park",
-    shipping_city: "New Delhi",
-    shipping_state: "Delhi",
-    shipping_postal_code: "110001",
-    shipping_country: "India",
-    user: { email: "khannayash399@gmail.com", first_name: "Yash" },
-    items: [{
-      id: "tmp-mock-item-1",
-      product_name: "GenBots Robotics Pro Kit",
-      product_sku: "GB-ROB-PRO",
-      quantity: 1,
-      unit_price: "4999.00",
-      total_price: "4999.00"
-    }]
-  };
-
   const { data: orders, isLoading: ordersLoading } = useQuery({
     queryKey: ["adminOrders"],
     queryFn: async () => {
       try {
         const res = await adminApi.orders();
-        const data = res.data || {};
-        const items = data.items || [];
-        if (!items.some((o: any) => o.order_number === "GB-MOCK-9999")) {
-          return { ...data, items: [MOCK_ORDER, ...items] };
-        }
-        return data;
+        return res.data || { items: [] };
       } catch {
-        return { items: [MOCK_ORDER] };
+        return { items: [] };
       }
     },
     enabled: !!user,

@@ -85,56 +85,28 @@ async def get_analytics_traffic(db: DbSession, admin: AdminUser):
     today = datetime.now(timezone.utc)
     date_labels = [(today - timedelta(days=i)).strftime("%Y-%m-%d") for i in range(6, -1, -1)]
 
-    # Real-time traffic metrics
+    # Real-time traffic metrics (starting fresh empty from today)
     daily_views_data = [
-        {"date": date_labels[0], "views": 1420, "unique_visitors": 910},
-        {"date": date_labels[1], "views": 1680, "unique_visitors": 1120},
-        {"date": date_labels[2], "views": 2150, "unique_visitors": 1430},
-        {"date": date_labels[3], "views": 1940, "unique_visitors": 1280},
-        {"date": date_labels[4], "views": 2890, "unique_visitors": 1850},
-        {"date": date_labels[5], "views": 3410, "unique_visitors": 2190},
-        {"date": date_labels[6], "views": 4120, "unique_visitors": 2740},
+        {"date": date_labels[0], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[1], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[2], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[3], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[4], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[5], "views": 0, "unique_visitors": 0},
+        {"date": date_labels[6], "views": 0, "unique_visitors": 0},
     ]
 
-    top_pages = [
-        {"path": "/blog/microcontroller-beginners-guide-2026", "title": "Microcontroller Beginner's Guide 2026", "views": 5240, "category": "Blog"},
-        {"path": "/blog/dht11-temperature-humidity-sensor-setup", "title": "DHT11 Sensor Setup & IoT Dashboard", "views": 4150, "category": "Blog"},
-        {"path": "/store", "title": "GenBots Store & Products Catalog", "views": 3890, "category": "Store"},
-        {"path": "/blog/ultrasonic-sensor-hc-sr04-guide", "title": "HC-SR04 Ultrasonic Sensor Guide", "views": 3420, "category": "Blog"},
-        {"path": "/", "title": "Home Page", "views": 3100, "category": "Landing"},
-        {"path": "/blog/ir-sensor-module-working-wiring-projects", "title": "IR Sensor Module Guide", "views": 2870, "category": "Blog"},
-        {"path": "/software", "title": "Software Download Portal", "views": 2410, "category": "Software"},
-        {"path": "/lab-setup", "title": "Robotics & IoT Lab Setup", "views": 1860, "category": "Services"},
-    ]
-
-    device_breakdown = [
-        {"device": "Mobile", "percentage": 58, "count": 10200},
-        {"device": "Desktop", "percentage": 36, "count": 6330},
-        {"device": "Tablet", "percentage": 6, "count": 1050},
-    ]
-
-    browser_breakdown = [
-        {"name": "Google Chrome", "percentage": 64},
-        {"name": "Safari", "percentage": 21},
-        {"name": "Microsoft Edge", "percentage": 9},
-        {"name": "Firefox & Others", "percentage": 6},
-    ]
-
-    recent_activities = [
-        {"id": "act_101", "visitor": "Visitor #4920", "path": "/blog/microcontroller-beginners-guide-2026", "action": "Read Microcontroller Guide Blog", "device": "Mobile (Android)", "location": "New Delhi, IN", "time": "2 mins ago"},
-        {"id": "act_102", "visitor": "Visitor #4919", "path": "/store", "action": "Added Arduino Uno to Cart", "device": "Desktop (Windows)", "location": "Mumbai, IN", "time": "5 mins ago"},
-        {"id": "act_103", "visitor": "Visitor #4918", "path": "/blog/dht11-temperature-humidity-sensor-setup", "action": "Read DHT11 Sensor Article", "device": "Mobile (iOS)", "location": "Bengaluru, IN", "time": "8 mins ago"},
-        {"id": "act_104", "visitor": "Visitor #4917", "path": "/cart", "action": "Viewed Shopping Cart", "device": "Desktop (Windows)", "location": "Pune, IN", "time": "12 mins ago"},
-        {"id": "act_105", "visitor": "Visitor #4916", "path": "/software", "action": "Downloaded GenBots Arduino IDE Plugin", "device": "Desktop (Mac)", "location": "Hyderabad, IN", "time": "15 mins ago"},
-        {"id": "act_106", "visitor": "Visitor #4915", "path": "/services", "action": "Checked Lab Setup Inquiry Form", "device": "Mobile (Android)", "location": "Chandigarh, IN", "time": "22 mins ago"},
-    ]
+    top_pages = []
+    device_breakdown = []
+    browser_breakdown = []
+    recent_activities = []
 
     return {
-        "today_views": 4120,
-        "today_unique_visitors": 2740,
-        "active_users_online": 38,
-        "avg_session_duration": "4m 12s",
-        "bounce_rate": "34.2%",
+        "today_views": 0,
+        "today_unique_visitors": 0,
+        "active_users_online": 0,
+        "avg_session_duration": "0m 0s",
+        "bounce_rate": "0%",
         "daily_views": daily_views_data,
         "top_pages": top_pages,
         "device_breakdown": device_breakdown,
