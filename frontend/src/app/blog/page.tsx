@@ -2,7 +2,7 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, User, ArrowRight, Search, Tag } from "lucide-react";
+import { Calendar, User, ArrowRight, Search, Tag, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
@@ -10,18 +10,49 @@ import { useQuery } from "@tanstack/react-query";
 import { blogApi } from "@/lib/api";
 import { useState } from "react";
 import { ScrollReveal, StaggerReveal } from "@/components/animations/ScrollAnimations";
+import Image from "next/image";
 
-// Fallback static posts when API is unavailable
+// Fallback static posts when API is unavailable — sensor-focused blogs
 const fallbackPosts = [
-  { id: "1", title: "Getting Started with ESP32: A Complete Guide", slug: "getting-started-esp32-guide", excerpt: "Learn everything about ESP32 from setup to deployment.", category: "IoT", author_name: "Admin GenBots", created_at: "2026-07-10", status: "published", view_count: 1240 },
-  { id: "2", title: "Building a Smart Home with GenBots", slug: "building-smart-home-genbots", excerpt: "Transform your home with GenBots automation products.", category: "IoT", author_name: "Admin GenBots", created_at: "2026-07-08", status: "published", view_count: 890 },
-  { id: "3", title: "Top 10 Robotics Projects for Students", slug: "top-10-robotics-projects", excerpt: "Inspiring robotics project ideas for students at every level.", category: "Robotics", author_name: "Admin GenBots", created_at: "2026-07-05", status: "published", view_count: 2100 },
-  { id: "4", title: "Introduction to MQTT Protocol", slug: "introduction-mqtt-protocol", excerpt: "Understanding MQTT for IoT communications and device networking.", category: "Tutorials", author_name: "Admin GenBots", created_at: "2026-07-02", status: "published", view_count: 750 },
-  { id: "5", title: "AI at the Edge: Running ML on ESP32", slug: "ai-edge-ml-esp32", excerpt: "Deploy machine learning models on microcontrollers for edge computing.", category: "AI", author_name: "Admin GenBots", created_at: "2026-06-28", status: "published", view_count: 1580 },
-  { id: "6", title: "Setting Up Your First Robotics Lab", slug: "setting-up-robotics-lab", excerpt: "A guide for schools planning their first robotics and IoT lab.", category: "Education", author_name: "Admin GenBots", created_at: "2026-06-25", status: "published", view_count: 3200 },
+  {
+    id: "1",
+    title: "Ultrasonic Sensor HC-SR04: Complete Guide for Beginners",
+    slug: "ultrasonic-sensor-hc-sr04-guide",
+    excerpt: "Learn how the HC-SR04 ultrasonic distance sensor works, how to wire it with Arduino & ESP32, and build real-world projects like obstacle-avoiding robots and smart parking systems.",
+    category: "Sensors",
+    author_name: "GenBots Team",
+    created_at: "2026-08-05",
+    status: "published",
+    view_count: 3420,
+    cover_image: "/blog-ultrasonic-sensor.png",
+  },
+  {
+    id: "2",
+    title: "IR Sensor Module: Working, Wiring & Projects",
+    slug: "ir-sensor-module-working-wiring-projects",
+    excerpt: "Understand infrared (IR) sensor modules — how they detect obstacles, line-following applications, and step-by-step Arduino wiring guide with code examples.",
+    category: "Sensors",
+    author_name: "GenBots Team",
+    created_at: "2026-08-02",
+    status: "published",
+    view_count: 2870,
+    cover_image: "/blog-ir-sensor.png",
+  },
+  {
+    id: "3",
+    title: "DHT11 Temperature & Humidity Sensor: Setup & IoT Dashboard",
+    slug: "dht11-temperature-humidity-sensor-setup",
+    excerpt: "A complete guide to the DHT11 sensor — measure temperature & humidity, connect with Arduino/ESP32, and build a live IoT monitoring dashboard.",
+    category: "Sensors",
+    author_name: "GenBots Team",
+    created_at: "2026-07-28",
+    status: "published",
+    view_count: 4150,
+    cover_image: "/blog-dht11-sensor.png",
+  },
 ];
 
-const categories = ["All", "IoT", "Robotics", "AI", "Tutorials", "Education"];
+const categories = ["All", "Sensors", "IoT", "Robotics", "AI", "Tutorials", "Education"];
 
 export default function BlogPage() {
   const [search, setSearch] = useState("");
@@ -54,7 +85,7 @@ export default function BlogPage() {
               <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">📝 Blog</Badge>
               <h1 className="text-4xl md:text-5xl font-bold mb-4">Our <span className="gradient-text">Blog</span></h1>
               <p className="text-muted-foreground max-w-2xl mx-auto">
-                Articles, tutorials, and insights on IoT, robotics, and AI.
+                In-depth guides, tutorials, and insights on sensors, IoT, robotics, and AI.
               </p>
             </div>
           </ScrollReveal>
@@ -88,29 +119,48 @@ export default function BlogPage() {
           </ScrollReveal>
 
           {/* Blog Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
             {filtered.map((post: any, i: number) => (
-              <ScrollReveal key={post.id || post.slug} delay={i * 0.05}>
+              <ScrollReveal key={post.id || post.slug} delay={i * 0.08}>
                 <Link href={`/blog/${post.slug}`}>
-                  <div className="glass-card overflow-hidden group hover:glow-sm hover:-translate-y-1 transition-all h-full flex flex-col">
-                    <div className="h-48 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 flex items-center justify-center relative overflow-hidden">
-                      <span className="text-5xl opacity-40 group-hover:scale-125 transition-transform duration-500" aria-hidden="true">📝</span>
+                  <div className="glass-card overflow-hidden group hover:glow-sm hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
+                    {/* Cover Image */}
+                    <div className="h-52 relative overflow-hidden bg-gradient-to-br from-emerald-500/5 to-cyan-500/5">
+                      {post.cover_image ? (
+                        <img
+                          src={post.cover_image}
+                          alt={post.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center">
+                          <span className="text-5xl opacity-30 group-hover:scale-125 transition-transform duration-500" aria-hidden="true">📝</span>
+                        </div>
+                      )}
+                      {/* Gradient overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                      {/* View count badge */}
                       {post.view_count && (
-                        <span className="absolute bottom-3 right-3 text-[10px] text-muted-foreground bg-background/80 px-2 py-0.5 rounded-full backdrop-blur-sm">
-                          👁 {post.view_count}
+                        <span className="absolute top-3 right-3 text-[11px] font-medium text-white/90 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1">
+                          <Eye className="w-3 h-3" /> {post.view_count.toLocaleString()}
                         </span>
                       )}
+                      {/* Category badge on image */}
+                      <Badge className="absolute bottom-3 left-3 rounded-full gradient-bg text-white border-0 text-[10px] shadow-lg">
+                        {post.category || "General"}
+                      </Badge>
                     </div>
+
+                    {/* Content */}
                     <div className="p-6 flex-1 flex flex-col">
-                      <Badge variant="outline" className="rounded-full mb-3 w-fit">{post.category || "General"}</Badge>
-                      <h2 className="font-bold mb-2 group-hover:text-primary transition-colors line-clamp-2">{post.title}</h2>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-2 flex-1">{post.excerpt}</p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground mt-auto">
-                        <span className="flex items-center gap-1">
-                          <User className="w-3 h-3" aria-hidden="true" />{post.author_name || "GenBots"}
+                      <h2 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-snug">{post.title}</h2>
+                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">{post.excerpt}</p>
+                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-border/50">
+                        <span className="flex items-center gap-1.5">
+                          <User className="w-3.5 h-3.5" aria-hidden="true" />{post.author_name || "GenBots"}
                         </span>
-                        <span className="flex items-center gap-1">
-                          <Calendar className="w-3 h-3" aria-hidden="true" />
+                        <span className="flex items-center gap-1.5">
+                          <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
                           {new Date(post.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
                         </span>
                       </div>

@@ -90,6 +90,7 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
     .header { display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 32px; padding-bottom: 24px; border-bottom: 3px solid #7c3aed; }
     .logo-section h1 { font-size: 28px; font-weight: 800; color: #7c3aed; }
     .logo-section p { font-size: 12px; color: #6b7280; margin-top: 4px; }
+    .logo-section img { height: 60px; object-fit: contain; margin-bottom: 8px; }
     .doc-type { text-align: right; }
     .doc-type h2 { font-size: 24px; font-weight: 700; color: #1f2937; letter-spacing: 2px; }
     .doc-type .doc-num { font-size: 14px; color: #7c3aed; font-weight: 600; margin-top: 4px; }
@@ -128,9 +129,8 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
   <div class="doc-container">
     <div class="header">
       <div class="logo-section">
-        <h1>Gen<span style="color:#a855f7;">Bots</span></h1>
+        <img src="${window.location.origin}/logo.jpg" alt="GenBots Logo" />
         <p>IoT • Robotics • AI Solutions</p>
-        <p style="margin-top:8px;">GSTIN: 06AABCG1234A1Z5</p>
       </div>
       <div class="doc-type">
         <h2>${docTitle}</h2>
@@ -148,8 +148,7 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
           GenBots Technology Park<br>
           Sonipat, Haryana 131001, India<br>
           Email: billing@genbots.in<br>
-          Phone: +91 92 110 67540<br>
-          GSTIN: 06AABCG1234A1Z5
+          Phone: +91 92 110 67540
         </div>
       </div>
       <div class="party">
@@ -184,9 +183,6 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
     <div class="summary">
       <div class="summary-table">
         <div class="summary-row"><span class="label">Subtotal</span><span>₹${subtotal.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-        ${taxAmount > 0 ? `
-        <div class="summary-row"><span class="label">CGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
-        <div class="summary-row"><span class="label">SGST (9%)</span><span>₹${(taxAmount / 2).toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
         ${shippingAmount > 0 ? `<div class="summary-row"><span class="label">Shipping</span><span>₹${shippingAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : `<div class="summary-row"><span class="label">Shipping</span><span style="color:#16a34a;">FREE</span></div>`}
         ${discountAmount > 0 ? `<div class="summary-row"><span class="label">Discount</span><span style="color:#dc2626;">-₹${discountAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>` : ""}
         <div class="summary-row total"><span>Total Amount</span><span>₹${totalAmount.toLocaleString("en-IN", { minimumFractionDigits: 2 })}</span></div>
