@@ -226,6 +226,7 @@ export const adminApi = {
   reviews: () => adminAxios.get("/admin/reviews"),
   approveReview: (id: string) => adminAxios.patch(`/admin/reviews/${id}/approve`),
   deleteReview: (id: string) => adminAxios.delete(`/admin/reviews/${id}`),
+  analytics: () => adminAxios.get("/admin/analytics"),
 };
 
 export const mediaApi = {

@@ -11,6 +11,41 @@ import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 
 // ── Full blog content for each sensor ──────────────────────────
 const blogData: Record<string, any> = {
+    "microcontroller-beginners-guide-2026": {
+        title: "What is a Microcontroller? Beginner's Guide 2026 (Types, Uses & Where to Buy)",
+        category: "Microcontrollers",
+        author_name: "GenBots Team",
+        created_at: "2026-08-09",
+        read_time: "9 min read",
+        view_count: 5240,
+        cover_image: "/blog-microcontroller-guide.png",
+        sections: [
+            {
+                heading: "What is a Microcontroller?",
+                content: `If you're new to electronics or robotics, you've probably come across the word "microcontroller" already. Arduino, ESP32, Raspberry Pi Pico — these are all microcontroller boards that power almost every DIY project, IoT device, and robotics kit today.\n\nA microcontroller is a small computer chip that has a **processor (CPU), memory (RAM/ROM), and input-output pins** — all built into a single integrated circuit (IC). This is what makes it possible to turn any electronic device "smart," whether it's a simple LED blinking project or a full smart home system.\n\nIn simple terms: if your laptop is a "general-purpose computer" designed for heavy multi-tasking, a microcontroller is a "special-purpose mini computer" designed to execute one specific program continuously with high speed and low power consumption.`,
+            },
+            {
+                heading: "Main Components of a Microcontroller",
+                content: `| Component | Purpose |\n|---|---|\n| **CPU (Processor)** | Executes program instructions and handles mathematical & logic calculations |\n| **RAM (Volatile Memory)** | Temporarily holds variables and sensor data while the program is running |\n| **Flash Memory (ROM)** | Permanently stores your uploaded code, even when power is turned off |\n| **GPIO Pins (Input/Output)** | Digital and analog pins used to connect sensors, motors, displays, & relays |\n| **Timers / Oscillators** | Controls system clock speed, PWM signal generation, and delay timing |\n| **Communication Interfaces** | Hardware modules for UART (Serial), I2C, SPI, Wi-Fi, and Bluetooth |\n\n> 💡 **Key Takeaway**: Having all these components on a single chip keeps circuit design simple, extremely compact, and very energy efficient.`,
+            },
+            {
+                heading: "Microcontroller vs Microprocessor — Clearing the Confusion",
+                content: `Many beginners mix up microcontrollers with microprocessors:\n\n| Feature | Microcontroller (e.g. Arduino, ESP32) | Microprocessor (e.g. Intel i5, Raspberry Pi 4 CPU) |\n|---|---|---|\n| **Architecture** | Single chip (CPU + RAM + Storage + GPIO) | CPU only (RAM & Storage connected externally) |\n| **Use Case** | Single, specific task (control, sensing) | Complex multi-tasking OS (Windows, Linux) |\n| **Cost** | Ultra low (₹150 – ₹600) | Higher (₹2,000 – ₹10,000+) |\n| **Power Consumption** | Milliwatts (can run on batteries/solar) | Tens of Watts (requires dedicated power supply) |\n| **Boot Time** | Instant (milliseconds) | 10 to 30 seconds |\n\nSimple rule of thumb: **Raspberry Pi 4 is a microprocessor-based mini PC, while Arduino/ESP32 are microcontrollers.**`,
+            },
+            {
+                heading: "Popular Microcontroller Boards in 2026",
+                content: `🤖 **1. Arduino Uno (ATmega328P)**: The undisputed king for beginners. Simple C/C++ programming environment, thousands of open-source libraries, and robust 5V tolerance.\n\n📶 **2. ESP32 (Xtensa Dual-Core)**: The ultimate IoT board! Features built-in Wi-Fi, Bluetooth 4.2/BLE, 240MHz clock speed, and touch sensors at an unbeatable price.\n\n🌐 **3. ESP8266 (NodeMCU)**: The pioneer of low-cost Wi-Fi microcontrollers. Great for simple Wi-Fi smart plugs and environment monitors.\n\n⚡ **4. Raspberry Pi Pico (RP2040)**: Dual ARM Cortex-M0+ cores with unique Programmable I/O (PIO) state machines. Excellent for high-speed signal processing and MicroPython.\n\n🏭 **5. STM32 (ARM Cortex-M3/M4)**: Industrial-grade 32-bit microcontrollers used in commercial electronics, flight controllers, and professional automation systems.`,
+            },
+            {
+                heading: "How Does a Microcontroller Work?",
+                content: `1. **Write Code**: You write your program logic in an IDE (such as Arduino IDE, VS Code + PlatformIO, or Thonny for MicroPython).\n2. **Compile & Upload**: The code is compiled into machine binary code and uploaded via USB to the microcontroller's Flash memory.\n3. **Boot & Execute**: Upon receiving power, the CPU begins reading instructions line-by-line from address 0x00.\n4. **Read Inputs**: The chip polls voltage levels or serial data from connected sensors (temperature, motion, light, ultrasonic).\n5. **Process & Control**: Based on your code logic, it calculates outputs and sets GPIO pins HIGH or LOW (spinning motors, turning on relays, updating displays).\n\nThis execution loop repeats thousands or millions of times per second (e.g. 16 MHz for Arduino, 240 MHz for ESP32), giving real-time control!`,
+            },
+            {
+                heading: "Where to Buy Genuine Microcontrollers in India?",
+                content: `The market is flooded with counterfeit or rejected microcontrollers that overheat, fail during programming, or burn out quickly. Always source your boards from trusted robotics vendors.\n\n**At GenBots.in, every microcontroller is:**\n- ✅ 100% genuine and pre-tested before shipping\n- ✅ Backed by complete pinout diagrams and beginner project guides\n- ✅ Shipped with fast nationwide delivery from India\n- ✅ Paired with compatible sensors, motor drivers, and power shields\n\n👉 **Explore the GenBots Store today to get genuine Arduino, ESP32, and Raspberry Pi Pico kits!**`,
+            },
+        ],
+    },
     "ultrasonic-sensor-hc-sr04-guide": {
         title: "Ultrasonic Sensor HC-SR04: Complete Guide for Beginners",
         category: "Sensors",

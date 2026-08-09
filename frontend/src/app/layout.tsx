@@ -69,6 +69,7 @@ export const metadata: Metadata = {
 import Script from "next/script";
 
 import { BackToTop } from "@/components/BackToTop";
+import { VisitorTracker } from "@/components/analytics/VisitorTracker";
 
 export default function RootLayout({
   children,
@@ -105,6 +106,7 @@ export default function RootLayout({
           Skip to main content
         </a>
         <Providers>
+          <VisitorTracker />
           {children}
           <BackToTop />
         </Providers>

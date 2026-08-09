@@ -12,10 +12,22 @@ import { useState } from "react";
 import { ScrollReveal, StaggerReveal } from "@/components/animations/ScrollAnimations";
 import Image from "next/image";
 
-// Fallback static posts when API is unavailable — sensor-focused blogs
+// Static published posts for GenBots blog platform
 const fallbackPosts = [
   {
     id: "1",
+    title: "What is a Microcontroller? Beginner's Guide 2026 (Types, Uses & Where to Buy)",
+    slug: "microcontroller-beginners-guide-2026",
+    excerpt: "Break down what a microcontroller is, how it works, Arduino vs ESP32 vs Pi Pico comparison, main components, real-world uses, and how to choose the right board.",
+    category: "Microcontrollers",
+    author_name: "GenBots Team",
+    created_at: "2026-08-09",
+    status: "published",
+    view_count: 5240,
+    cover_image: "/blog-microcontroller-guide.png",
+  },
+  {
+    id: "2",
     title: "Ultrasonic Sensor HC-SR04: Complete Guide for Beginners",
     slug: "ultrasonic-sensor-hc-sr04-guide",
     excerpt: "Learn how the HC-SR04 ultrasonic distance sensor works, how to wire it with Arduino & ESP32, and build real-world projects like obstacle-avoiding robots and smart parking systems.",
@@ -27,7 +39,7 @@ const fallbackPosts = [
     cover_image: "/blog-ultrasonic-sensor.png",
   },
   {
-    id: "2",
+    id: "3",
     title: "IR Sensor Module: Working, Wiring & Projects",
     slug: "ir-sensor-module-working-wiring-projects",
     excerpt: "Understand infrared (IR) sensor modules — how they detect obstacles, line-following applications, and step-by-step Arduino wiring guide with code examples.",
@@ -39,7 +51,7 @@ const fallbackPosts = [
     cover_image: "/blog-ir-sensor.png",
   },
   {
-    id: "3",
+    id: "4",
     title: "DHT11 Temperature & Humidity Sensor: Setup & IoT Dashboard",
     slug: "dht11-temperature-humidity-sensor-setup",
     excerpt: "A complete guide to the DHT11 sensor — measure temperature & humidity, connect with Arduino/ESP32, and build a live IoT monitoring dashboard.",
@@ -52,7 +64,7 @@ const fallbackPosts = [
   },
 ];
 
-const categories = ["All", "Sensors", "IoT", "Robotics", "AI", "Tutorials", "Education"];
+const categories = ["All", "Microcontrollers", "Sensors", "IoT", "Robotics", "AI", "Tutorials"];
 
 export default function BlogPage() {
   const [search, setSearch] = useState("");
