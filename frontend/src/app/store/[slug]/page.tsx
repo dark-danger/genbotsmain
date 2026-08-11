@@ -5,7 +5,7 @@ import dynamic from "next/dynamic";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useQuery, useMutation } from "@tanstack/react-query";
-import { Star, Package, Truck, Shield, RotateCcw, ShoppingCart, Heart, Check, Loader2, Trash2 } from "lucide-react";
+import { Star, Package, Truck, Shield, RotateCcw, ShoppingCart, Heart, Check, Loader2, Trash2, Share2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar } from "@/components/ui/avatar";
 import { Textarea } from "@/components/ui/textarea";
@@ -38,6 +38,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const [wishlisted, setWishlisted] = useState(false);
   const [newReview, setNewReview] = useState("");
   const [rating, setRating] = useState(5);
+  const [copiedLink, setCopiedLink] = useState(false);
 
   // Fetch product from API
   const { data: apiProduct, isLoading, error } = useQuery({
@@ -267,13 +268,30 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">
                     {product.brand?.name || "GenBots"}
                   </span>
-                  <button
-                    onClick={() => toggleWishlistMutation.mutate()}
-                    className={`p-2 rounded-full border transition-colors ${wishlisted ? "bg-red-500/10 border-red-500 text-red-500" : "hover:bg-muted text-muted-foreground"}`}
-                    aria-label="Toggle wishlist"
-                  >
-                    <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : ""}`} />
-                  </button>
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={() => {
+                        if (typeof window !== "undefined") {
+                          navigator.clipboard.writeText(window.location.href);
+                          setCopiedLink(true);
+                          setTimeout(() => setCopiedLink(false), 2500);
+                        }
+                      }}
+                      className="p-2 rounded-full border transition-colors hover:bg-muted text-muted-foreground flex items-center gap-1 text-xs"
+                      title="Share product link"
+                      aria-label="Share product"
+                    >
+                      <Share2 className="w-4 h-4 text-primary" />
+                      {copiedLink ? <span className="text-emerald-500 font-medium">Copied!</span> : null}
+                    </button>
+                    <button
+                      onClick={() => toggleWishlistMutation.mutate()}
+                      className={`p-2 rounded-full border transition-colors ${wishlisted ? "bg-red-500/10 border-red-500 text-red-500" : "hover:bg-muted text-muted-foreground"}`}
+                      aria-label="Toggle wishlist"
+                    >
+                      <Heart className={`w-4 h-4 ${wishlisted ? "fill-current" : ""}`} />
+                    </button>
+                  </div>
                 </div>
 
                 <h1 className="text-3xl md:text-4xl font-bold mb-4">{product.name}</h1>

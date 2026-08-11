@@ -9,7 +9,7 @@ import {
   Cpu, Briefcase, BookOpen, Tag, Bell, MessageSquare, Download, Upload,
   Eye, Copy, Archive, RotateCcw, AlertTriangle, Star, CheckCircle, FileText,
   Images, GraduationCap, TrendingUp, Activity, BarChart3, Radio, Smartphone, Monitor, Globe, Clock, ArrowUpRight,
-  School, Phone, MapPin
+  School, Phone, MapPin, Share2, ExternalLink
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -382,10 +382,16 @@ export default function AdminDashboard() {
   // --- MUTATIONS ---
   const createProductMutation = useMutation({
     mutationFn: async (pData: any) => (await productsApi.create(pData)).data,
-    onSuccess: () => {
+    onSuccess: (createdProduct: any) => {
       queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
       queryClient.invalidateQueries({ queryKey: ["adminDraftProducts"] });
-      alert("Product added successfully!");
+      const productLink = typeof window !== "undefined"
+        ? `${window.location.origin}/store/${createdProduct.slug}`
+        : `/store/${createdProduct.slug}`;
+      if (typeof navigator !== "undefined" && navigator.clipboard) {
+        navigator.clipboard.writeText(productLink).catch(() => { });
+      }
+      alert(`Product added successfully!\n\nUnique Shareable Link:\n${productLink}\n\n(Link copied to clipboard)`);
       setNewProduct(initialProductState);
     },
     onError: (err: any) => alert(extractErr(err, "Failed to create product"))
@@ -1603,8 +1609,16 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3">
                             <Badge variant="default" className="bg-green-600">Active</Badge>
                           </td>
-                          <td className="px-4 py-3 flex gap-2">
-                            <Button size="icon" variant="outline" onClick={() => setEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                          <td className="px-4 py-3 flex gap-1.5 flex-wrap">
+                            <Button size="icon" variant="outline" title="Edit Product" onClick={() => setEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="outline" title="Copy Unique Link" onClick={() => {
+                              const link = `${window.location.origin}/store/${product.slug}`;
+                              navigator.clipboard.writeText(link);
+                              alert(`Copied product link:\n${link}`);
+                            }}><Share2 className="w-3.5 h-3.5 text-blue-500" /></Button>
+                            <a href={`/store/${product.slug}`} target="_blank" rel="noopener noreferrer">
+                              <Button size="icon" variant="outline" title="View Product Page"><ExternalLink className="w-3.5 h-3.5 text-emerald-500" /></Button>
+                            </a>
                             <Button size="icon" variant="outline" title="Duplicate" onClick={() => {
                               const { id, sku, ...dup } = product;
                               setNewProduct({
@@ -1615,7 +1629,7 @@ export default function AdminDashboard() {
                               });
                             }}><Copy className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="outline" title="Archive" onClick={() => updateProductMutation.mutate({ id: product.id, data: { status: "archived" } })}><Archive className="w-3.5 h-3.5 text-yellow-500" /></Button>
-                            <Button size="icon" variant="destructive" onClick={() => { if (confirm("Delete product permanently?")) deleteProductMutation.mutate(product.id); }}><Trash className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="destructive" title="Delete" onClick={() => { if (confirm("Delete product permanently?")) deleteProductMutation.mutate(product.id); }}><Trash className="w-3.5 h-3.5" /></Button>
                           </td>
                         </tr>
                       ))}

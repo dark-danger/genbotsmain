@@ -18,10 +18,39 @@ class ProductService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    async def _generate_unique_slug(self, base_name: str, requested_slug: Optional[str] = None) -> str:
+        raw_slug = requested_slug or slugify(base_name or "product")
+        if not raw_slug:
+            raw_slug = "product"
+        slug = raw_slug
+        counter = 1
+        while True:
+            existing = await self.db.execute(select(Product.id).where(Product.slug == slug))
+            if not existing.scalar_one_or_none():
+                return slug
+            slug = f"{raw_slug}-{counter}"
+            counter += 1
+
+    async def _generate_unique_sku(self, requested_sku: Optional[str] = None) -> str:
+        from uuid import uuid4
+        base_sku = (requested_sku or "").strip()
+        if not base_sku:
+            base_sku = f"GEN-{uuid4().hex[:6].upper()}"
+        sku = base_sku
+        counter = 1
+        while True:
+            existing = await self.db.execute(select(Product.id).where(Product.sku == sku))
+            if not existing.scalar_one_or_none():
+                return sku
+            sku = f"{base_sku}-{counter}"
+            counter += 1
+
     async def create_product(self, data: ProductCreate) -> Product:
-        slug = data.slug or slugify(data.name)
+        slug = await self._generate_unique_slug(data.name, data.slug)
+        sku = await self._generate_unique_sku(data.sku)
+
         product = Product(
-            name=data.name, slug=slug, sku=data.sku,
+            name=data.name, slug=slug, sku=sku,
             description=data.description, short_description=data.short_description,
             category_id=data.category_id, brand_id=data.brand_id,
             price=data.price, compare_at_price=data.compare_at_price,

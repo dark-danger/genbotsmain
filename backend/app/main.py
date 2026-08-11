@@ -51,6 +51,7 @@ UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")
+    app.mount("/api/backend/uploads", StaticFiles(directory=UPLOAD_DIR), name="api_backend_uploads")
 except Exception as _mount_err:
     logger.warning(f"Could not mount /uploads static directory: {_mount_err}")
 

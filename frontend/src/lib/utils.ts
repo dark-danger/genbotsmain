@@ -18,9 +18,14 @@ const FALLBACK_IMAGES: Record<string, string> = {
 
 export function resolveImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== "string" || !url.trim()) return FALLBACK_IMAGES.default
-  const cleanUrl = url.trim()
+  let cleanUrl = url.trim()
 
-  // Already an absolute URL - return as-is
+  // Clean up legacy hardcoded localhost URLs if stored in DB
+  if (cleanUrl.includes("localhost:8000")) {
+    cleanUrl = cleanUrl.replace(/^https?:\/\/localhost:8000/, "")
+  }
+
+  // Already a full external/data URL (e.g. Unsplash, S3, data:image)
   if (
     cleanUrl.startsWith("http://") ||
     cleanUrl.startsWith("https://") ||
@@ -30,27 +35,14 @@ export function resolveImageUrl(url: string | null | undefined): string {
     return cleanUrl
   }
 
-  // Paths that go through Vercel rewrite (production) - already routable by browser as-is
-  if (cleanUrl.startsWith("/api/backend/uploads/") || cleanUrl.startsWith("/api/backend/")) {
+  // Relative upload or API paths (/uploads/..., /api/backend/uploads/...)
+  // Browsers automatically resolve relative paths against current origin (e.g. https://thegenbots.in/uploads/...)
+  if (cleanUrl.startsWith("/")) {
     return cleanUrl
   }
 
-  // Local /uploads/... paths - need backend host prefix locally
-  if (cleanUrl.startsWith("/uploads/")) {
-    // In production/Vercel environment backed URLs already have /api/backend prefix from backend
-    // Locally, prepend NEXT_PUBLIC_API_URL base or localhost:8000
-    const apiUrl = typeof process !== "undefined" ? process.env.NEXT_PUBLIC_API_URL : undefined
-    if (apiUrl) {
-      // Strip /api/v1 or /api/backend suffix to get base host
-      const backendBase = apiUrl.replace(/\/api\/v1\/?$/, "").replace(/\/api\/backend\/?$/, "")
-      return `${backendBase}${cleanUrl}`
-    }
-    // Default to localhost for local development
-    return `http://localhost:8000${cleanUrl}`
-  }
-
-  // Fallback: relative path with no leading slash
-  return `http://localhost:8000/${cleanUrl}`
+  // Fallback for paths missing leading slash
+  return `/${cleanUrl}`
 }
 
 export function getProductImage(product: any): string {
