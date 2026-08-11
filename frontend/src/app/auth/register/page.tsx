@@ -16,13 +16,13 @@ export default function RegisterPage() {
     const fd = new FormData(e.currentTarget);
     try {
       const data: Record<string, string> = {
-        email: fd.get("email") as string,
+        email: ((fd.get("email") as string) || "").toLowerCase().trim(),
         password: fd.get("password") as string,
         first_name: fd.get("first_name") as string,
         last_name: fd.get("last_name") as string,
       };
       if (fd.get("phone")) data.phone = fd.get("phone") as string;
-      
+
       await authApi.register(data);
       window.location.href = "/auth/login?registered=true";
     } catch (err: any) {

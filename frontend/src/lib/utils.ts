@@ -16,23 +16,47 @@ const FALLBACK_IMAGES: Record<string, string> = {
   default: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80",
 }
 
+export function resolveImageUrl(url: string | null | undefined): string {
+  if (!url || typeof url !== "string" || !url.trim()) return FALLBACK_IMAGES.default
+  const cleanUrl = url.trim()
+  if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://") || cleanUrl.startsWith("data:") || cleanUrl.startsWith("blob:")) {
+    return cleanUrl
+  }
+  const backendHost = process.env.NEXT_PUBLIC_API_URL
+    ? process.env.NEXT_PUBLIC_API_URL.replace(/\/api\/v1\/?$/, "").replace(/\/api\/backend\/?$/, "")
+    : "http://localhost:8000"
+  return `${backendHost}${cleanUrl.startsWith("/") ? "" : "/"}${cleanUrl}`
+}
+
 export function getProductImage(product: any): string {
   if (!product) return FALLBACK_IMAGES.default
 
+  if (typeof product === "string" && product.trim()) {
+    return resolveImageUrl(product)
+  }
+
+  let url = ""
   // Check images array
   if (Array.isArray(product.images) && product.images.length > 0) {
-    const first = product.images[0]
-    if (typeof first === "string" && first.trim()) return first
-    if (first && typeof first === "object") {
-      const url = first.url || first.image_url || first.src
-      if (url && typeof url === "string" && url.trim()) return url
+    const primary = product.images.find((i: any) => typeof i === "object" && i.is_primary)
+    const first = primary || product.images[0]
+    if (typeof first === "string" && first.trim()) url = first
+    else if (first && typeof first === "object") {
+      const u = first.url || first.image_url || first.src
+      if (u && typeof u === "string" && u.trim()) url = u
     }
   }
 
   // Check direct properties
-  if (typeof product.image === "string" && product.image.trim()) return product.image
-  if (typeof product.image_url === "string" && product.image_url.trim()) return product.image_url
-  if (typeof product.product_image === "string" && product.product_image.trim()) return product.product_image
+  if (!url) {
+    if (typeof product.image === "string" && product.image.trim()) url = product.image
+    else if (typeof product.image_url === "string" && product.image_url.trim()) url = product.image_url
+    else if (typeof product.product_image === "string" && product.product_image.trim()) url = product.product_image
+  }
+
+  if (url) {
+    return resolveImageUrl(url)
+  }
 
   // Smart fallback by category or name keyword
   const name = (product.name || product.title || product.product_name || "").toLowerCase()

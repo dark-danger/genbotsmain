@@ -20,7 +20,7 @@ import { useAdminAuthStore } from "@/store/adminAuth";
 import {
   adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi
 } from "@/lib/api";
-import { generateInvoice, generatePurchaseOrder } from "@/lib/utils";
+import { generateInvoice, generatePurchaseOrder, resolveImageUrl, getProductImage } from "@/lib/utils";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -1409,7 +1409,7 @@ export default function AdminDashboard() {
                       <div className="flex gap-2 flex-wrap mt-3">
                         {(editingProduct ? editingProduct.images : newProduct.images)?.map((img: any, idx: number) => (
                           <div key={idx} className="relative w-16 h-16 rounded border overflow-hidden">
-                            <img src={img.url.startsWith("http") ? img.url : `http://localhost:8000${img.url}`} className="w-full h-full object-cover" alt="product preview" />
+                            <img src={resolveImageUrl(img.url)} className="w-full h-full object-cover" alt="product preview" />
                             {img.is_primary && <Badge className="absolute bottom-0 right-0 text-[8px] px-1 py-0 scale-90">Main</Badge>}
                           </div>
                         ))}
@@ -1541,9 +1541,7 @@ export default function AdminDashboard() {
                         <tr key={product.id} className="hover:bg-muted/30">
                           <td className="px-4 py-3 font-mono text-xs">{product.sku}</td>
                           <td className="px-4 py-3 font-medium flex items-center gap-2">
-                            {product.images?.[0] && (
-                              <img src={product.images[0].url.startsWith("http") ? product.images[0].url : `http://localhost:8000${product.images[0].url}`} className="w-8 h-8 rounded object-cover" />
-                            )}
+                            <img src={getProductImage(product)} className="w-8 h-8 rounded object-cover" alt={product.name} />
                             <span>{product.name}</span>
                           </td>
                           <td className="px-4 py-3">₹{product.price}</td>

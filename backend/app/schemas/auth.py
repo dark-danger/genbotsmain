@@ -13,6 +13,13 @@ class UserRegister(BaseModel):
     last_name: str = Field(..., min_length=1, max_length=100)
     phone: Optional[str] = None
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def lower_email(cls, v):
+        if isinstance(v, str):
+            return v.strip().lower()
+        return v
+
     @field_validator("password")
     @classmethod
     def validate_password(cls, v):
@@ -29,6 +36,13 @@ class UserLogin(BaseModel):
     email: EmailStr
     password: str
 
+    @field_validator("email", mode="before")
+    @classmethod
+    def lower_email(cls, v):
+        if isinstance(v, str):
+            return v.strip().lower()
+        return v
+
 
 class TokenResponse(BaseModel):
     access_token: str
@@ -43,6 +57,13 @@ class RefreshTokenRequest(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
+
+    @field_validator("email", mode="before")
+    @classmethod
+    def lower_email(cls, v):
+        if isinstance(v, str):
+            return v.strip().lower()
+        return v
 
 
 class ResetPasswordRequest(BaseModel):

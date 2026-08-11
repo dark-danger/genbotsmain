@@ -167,11 +167,68 @@ class ProductService:
         product = await self.get_product_by_id(product_id)
         if not product:
             return None
+
+        images_data = data.pop("images", None)
+        variants_data = data.pop("variants", None)
+        specifications_data = data.pop("specifications", None)
+
         for key, value in data.items():
             if hasattr(product, key) and value is not None:
                 setattr(product, key, value)
+
+        from sqlalchemy import delete
+
+        if images_data is not None:
+            await self.db.execute(delete(ProductImage).where(ProductImage.product_id == product_id))
+            for img in images_data:
+                if isinstance(img, dict) and img.get("url"):
+                    new_img = ProductImage(
+                        product_id=product_id,
+                        url=img["url"],
+                        alt_text=img.get("alt_text"),
+                        is_primary=img.get("is_primary", False),
+                        sort_order=img.get("sort_order", 0)
+                    )
+                    self.db.add(new_img)
+                elif hasattr(img, "url"):
+                    new_img = ProductImage(
+                        product_id=product_id,
+                        url=img.url,
+                        alt_text=getattr(img, "alt_text", None),
+                        is_primary=getattr(img, "is_primary", False),
+                        sort_order=getattr(img, "sort_order", 0)
+                    )
+                    self.db.add(new_img)
+
+        if specifications_data is not None:
+            await self.db.execute(delete(ProductSpecification).where(ProductSpecification.product_id == product_id))
+            for spec in specifications_data:
+                if isinstance(spec, dict) and spec.get("key") and spec.get("value"):
+                    new_spec = ProductSpecification(
+                        product_id=product_id,
+                        key=spec["key"],
+                        value=spec["value"],
+                        sort_order=spec.get("sort_order", 0)
+                    )
+                    self.db.add(new_spec)
+
+        if variants_data is not None:
+            await self.db.execute(delete(ProductVariant).where(ProductVariant.product_id == product_id))
+            for var in variants_data:
+                if isinstance(var, dict) and var.get("name"):
+                    new_var = ProductVariant(
+                        product_id=product_id,
+                        name=var["name"],
+                        sku=var.get("sku"),
+                        price=var.get("price"),
+                        stock_quantity=var.get("stock_quantity", 0),
+                        attributes=var.get("attributes"),
+                        is_active=var.get("is_active", True)
+                    )
+                    self.db.add(new_var)
+
         await self.db.flush()
-        return product
+        return await self.get_product_by_id(product_id)
 
     async def delete_product(self, product_id: UUID) -> bool:
         from app.models.product import CartItem, Wishlist

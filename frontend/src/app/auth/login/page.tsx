@@ -17,27 +17,28 @@ export default function LoginPage() {
     e.preventDefault();
     setLoading(true);
     const formData = new FormData(e.currentTarget);
-    const email = formData.get("email") as string;
+    const rawEmail = (formData.get("email") as string) || "";
+    const email = rawEmail.toLowerCase().trim();
     const password = formData.get("password") as string;
-    
+
     try {
       // 1. Get tokens
       const res = await authApi.login({ email, password });
       const { access_token, refresh_token } = res.data;
-      
+
       // Store in localStorage for api.ts to use if needed (or zustand will handle access_token)
       localStorage.setItem("refresh_token", refresh_token);
-      
+
       // We must set the token in the store right away so that getMe() can use it via interceptor
       // Zustand state update might be async depending on how it's used, but usually it's synchronous.
       loginStore({ id: "", email: "", role: "user" } as any, access_token);
-      
+
       // 2. Fetch user profile
       const userRes = await authApi.getMe();
-      
+
       // 3. Save proper user state
       loginStore(userRes.data, access_token);
-      
+
       window.location.href = "/dashboard";
     } catch (err: any) {
       const d = err.response?.data;

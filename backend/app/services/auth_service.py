@@ -19,13 +19,15 @@ class AuthService:
         self.db = db
 
     async def register(self, data: UserRegister) -> User:
-        result = await self.db.execute(select(User).where(User.email == data.email))
+        clean_email = data.email.strip().lower()
+        from sqlalchemy import func
+        result = await self.db.execute(select(User).where(func.lower(User.email) == clean_email))
         existing = result.scalar_one_or_none()
         if existing:
             raise ValueError("Email already registered")
 
         user = User(
-            email=data.email,
+            email=clean_email,
             hashed_password=get_password_hash(data.password),
             first_name=data.first_name,
             last_name=data.last_name,
@@ -39,7 +41,9 @@ class AuthService:
         return user
 
     async def login(self, email: str, password: str, is_admin: bool = False) -> TokenResponse:
-        result = await self.db.execute(select(User).where(User.email == email))
+        clean_email = email.strip().lower()
+        from sqlalchemy import func
+        result = await self.db.execute(select(User).where(func.lower(User.email) == clean_email))
         user = result.scalar_one_or_none()
 
         if not user or not verify_password(password, user.hashed_password):
