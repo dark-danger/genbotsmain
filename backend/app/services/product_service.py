@@ -168,12 +168,31 @@ class ProductService:
         if not product:
             return None
 
+        # Extract relationship data
         images_data = data.pop("images", None)
         variants_data = data.pop("variants", None)
         specifications_data = data.pop("specifications", None)
 
+        # Ignore relationship objects and read-only attributes that cannot be updated directly
+        IGNORED_KEYS = {
+            "id", "category", "brand", "reviews", "images", "variants", "specifications",
+            "created_at", "updated_at", "view_count", "sold_count", "avg_rating", "review_count"
+        }
+
         for key, value in data.items():
-            if hasattr(product, key) and value is not None:
+            if key in IGNORED_KEYS:
+                continue
+            if not hasattr(product, key):
+                continue
+            
+            # Handle category_id / brand_id string to UUID conversion
+            if key in ("category_id", "brand_id") and isinstance(value, str):
+                try:
+                    value = UUID(value)
+                except ValueError:
+                    value = None
+
+            if value is not None:
                 setattr(product, key, value)
 
         from sqlalchemy import delete

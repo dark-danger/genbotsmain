@@ -1194,8 +1194,60 @@ export default function AdminDashboard() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (editingProduct) {
-                        const { id, glb_url, usdz_url, ...data } = editingProduct;
-                        updateProductMutation.mutate({ id, data });
+                        // Build a clean payload - only send scalar/serializable fields to backend
+                        const {
+                          id,
+                          // strip read-only/virtual fields
+                          glb_url, usdz_url,
+                          category, brand,       // ORM objects – backend resolves via category_id
+                          created_at, updated_at, view_count, average_rating, review_count,
+                          // destructure relationships to handle manually
+                          images: rawImages,
+                          specifications: rawSpecs,
+                          variants: rawVariants,
+                          ...scalarFields
+                        } = editingProduct;
+
+                        const cleanData: Record<string, any> = { ...scalarFields };
+
+                        // Serialize images to plain objects
+                        if (rawImages && rawImages.length > 0) {
+                          cleanData.images = rawImages.map((img: any) => ({
+                            url: img.url || img.image_url || "",
+                            alt_text: img.alt_text || null,
+                            is_primary: img.is_primary || false,
+                            sort_order: img.sort_order || 0,
+                          })).filter((img: any) => img.url);
+                        }
+
+                        // Serialize specifications
+                        if (rawSpecs && rawSpecs.length > 0) {
+                          cleanData.specifications = rawSpecs.map((s: any) => ({
+                            key: s.key,
+                            value: s.value,
+                            sort_order: s.sort_order || 0,
+                          }));
+                        }
+
+                        // Serialize variants
+                        if (rawVariants && rawVariants.length > 0) {
+                          cleanData.variants = rawVariants.map((v: any) => ({
+                            name: v.name,
+                            sku: v.sku || null,
+                            price: v.price || null,
+                            stock_quantity: v.stock_quantity || 0,
+                            attributes: v.attributes || null,
+                            is_active: v.is_active !== undefined ? v.is_active : true,
+                          }));
+                        }
+
+                        // Coerce numeric fields
+                        if (cleanData.price) cleanData.price = parseFloat(cleanData.price);
+                        if (cleanData.compare_at_price) cleanData.compare_at_price = parseFloat(cleanData.compare_at_price) || null;
+                        if (cleanData.stock_quantity !== undefined) cleanData.stock_quantity = parseInt(String(cleanData.stock_quantity)) || 0;
+                        if (cleanData.weight) cleanData.weight = parseFloat(cleanData.weight) || null;
+
+                        updateProductMutation.mutate({ id, data: cleanData });
                       } else {
                         // Strip fields not in backend schema; coerce types.
                         const { glb_url, usdz_url, tags: rawTags, dimensions: rawDims, ...rest } = newProduct;
