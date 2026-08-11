@@ -1,5 +1,7 @@
 {
-    "regions": ["syd1"],
+    "regions": [
+        "syd1"
+    ],
     "services": {
         "frontend": {
             "root": "frontend",
@@ -12,7 +14,14 @@
     },
     "rewrites": [
         {
-            "source": "/api/backend(/.*)?",
+            "source": "/api/backend(/.*)?(.*)",
+            "destination": {
+                "type": "service",
+                "service": "backend"
+            }
+        },
+        {
+            "source": "/uploads(.*)",
             "destination": {
                 "type": "service",
                 "service": "backend"

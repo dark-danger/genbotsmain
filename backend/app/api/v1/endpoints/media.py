@@ -78,7 +78,13 @@ async def upload_file(
     folder_dir = os.path.join(UPLOAD_DIR, folder)
     os.makedirs(folder_dir, exist_ok=True)
     file_path = os.path.join(folder_dir, filename)
-    relative_url = f"/uploads/{folder}/{filename}"
+    # Use /api/backend/uploads path so Vercel rewrite forwards to backend,
+    # and Next.js rewrites work locally via next.config proxy too
+    IS_VERCEL = bool(os.getenv("VERCEL"))
+    if IS_VERCEL:
+        relative_url = f"/api/backend/uploads/{folder}/{filename}"
+    else:
+        relative_url = f"/uploads/{folder}/{filename}"
     
     # 3. File Optimization & Compression (Images only)
     temp_path = file_path + ".tmp"
