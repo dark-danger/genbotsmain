@@ -320,6 +320,8 @@ class ProductService:
             select(Product)
             .options(
                 selectinload(Product.images),
+                selectinload(Product.variants),
+                selectinload(Product.specifications),
                 selectinload(Product.category),
                 selectinload(Product.brand),
             )
