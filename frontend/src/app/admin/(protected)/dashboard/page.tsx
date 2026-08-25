@@ -18,7 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { useAuthStore } from "@/store/auth";
 import { useAdminAuthStore } from "@/store/adminAuth";
 import {
-  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi
+  adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi, publicApi
 } from "@/lib/api";
 import { generateInvoice, generatePurchaseOrder, resolveImageUrl, getProductImage } from "@/lib/utils";
 
@@ -172,6 +172,17 @@ export default function AdminDashboard() {
     excerpt: "",
     content: "",
     status: "draft",
+  });
+
+  // --- FORM STATE FOR FEEDBACK / TESTIMONIALS ---
+  const [isAddFeedbackOpen, setIsAddFeedbackOpen] = useState(false);
+  const [newFeedback, setNewFeedback] = useState({
+    name: "",
+    designation: "Maker / Enthusiast",
+    company: "",
+    rating: 5,
+    content: "",
+    is_active: true,
   });
 
   // --- FETCH QUERIES ---
@@ -577,6 +588,24 @@ export default function AdminDashboard() {
       refetchTestimonials();
       alert("Feedback deleted successfully!");
     }
+  });
+
+  const createTestimonialMutation = useMutation({
+    mutationFn: async (data: any) => (await publicApi.submitFeedback(data)).data,
+    onSuccess: () => {
+      refetchTestimonials();
+      setIsAddFeedbackOpen(false);
+      setNewFeedback({
+        name: "",
+        designation: "Maker / Enthusiast",
+        company: "",
+        rating: 5,
+        content: "",
+        is_active: true,
+      });
+      alert("Feedback / Review created and added successfully! 🌟");
+    },
+    onError: (err: any) => alert(err.response?.data?.detail || "Failed to add feedback")
   });
 
   const markAllNotificationsReadMutation = useMutation({
@@ -3240,10 +3269,87 @@ export default function AdminDashboard() {
                       Click &ldquo;Show on Home&rdquo; on any review to instantly display it in the Testimonials section on the main website!
                     </p>
                   </div>
-                  <Button onClick={handleExportReviews} variant="outline" size="sm" className="flex items-center gap-2">
-                    <Download className="w-4 h-4" /> Export CSV
-                  </Button>
+                  <div className="flex items-center gap-2">
+                    <Button onClick={() => setIsAddFeedbackOpen(!isAddFeedbackOpen)} className="gradient-bg text-white flex items-center gap-1.5 text-xs h-8">
+                      <Plus className="w-3.5 h-3.5" /> {isAddFeedbackOpen ? "Close Form" : "Add Customer Review"}
+                    </Button>
+                    <Button onClick={handleExportReviews} variant="outline" size="sm" className="flex items-center gap-2 text-xs h-8">
+                      <Download className="w-3.5 h-3.5" /> Export CSV
+                    </Button>
+                  </div>
                 </div>
+
+                {/* ADD FEEDBACK FORM */}
+                {isAddFeedbackOpen && (
+                  <div className="glass-card p-5 border border-primary/30 bg-primary/5 rounded-xl space-y-4">
+                    <h4 className="font-bold text-sm flex items-center gap-2">
+                      <Plus className="w-4 h-4 text-primary" /> Add New Customer Review / Feedback
+                    </h4>
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Customer Name *</label>
+                        <Input
+                          value={newFeedback.name}
+                          onChange={(e) => setNewFeedback({ ...newFeedback, name: e.target.value })}
+                          placeholder="e.g. Mr. Arjun"
+                          className="h-9 text-xs rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Designation / Role</label>
+                        <Input
+                          value={newFeedback.designation}
+                          onChange={(e) => setNewFeedback({ ...newFeedback, designation: e.target.value })}
+                          placeholder="e.g. Robotics Enthusiast, Sonipat"
+                          className="h-9 text-xs rounded-lg"
+                        />
+                      </div>
+                      <div>
+                        <label className="text-xs font-medium mb-1 block">Rating (1 to 5 Stars)</label>
+                        <select
+                          value={newFeedback.rating}
+                          onChange={(e) => setNewFeedback({ ...newFeedback, rating: parseInt(e.target.value) })}
+                          className="w-full h-9 px-3 rounded-lg bg-background border border-border text-xs"
+                        >
+                          <option value="5">⭐⭐⭐⭐⭐ (5 Stars)</option>
+                          <option value="4">⭐⭐⭐⭐ (4 Stars)</option>
+                          <option value="3">⭐⭐⭐ (3 Stars)</option>
+                          <option value="2">⭐⭐ (2 Stars)</option>
+                          <option value="1">⭐ (1 Star)</option>
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium mb-1 block">Review Message *</label>
+                      <Textarea
+                        value={newFeedback.content}
+                        onChange={(e) => setNewFeedback({ ...newFeedback, content: e.target.value })}
+                        placeholder="e.g. This is good for robotics components with affordable products illl also suggest my friends too..."
+                        rows={2}
+                        className="text-xs rounded-lg"
+                      />
+                    </div>
+                    <div className="flex items-center justify-between pt-2">
+                      <label className="flex items-center gap-2 text-xs cursor-pointer">
+                        <input
+                          type="checkbox"
+                          checked={newFeedback.is_active}
+                          onChange={(e) => setNewFeedback({ ...newFeedback, is_active: e.target.checked })}
+                          className="rounded border-border"
+                        />
+                        <span className="font-medium text-emerald-600">🌟 Show directly on Home Page Testimonials</span>
+                      </label>
+                      <Button
+                        size="sm"
+                        disabled={createTestimonialMutation.isPending || !newFeedback.name || !newFeedback.content}
+                        onClick={() => createTestimonialMutation.mutate(newFeedback)}
+                        className="gradient-bg text-white text-xs h-8 px-4"
+                      >
+                        {createTestimonialMutation.isPending ? "Adding Review..." : "Save Review"}
+                      </Button>
+                    </div>
+                  </div>
+                )}
 
                 <div className="glass-card p-6 border bg-card/50">
                   <div className="border border-border rounded-lg overflow-hidden">

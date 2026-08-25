@@ -407,14 +407,15 @@ async def create_testimonial(data: TestimonialCreate, db: DbSession, admin: Admi
 @public_router.post("/feedback", response_model=TestimonialResponse, status_code=201)
 @public_router.post("/testimonials/submit", response_model=TestimonialResponse, status_code=201)
 async def submit_user_feedback(data: TestimonialCreate, db: DbSession):
-    """Allow customers and visitors to submit their reviews/feedback."""
+    """Allow customers, visitors, or admin to submit and create reviews/feedback."""
     t = Testimonial(
         name=data.name.strip(),
-        designation=data.designation.strip() if data.designation else "Verified Customer",
+        designation=data.designation.strip() if data.designation else "Customer",
         company=data.company.strip() if data.company else "",
+        avatar_url=data.avatar_url,
         content=data.content.strip(),
         rating=data.rating if data.rating and 1 <= data.rating <= 5 else 5,
-        is_active=False,  # Default to False until approved by Admin to show on home
+        is_active=data.is_active if data.is_active is not None else True,
         sort_order=0,
     )
     db.add(t)

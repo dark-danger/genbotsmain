@@ -283,6 +283,7 @@ class TestimonialCreate(BaseModel):
     avatar_url: Optional[str] = None
     content: str
     rating: int = 5
+    is_active: Optional[bool] = True
 
 class TestimonialResponse(BaseModel):
     id: UUID
