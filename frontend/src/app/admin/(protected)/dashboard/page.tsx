@@ -21,7 +21,6 @@ import {
   adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi
 } from "@/lib/api";
 import { generateInvoice, generatePurchaseOrder, resolveImageUrl, getProductImage } from "@/lib/utils";
-import { compressImageFile } from "@/lib/image-utils";
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState("overview");
@@ -631,52 +630,34 @@ export default function AdminDashboard() {
     setUploadingFile(true);
     setUploadError("");
 
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", target.startsWith("product") ? "products" : target);
+
     try {
-      let fileUrl = "";
+      const res = await mediaApi.upload(formData);
+      const fileUrl = res.data.url;
 
-      // 1. If it is an image, compress client-side to high-efficiency WebP/JPEG data URL (< 80KB)
-      if (file.type.startsWith("image/")) {
-        fileUrl = await compressImageFile(file, 1200, 0.85);
+      if (target === "product-primary") {
+        setNewProduct(prev => ({
+          ...prev,
+          images: [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map(i => ({ ...i, is_primary: false }))]
+        }));
+      } else if (target === "product-gallery") {
+        setNewProduct(prev => ({
+          ...prev,
+          images: [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
+        }));
+      } else if (target === "service") {
+        setNewService(prev => ({ ...prev, image_url: fileUrl }));
+      } else if (target === "software") {
+        setNewVersion(prev => ({ ...prev, download_url: fileUrl }));
+      } else if (target === "project-cover") {
+        setNewProject(prev => ({ ...prev, cover_image: fileUrl }));
+      } else if (target === "course-cover") {
+        setNewCourse(prev => ({ ...prev, cover_image: fileUrl }));
       }
-
-      // 2. Set image immediately into state for zero-latency preview and reliable rendering
-      if (fileUrl) {
-        if (target === "product-primary") {
-          setNewProduct(prev => ({
-            ...prev,
-            images: [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map(i => ({ ...i, is_primary: false }))]
-          }));
-        } else if (target === "product-gallery") {
-          setNewProduct(prev => ({
-            ...prev,
-            images: [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
-          }));
-        } else if (target === "service") {
-          setNewService(prev => ({ ...prev, image_url: fileUrl }));
-        } else if (target === "project-cover") {
-          setNewProject(prev => ({ ...prev, cover_image: fileUrl }));
-        } else if (target === "course-cover") {
-          setNewCourse(prev => ({ ...prev, cover_image: fileUrl }));
-        }
-      }
-
-      // 3. Sync with backend media upload endpoint
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", target.startsWith("product") ? "products" : target);
-
-      try {
-        const res = await mediaApi.upload(formData);
-        if (target === "software") {
-          setNewVersion(prev => ({ ...prev, download_url: res.data.url }));
-        }
-      } catch (backendErr) {
-        if (target === "software") {
-          throw backendErr;
-        }
-      }
-
-      alert("Image processed and added successfully!");
+      alert("File uploaded successfully and optimized!");
     } catch (err: any) {
       setUploadError(err.response?.data?.detail || "Upload failed. Check file type and size constraints.");
     } finally {
@@ -690,33 +671,20 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingFile(true);
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("folder", "products");
 
     try {
-      let fileUrl = "";
-      if (file.type.startsWith("image/")) {
-        fileUrl = await compressImageFile(file, 1200, 0.85);
-      }
-
-      if (fileUrl) {
-        setEditingProduct((prev: any) => ({
-          ...prev,
-          images: isPrimary
-            ? [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map((i: any) => ({ ...i, is_primary: false }))]
-            : [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
-        }));
-      }
-
-      const formData = new FormData();
-      formData.append("file", file);
-      formData.append("folder", "products");
-
-      try {
-        await mediaApi.upload(formData);
-      } catch {
-        // Local compression already ensured image preview and storage
-      }
-
-      alert("Image processed and added successfully!");
+      const res = await mediaApi.upload(formData);
+      const fileUrl = res.data.url;
+      setEditingProduct((prev: any) => ({
+        ...prev,
+        images: isPrimary
+          ? [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map((i: any) => ({ ...i, is_primary: false }))]
+          : [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
+      }));
+      alert("Image uploaded successfully!");
     } catch (err: any) {
       alert(err.response?.data?.detail || "Upload failed");
     } finally {
