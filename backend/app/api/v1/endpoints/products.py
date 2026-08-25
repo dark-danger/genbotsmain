@@ -345,5 +345,94 @@ async def delete_product(product_id: UUID, db: DbSession, admin: AdminUser):
     return MessageResponse(message="Product deleted successfully")
 
 
+@router.get("/{product_id}/reviews")
+async def get_product_reviews(product_id: UUID, db: DbSession):
+    """Get all reviews for a product."""
+    result = await db.execute(
+        select(Review)
+        .options(selectinload(Review.user))
+        .where(Review.product_id == product_id)
+        .order_by(Review.created_at.desc())
+    )
+    reviews = result.scalars().all()
+    return [
+        {
+            "id": r.id,
+            "product_id": r.product_id,
+            "rating": r.rating,
+            "title": r.title,
+            "comment": r.comment,
+            "is_verified_purchase": r.is_verified_purchase,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+            "user": {
+                "id": r.user.id if r.user else None,
+                "first_name": r.user.first_name if r.user else "Customer",
+                "last_name": r.user.last_name if r.user else "",
+                "avatar_url": r.user.avatar_url if r.user else None,
+            } if r.user else {"first_name": "Verified Customer", "last_name": ""}
+        }
+        for r in reviews
+    ]
+
+
+@router.post("/{product_id}/reviews", status_code=status.HTTP_201_CREATED)
+async def create_product_review(
+    product_id: UUID,
+    data: ReviewCreate,
+    db: DbSession,
+    user: OptionalUser,
+):
+    """Submit a customer review for a product."""
+    import uuid
+    from app.models.user import User
+
+    # Find product
+    prod_res = await db.execute(select(Product).where(Product.id == product_id))
+    product = prod_res.scalar_one_or_none()
+    if not product:
+        raise HTTPException(status_code=404, detail="Product not found")
+
+    user_id = user.id if user else None
+    if not user_id:
+        # Get fallback default user or admin
+        any_user = await db.execute(select(User).limit(1))
+        u = any_user.scalar_one_or_none()
+        if u:
+            user_id = u.id
+
+    if not user_id:
+        raise HTTPException(status_code=400, detail="User account required to submit review")
+
+    review = Review(
+        id=uuid.uuid4(),
+        product_id=product_id,
+        user_id=user_id,
+        rating=data.rating,
+        title=data.title or f"{data.rating}-Star Review",
+        comment=data.comment or "",
+        is_verified_purchase=True,
+        is_approved=True,
+    )
+    db.add(review)
+    await db.flush()
+
+    # Recalculate product rating & count
+    ratings_res = await db.execute(select(func.avg(Review.rating), func.count(Review.id)).where(Review.product_id == product_id))
+    avg_r, count_r = ratings_res.first()
+    product.avg_rating = float(round(avg_r, 1)) if avg_r else float(data.rating)
+    product.review_count = count_r or 1
+    await db.flush()
+
+    global_cache.clear()
+
+    return {
+        "message": "Thank you! Your product review has been submitted successfully.",
+        "review_id": review.id,
+        "avg_rating": product.avg_rating,
+        "review_count": product.review_count,
+    }
+
+
+
 
 

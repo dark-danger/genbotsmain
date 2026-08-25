@@ -105,6 +105,9 @@ export const productsApi = {
   update: (id: string, data: Record<string, unknown>) => adminAxios.patch(`/products/${id}`, data),
   delete: (id: string) => adminAxios.delete(`/products/${id}`),
   featured: (limit = 8) => api.get("/products/featured", { params: { limit } }),
+  getReviews: (productId: string) => api.get(`/products/${productId}/reviews`),
+  submitReview: (productId: string, data: { rating: number; title?: string; comment?: string }) =>
+    api.post(`/products/${productId}/reviews`, data),
 };
 
 export const blogApi = {

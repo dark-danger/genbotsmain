@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
-import { ordersApi, wishlistApi, cartApi, publicApi } from "@/lib/api";
+import { ordersApi, wishlistApi, cartApi, publicApi, productsApi } from "@/lib/api";
 import { generateInvoice, resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
@@ -112,7 +112,7 @@ export default function CustomerDashboard() {
 
   const tabs = [
     { id: "orders", icon: Package, label: "My Orders" },
-    { id: "feedback", icon: Star, label: "Write Feedback & Review" },
+    { id: "feedback", icon: Star, label: "Reviews & Feedback" },
     { id: "downloads", icon: Download, label: "Downloads" },
     { id: "wishlist", icon: Heart, label: "Wishlist" },
     { id: "addresses", icon: MapPin, label: "Addresses" },
@@ -120,6 +120,8 @@ export default function CustomerDashboard() {
     { id: "tickets", icon: Ticket, label: "Support Tickets" },
     { id: "settings", icon: Settings, label: "Account Settings" },
   ];
+
+  const [selectedProductReview, setSelectedProductReview] = useState<{ id: string; name: string; slug?: string; image?: string } | null>(null);
 
   return (
     <>
@@ -198,25 +200,44 @@ export default function CustomerDashboard() {
                               </div>
                             </div>
                             {order.items?.map((item: any) => (
-                              <div key={item.id} className="flex items-center gap-3 py-2 border-t border-border">
-                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-xs overflow-hidden shrink-0">
-                                  {item.product_image ? (
-                                    <img
-                                      src={resolveImageUrl(item.product_image)}
-                                      alt={item.product_name}
-                                      className="w-full h-full object-cover"
-                                      onError={(e) => {
-                                        (e.currentTarget as HTMLImageElement).onerror = null;
-                                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
-                                      }}
-                                    />
-                                  ) : (
-                                    "📦"
-                                  )}
+                              <div key={item.id} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 py-3 border-t border-border">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center text-xs overflow-hidden shrink-0 border">
+                                    {item.product_image ? (
+                                      <img
+                                        src={resolveImageUrl(item.product_image)}
+                                        alt={item.product_name}
+                                        className="w-full h-full object-cover"
+                                        onError={(e) => {
+                                          (e.currentTarget as HTMLImageElement).onerror = null;
+                                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                        }}
+                                      />
+                                    ) : (
+                                      "📦"
+                                    )}
+                                  </div>
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-sm font-semibold line-clamp-1">{item.product_name}</p>
+                                    <p className="text-xs text-muted-foreground">Qty: {item.quantity} × ₹{parseFloat(item.unit_price).toLocaleString("en-IN")}</p>
+                                  </div>
                                 </div>
-                                <div className="flex-1 min-w-0">
-                                  <p className="text-sm font-medium line-clamp-1">{item.product_name}</p>
-                                  <p className="text-xs text-muted-foreground">Qty: {item.quantity} × ₹{parseFloat(item.unit_price).toLocaleString("en-IN")}</p>
+                                <div className="flex items-center gap-2 shrink-0">
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-lg text-xs hover:border-amber-500 hover:text-amber-500 flex items-center gap-1"
+                                    onClick={() => {
+                                      setSelectedProductReview({
+                                        id: item.product_id || item.id,
+                                        name: item.product_name,
+                                        image: item.product_image,
+                                      });
+                                      setActiveTab("feedback");
+                                    }}
+                                  >
+                                    <Star className="w-3.5 h-3.5 fill-amber-500 text-amber-500" /> Write Review
+                                  </Button>
                                 </div>
                               </div>
                             ))}
@@ -286,7 +307,11 @@ export default function CustomerDashboard() {
 
                 {/* FEEDBACK TAB */}
                 {activeTab === "feedback" && (
-                  <FeedbackTab user={user} />
+                  <FeedbackTab
+                    user={user}
+                    selectedProduct={selectedProductReview}
+                    onClearProduct={() => setSelectedProductReview(null)}
+                  />
                 )}
 
                 {/* WISHLIST TAB */}
@@ -312,11 +337,21 @@ export default function CustomerDashboard() {
 }
 
 // ── FeedbackTab Component ────────────────────────────────
-function FeedbackTab({ user }: { user: any }) {
+function FeedbackTab({
+  user,
+  selectedProduct,
+  onClearProduct,
+}: {
+  user: any;
+  selectedProduct?: { id: string; name: string; slug?: string; image?: string } | null;
+  onClearProduct?: () => void;
+}) {
+  const [reviewType, setReviewType] = useState<"platform" | "product">(selectedProduct ? "product" : "platform");
   const [name, setName] = useState(user.name || "");
   const [designation, setDesignation] = useState("Robotics Enthusiast");
   const [company, setCompany] = useState("");
   const [rating, setRating] = useState(5);
+  const [title, setTitle] = useState("");
   const [content, setContent] = useState("");
   const [submitted, setSubmitted] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -329,16 +364,24 @@ function FeedbackTab({ user }: { user: any }) {
     }
     setSubmitting(true);
     try {
-      await publicApi.submitFeedback({
-        name: name.trim() || user.name || "Verified Customer",
-        designation: designation.trim() || "Customer",
-        company: company.trim(),
-        rating,
-        content: content.trim(),
-      });
+      if (reviewType === "product" && selectedProduct?.id) {
+        await productsApi.submitReview(selectedProduct.id, {
+          rating,
+          title: title.trim() || `${rating}-Star Product Review`,
+          comment: content.trim(),
+        });
+      } else {
+        await publicApi.submitFeedback({
+          name: name.trim() || user.name || "Verified Customer",
+          designation: designation.trim() || "Customer",
+          company: company.trim(),
+          rating,
+          content: content.trim(),
+        });
+      }
       setSubmitted(true);
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Failed to submit feedback. Please try again.");
+      alert(err.response?.data?.detail || "Failed to submit review. Please try again.");
     } finally {
       setSubmitting(false);
     }
@@ -350,19 +393,21 @@ function FeedbackTab({ user }: { user: any }) {
         <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
           <CheckCircle2 className="w-8 h-8" />
         </div>
-        <h2 className="text-2xl font-bold">Thank You for Your Feedback!</h2>
+        <h2 className="text-2xl font-bold">Thank You for Your Review!</h2>
         <p className="text-muted-foreground text-sm">
-          Your review has been submitted successfully! Once approved by the GenBots team, it will be showcased on our main home page.
+          Your review and rating have been recorded successfully. Once approved, platform testimonials will appear on our homepage!
         </p>
         <Button
           variant="outline"
           className="rounded-xl mt-4"
           onClick={() => {
             setContent("");
+            setTitle("");
             setSubmitted(false);
+            if (onClearProduct) onClearProduct();
           }}
         >
-          Submit Another Review
+          Write Another Review
         </Button>
       </div>
     );
@@ -372,16 +417,59 @@ function FeedbackTab({ user }: { user: any }) {
     <div className="max-w-2xl">
       <div className="mb-6">
         <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" /> Share Your Experience & Review
+          <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" /> Share Your Review & Feedback
         </h2>
         <p className="text-sm text-muted-foreground mt-1">
-          Tell us how GenBots products and robotics kits helped your learning and projects. Approved reviews get featured on the main homepage!
+          Review your robotics products, school lab kits, or general store experience.
         </p>
       </div>
 
+      {/* Review Type Selector */}
+      <div className="flex gap-2 p-1 bg-muted/60 rounded-xl mb-6 w-fit border">
+        <button
+          type="button"
+          onClick={() => setReviewType("platform")}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            reviewType === "platform"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          ⭐ Platform & Store Review
+        </button>
+        <button
+          type="button"
+          onClick={() => setReviewType("product")}
+          className={`px-4 py-2 rounded-lg text-xs font-semibold transition-all ${
+            reviewType === "product"
+              ? "bg-background text-foreground shadow-sm"
+              : "text-muted-foreground hover:text-foreground"
+          }`}
+        >
+          📦 Product Review {selectedProduct ? `(${selectedProduct.name.slice(0, 15)}...)` : ""}
+        </button>
+      </div>
+
+      {selectedProduct && reviewType === "product" && (
+        <div className="p-3 mb-5 border border-primary/30 rounded-xl bg-primary/5 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <span className="text-xl">📦</span>
+            <div>
+              <p className="text-xs font-bold text-primary">Reviewing Component:</p>
+              <p className="text-sm font-semibold">{selectedProduct.name}</p>
+            </div>
+          </div>
+          {onClearProduct && (
+            <Button size="sm" variant="ghost" className="text-xs" onClick={onClearProduct}>
+              Change
+            </Button>
+          )}
+        </div>
+      )}
+
       <form onSubmit={handleSubmit} className="space-y-5">
         <div>
-          <label className="text-sm font-medium mb-2 block">Rating (1 to 5 Stars)</label>
+          <label className="text-sm font-medium mb-2 block">Your Rating (1 to 5 Stars) *</label>
           <div className="flex items-center gap-2">
             {[1, 2, 3, 4, 5].map((star) => (
               <button
@@ -396,60 +484,82 @@ function FeedbackTab({ user }: { user: any }) {
                 />
               </button>
             ))}
-            <span className="text-sm font-semibold ml-2 text-yellow-600 dark:text-yellow-400">{rating} / 5 Stars</span>
+            <span className="text-sm font-semibold ml-2 text-yellow-600 dark:text-yellow-400">
+              {rating === 5 ? "⭐⭐⭐⭐⭐ Excellent" : rating === 4 ? "⭐⭐⭐⭐ Very Good" : rating === 3 ? "⭐⭐⭐ Good" : `${rating} Stars`}
+            </span>
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {reviewType === "platform" ? (
+          <>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Your Name *</label>
+                <Input
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  placeholder="e.g. Arjun Sharma"
+                  required
+                  className="rounded-xl"
+                />
+              </div>
+              <div>
+                <label className="text-sm font-medium mb-1.5 block">Role / Designation</label>
+                <Input
+                  value={designation}
+                  onChange={(e) => setDesignation(e.target.value)}
+                  placeholder="e.g. Robotics Student, Maker, Engineer"
+                  className="rounded-xl"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="text-sm font-medium mb-1.5 block">City / Institute / Company (Optional)</label>
+              <Input
+                value={company}
+                onChange={(e) => setCompany(e.target.value)}
+                placeholder="e.g. Sonipat / IIT Delhi / Tech Club"
+                className="rounded-xl"
+              />
+            </div>
+          </>
+        ) : (
           <div>
-            <label className="text-sm font-medium mb-1.5 block">Your Name *</label>
+            <label className="text-sm font-medium mb-1.5 block">Review Headline / Title</label>
             <Input
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Arjun Sharma"
-              required
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="e.g. High quality sensor, works flawlessly with Arduino!"
               className="rounded-xl"
             />
           </div>
-          <div>
-            <label className="text-sm font-medium mb-1.5 block">Role / Designation</label>
-            <Input
-              value={designation}
-              onChange={(e) => setDesignation(e.target.value)}
-              placeholder="e.g. Robotics Student, Maker, Engineer"
-              className="rounded-xl"
-            />
-          </div>
-        </div>
+        )}
 
         <div>
-          <label className="text-sm font-medium mb-1.5 block">School / College / Company (Optional)</label>
-          <Input
-            value={company}
-            onChange={(e) => setCompany(e.target.value)}
-            placeholder="e.g. IIT Delhi, Tech Enthusiast Club"
-            className="rounded-xl"
-          />
-        </div>
-
-        <div>
-          <label className="text-sm font-medium mb-1.5 block">Your Review / Feedback Message *</label>
+          <label className="text-sm font-medium mb-1.5 block">
+            {reviewType === "product" ? "Product Feedback / Comment *" : "Your Feedback & Experience Review *"}
+          </label>
           <Textarea
             value={content}
             onChange={(e) => setContent(e.target.value)}
-            placeholder="Write your honest review about GenBots kits, delivery speed, product quality, or customer support..."
+            placeholder={
+              reviewType === "product"
+                ? "Describe the hardware build quality, wiring ease, sensor precision, or packaging..."
+                : "Describe your overall shopping experience, component affordability, delivery speed, and customer service..."
+            }
             rows={4}
             required
-            className="rounded-xl"
+            className="rounded-xl resize-none"
           />
         </div>
 
         <Button
           type="submit"
+          className="gradient-bg text-white rounded-xl w-full sm:w-auto px-8"
           disabled={submitting}
-          className="gradient-bg text-white rounded-xl px-6"
         >
-          {submitting ? "Submitting Review..." : "Submit Review & Feedback"}
+          {submitting ? "Submitting Review..." : "Submit Review"}
         </Button>
       </form>
     </div>

@@ -448,9 +448,91 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
             <section className="max-w-4xl mx-auto reviews">
               <h2 className="text-3xl font-bold mb-10 text-center">What <span className="gradient-text">Customers Say</span></h2>
 
+              {/* Review Submission Card */}
+              <div className="glass-card p-6 md:p-8 rounded-2xl border border-primary/20 mb-8 bg-gradient-to-br from-primary/5 via-background to-secondary/5">
+                <h3 className="text-lg font-bold mb-2 flex items-center gap-2">
+                  <Star className="w-5 h-5 fill-amber-500 text-amber-500" /> Write a Customer Review
+                </h3>
+                <p className="text-xs text-muted-foreground mb-4">
+                  Share your experience with this robotics component to help fellow creators and students.
+                </p>
+
+                <form
+                  onSubmit={async (e) => {
+                    e.preventDefault();
+                    if (!newReview.trim()) {
+                      alert("Please write a comment or review message.");
+                      return;
+                    }
+                    try {
+                      await productsApi.submitReview(product.id, {
+                        rating,
+                        title: `${rating}-Star Rating`,
+                        comment: newReview.trim(),
+                      });
+                      setNewReview("");
+                      alert("Thank you! Your review has been submitted successfully.");
+                      router.refresh();
+                    } catch (err: any) {
+                      alert(err.response?.data?.detail || "Failed to submit review.");
+                    }
+                  }}
+                  className="space-y-4"
+                >
+                  <div>
+                    <label className="text-xs font-semibold text-muted-foreground block mb-1.5">Your Rating</label>
+                    <div className="flex items-center gap-2">
+                      {[1, 2, 3, 4, 5].map((star) => (
+                        <button
+                          key={star}
+                          type="button"
+                          onClick={() => setRating(star)}
+                          className="p-1 hover:scale-110 transition-transform"
+                        >
+                          <Star
+                            className={`w-7 h-7 ${star <= rating ? "fill-amber-500 text-amber-500" : "text-muted-foreground/40"}`}
+                          />
+                        </button>
+                      ))}
+                      <span className="text-sm font-semibold ml-2 text-amber-500">
+                        {rating === 5 ? "⭐⭐⭐⭐⭐ Excellent" : rating === 4 ? "⭐⭐⭐⭐ Very Good" : rating === 3 ? "⭐⭐⭐ Good" : `${rating} Stars`}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div>
+                    <label htmlFor="review-comment" className="text-xs font-semibold text-muted-foreground block mb-1.5">Your Review</label>
+                    <Textarea
+                      id="review-comment"
+                      value={newReview}
+                      onChange={(e) => setNewReview(e.target.value)}
+                      placeholder="Write how this component worked with your Arduino / ESP32 project or robotics lab..."
+                      rows={3}
+                      className="rounded-xl resize-none text-sm"
+                      required
+                    />
+                  </div>
+
+                  <div className="flex justify-end">
+                    <Button type="submit" className="gradient-bg text-white rounded-xl text-xs px-6">
+                      Submit Review
+                    </Button>
+                  </div>
+                </form>
+              </div>
+
               {/* Review List */}
               <div className="space-y-6">
-                {(product.reviews && product.reviews.length > 0 ? product.reviews : placeholderReviews).map((review: any) => (
+                {(product.reviews && product.reviews.length > 0 ? product.reviews : [
+                  {
+                    id: "default-r1",
+                    rating: 5,
+                    title: "Excellent quality component",
+                    comment: "Works perfectly with my Arduino setup. Exact pinout and reliable readings as described!",
+                    user: { first_name: "Verified", last_name: "Maker" },
+                    created_at: new Date().toISOString()
+                  }
+                ]).map((review: any) => (
                   <div key={review.id} className="glass-card p-6 hover:glow-sm transition-all review-card">
                     <div className="flex items-start justify-between mb-4">
                       <div className="flex items-center gap-3">
@@ -458,17 +540,20 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                           {(review.user?.first_name || review.user || "A")[0]}
                         </Avatar>
                         <div>
-                          <h4 className="font-semibold">{review.user?.first_name ? `${review.user.first_name} ${review.user.last_name || ""}` : review.user}</h4>
-                          <p className="text-xs text-muted-foreground">{review.date || "Verified Purchase"}</p>
+                          <h4 className="font-semibold">{review.user?.first_name ? `${review.user.first_name} ${review.user.last_name || ""}` : (review.user || "Customer")}</h4>
+                          <p className="text-xs text-muted-foreground">
+                            {review.created_at ? new Date(review.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) : "Verified Purchase"}
+                          </p>
                         </div>
                       </div>
-                      <div className="flex text-yellow-500" aria-label={`${review.rating} out of 5 stars`}>
+                      <div className="flex text-amber-500" aria-label={`${review.rating} out of 5 stars`}>
                         {[...Array(5)].map((_, i) => (
-                          <Star key={i} className={`w-4 h-4 ${i < review.rating ? "fill-current" : "text-muted"}`} aria-hidden="true" />
+                          <Star key={i} className={`w-4 h-4 ${i < review.rating ? "fill-amber-500 text-amber-500" : "text-muted"}`} aria-hidden="true" />
                         ))}
                       </div>
                     </div>
-                    <p className="text-muted-foreground leading-relaxed mb-4">&ldquo;{review.comment}&rdquo;</p>
+                    {review.title && <h5 className="font-semibold text-sm mb-1">{review.title}</h5>}
+                    <p className="text-muted-foreground leading-relaxed text-sm">&ldquo;{review.comment}&rdquo;</p>
                   </div>
                 ))}
               </div>
