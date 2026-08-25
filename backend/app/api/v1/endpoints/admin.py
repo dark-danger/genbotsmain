@@ -190,6 +190,44 @@ async def update_order_status(order_id: UUID, status: str, db: DbSession, admin:
     return {"message": "Order status updated", "status": status}
 
 
+@router.post("/reset-revenue")
+async def reset_revenue(db: DbSession, admin: AdminUser):
+    """Reset total revenue to 0 by setting payment_status of past test orders to pending."""
+    from sqlalchemy import update
+    await db.execute(
+        update(Order)
+        .where(Order.payment_status == "paid")
+        .values(payment_status="pending")
+    )
+    await db.flush()
+    return {"message": "Total revenue reset to 0 successfully"}
+
+
+@router.delete("/orders/{order_id}")
+async def delete_order(order_id: UUID, db: DbSession, admin: AdminUser):
+    """Delete an order and its items."""
+    from sqlalchemy import delete
+    result = await db.execute(select(Order).where(Order.id == order_id))
+    order = result.scalar_one_or_none()
+    if not order:
+        raise HTTPException(status_code=404, detail="Order not found")
+    await db.execute(delete(OrderItem).where(OrderItem.order_id == order_id))
+    await db.delete(order)
+    await db.flush()
+    return {"message": "Order deleted successfully"}
+
+
+@router.delete("/orders")
+async def delete_all_orders(db: DbSession, admin: AdminUser):
+    """Clear all past test orders."""
+    from sqlalchemy import delete
+    await db.execute(delete(OrderItem))
+    await db.execute(delete(Order))
+    await db.flush()
+    return {"message": "All test orders cleared and revenue reset to 0"}
+
+
+
 @router.get("/inquiries")
 async def list_inquiries(db: DbSession, admin: AdminUser):
     """List contact inquiries."""

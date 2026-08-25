@@ -491,7 +491,35 @@ export default function AdminDashboard() {
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => (await adminApi.updateOrderStatus(orderId, status)).data,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
       alert("Order status updated!");
+    }
+  });
+
+  const deleteOrderMutation = useMutation({
+    mutationFn: async (orderId: string) => (await adminApi.deleteOrder(orderId)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+      alert("Order deleted successfully!");
+    }
+  });
+
+  const resetRevenueMutation = useMutation({
+    mutationFn: async () => (await adminApi.resetRevenue()).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      alert("Total revenue reset to ₹0!");
+    }
+  });
+
+  const deleteAllOrdersMutation = useMutation({
+    mutationFn: async () => (await adminApi.deleteAllOrders()).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+      queryClient.invalidateQueries({ queryKey: ["adminOrders"] });
+      alert("All test orders deleted and revenue reset to ₹0!");
     }
   });
 
@@ -1234,7 +1262,38 @@ export default function AdminDashboard() {
           {activeTab === "orders" && (
             <div className="space-y-6">
               <div className="glass-card p-6 border bg-card/50">
-                <h3 className="text-lg font-bold mb-4">All Orders</h3>
+                <div className="flex flex-wrap justify-between items-center gap-3 mb-4">
+                  <div>
+                    <h3 className="text-lg font-bold">All Orders</h3>
+                    <p className="text-xs text-muted-foreground">Manage customer purchases, update fulfillment status, and generate invoices.</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="text-xs gap-1.5"
+                      onClick={() => {
+                        if (confirm("Reset total revenue back to ₹0? (Past test orders will be kept but excluded from revenue calculation)")) {
+                          resetRevenueMutation.mutate();
+                        }
+                      }}
+                    >
+                      <DollarSign className="w-3.5 h-3.5 text-emerald-500" /> Reset Revenue to ₹0
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="text-xs gap-1.5"
+                      onClick={() => {
+                        if (confirm("Are you sure you want to delete ALL test orders permanently?")) {
+                          deleteAllOrdersMutation.mutate();
+                        }
+                      }}
+                    >
+                      <Trash className="w-3.5 h-3.5" /> Clear All Orders
+                    </Button>
+                  </div>
+                </div>
                 {ordersLoading ? (
                   <div className="flex justify-center p-12"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>
                 ) : (
@@ -1248,13 +1307,14 @@ export default function AdminDashboard() {
                           <th className="px-4 py-3 font-medium">Status</th>
                           <th className="px-4 py-3 font-medium">Update Status</th>
                           <th className="px-4 py-3 font-medium">Documents</th>
+                          <th className="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
                         {orders?.items?.map((order: any) => (
                           <tr key={order.id} className="hover:bg-muted/30">
                             <td className="px-4 py-3 font-medium">#{order.order_number || order.id.slice(0, 8)}</td>
-                            <td className="px-4 py-3">{order.user?.email || "Guest"}</td>
+                            <td className="px-4 py-3">{order.user?.email || order.shipping_name || "Guest"}</td>
                             <td className="px-4 py-3 font-medium">₹{order.total_amount}</td>
                             <td className="px-4 py-3">
                               <Badge className="capitalize">{order.status}</Badge>
@@ -1292,8 +1352,26 @@ export default function AdminDashboard() {
                                 </Button>
                               </div>
                             </td>
+                            <td className="px-4 py-3 text-right">
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="w-7 h-7 text-destructive hover:bg-destructive/10"
+                                title="Delete Order"
+                                onClick={() => {
+                                  if (confirm("Delete this order?")) {
+                                    deleteOrderMutation.mutate(order.id);
+                                  }
+                                }}
+                              >
+                                <Trash className="w-3.5 h-3.5" />
+                              </Button>
+                            </td>
                           </tr>
                         ))}
+                        {(!orders?.items || orders?.items.length === 0) && (
+                          <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders yet. Real orders will appear here automatically when placed by customers.</td></tr>
+                        )}
                       </tbody>
                     </table>
                   </div>

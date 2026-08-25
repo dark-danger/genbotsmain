@@ -230,6 +230,9 @@ export const adminApi = {
   approveReview: (id: string) => adminAxios.patch(`/admin/reviews/${id}/approve`),
   deleteReview: (id: string) => adminAxios.delete(`/admin/reviews/${id}`),
   analytics: () => adminAxios.get("/admin/analytics"),
+  resetRevenue: () => adminAxios.post("/admin/reset-revenue"),
+  deleteOrder: (id: string) => adminAxios.delete(`/admin/orders/${id}`),
+  deleteAllOrders: () => adminAxios.delete("/admin/orders"),
 };
 
 export const mediaApi = {
