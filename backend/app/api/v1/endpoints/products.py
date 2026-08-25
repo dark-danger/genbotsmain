@@ -101,6 +101,8 @@ async def sync_school_lab_products(db: DbSession):
     """Seed and sync all official GenBots School Lab products into the catalog."""
     from slugify import slugify
     import uuid
+    from sqlalchemy import select
+    from sqlalchemy.orm import selectinload
     from app.models.product import ProductImage, ProductSpecification
 
     # 1. Fetch Categories
