@@ -186,7 +186,8 @@ export default function AdminDashboard() {
     queryFn: async () => {
       try {
         const res = await adminApi.orders();
-        return res.data || { items: [] };
+        const rawList = Array.isArray(res.data) ? res.data : (res.data?.items || []);
+        return { items: rawList };
       } catch {
         return { items: [] };
       }
