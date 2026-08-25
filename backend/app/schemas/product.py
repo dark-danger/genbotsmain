@@ -107,28 +107,28 @@ class ProductCreate(BaseModel):
     specifications: list[ProductSpecSchema] = []
 
 class ProductImageResponse(BaseModel):
-    id: UUID
+    id: Optional[UUID] = None
     url: str
     alt_text: Optional[str] = None
-    is_primary: bool
-    sort_order: int
+    is_primary: bool = False
+    sort_order: int = 0
     model_config = {"from_attributes": True}
 
 class ProductVariantResponse(BaseModel):
-    id: UUID
+    id: Optional[UUID] = None
     name: str
     sku: str
     price: Optional[Decimal] = None
-    stock_quantity: int
+    stock_quantity: int = 0
     attributes: Optional[dict] = None
-    is_active: bool
+    is_active: bool = True
     model_config = {"from_attributes": True}
 
 class ProductSpecResponse(BaseModel):
-    id: UUID
+    id: Optional[UUID] = None
     key: str
     value: str
-    sort_order: int
+    sort_order: int = 0
     model_config = {"from_attributes": True}
 
 class ProductResponse(BaseModel):
@@ -142,23 +142,30 @@ class ProductResponse(BaseModel):
     brand_id: Optional[UUID] = None
     price: Decimal
     compare_at_price: Optional[Decimal] = None
-    stock_quantity: int
-    status: str
-    is_featured: bool
-    is_digital: bool
+    stock_quantity: int = 0
+    status: str = "active"
+    is_featured: bool = False
+    is_digital: bool = False
     tags: Optional[list[str]] = None
-    avg_rating: float
-    review_count: int
-    view_count: int
-    sold_count: int
+    avg_rating: Optional[float] = 0.0
+    review_count: Optional[int] = 0
+    view_count: Optional[int] = 0
+    sold_count: Optional[int] = 0
     warranty_info: Optional[str] = None
     images: list[ProductImageResponse] = []
     variants: list[ProductVariantResponse] = []
     specifications: list[ProductSpecResponse] = []
     category: Optional[CategoryResponse] = None
     brand: Optional[BrandResponse] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
+
+    @property
+    def primary_image(self) -> Optional[str]:
+        for img in self.images:
+            if img.is_primary:
+                return img.url
+        return self.images[0].url if self.images else None
 
 class ProductListResponse(BaseModel):
     id: UUID
@@ -166,18 +173,41 @@ class ProductListResponse(BaseModel):
     slug: str
     sku: str
     short_description: Optional[str] = None
+    description: Optional[str] = None
+    category_id: Optional[UUID] = None
+    brand_id: Optional[UUID] = None
     price: Decimal
     compare_at_price: Optional[Decimal] = None
-    stock_quantity: int
-    status: str
-    is_featured: bool
-    avg_rating: float
-    review_count: int
+    tax_rate: Optional[Decimal] = Decimal("18.00")
+    stock_quantity: int = 0
+    low_stock_threshold: Optional[int] = 5
+    weight: Optional[float] = None
+    dimensions: Optional[dict] = None
+    status: str = "active"
+    is_featured: bool = False
+    is_digital: Optional[bool] = False
+    tags: Optional[list[str]] = None
+    meta_title: Optional[str] = None
+    meta_description: Optional[str] = None
+    warranty_info: Optional[str] = None
+    return_policy: Optional[str] = None
+    shipping_info: Optional[str] = None
+    avg_rating: Optional[float] = 0.0
+    review_count: Optional[int] = 0
     images: list[ProductImageResponse] = []
+    specifications: list[ProductSpecResponse] = []
+    variants: list[ProductVariantResponse] = []
     category: Optional[CategoryResponse] = None
     brand: Optional[BrandResponse] = None
-    created_at: datetime
+    created_at: Optional[datetime] = None
     model_config = {"from_attributes": True}
+
+    @property
+    def primary_image(self) -> Optional[str]:
+        for img in self.images:
+            if img.is_primary:
+                return img.url
+        return self.images[0].url if self.images else None
 
 class ReviewCreate(BaseModel):
     rating: int = Field(..., ge=1, le=5)

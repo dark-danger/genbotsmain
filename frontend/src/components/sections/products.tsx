@@ -3,10 +3,12 @@
 import { motion, useInView } from "framer-motion";
 import { useRef, useEffect } from "react";
 import Link from "next/link";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { productsData } from "@/lib/data";
+import { useQuery } from "@tanstack/react-query";
+import { productsApi } from "@/lib/api";
+import { getProductImage } from "@/lib/utils";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -19,23 +21,37 @@ export function ProductsSection() {
   const gridRef = useRef<HTMLDivElement>(null);
   const isInView = useInView(ref, { once: true, margin: "-100px" });
 
+  const { data: featuredProducts, isLoading } = useQuery({
+    queryKey: ["homepageFeaturedProducts"],
+    queryFn: async () => {
+      try {
+        const res = await productsApi.featured(8);
+        return res.data;
+      } catch {
+        const fallbackRes = await productsApi.list({ page_size: 8, status: "active" });
+        return fallbackRes.data?.items || [];
+      }
+    },
+    staleTime: 60000,
+  });
+
   // GSAP stagger animation for product cards
   useEffect(() => {
-    if (!gridRef.current) return;
+    if (!gridRef.current || !featuredProducts || featuredProducts.length === 0) return;
     const cards = gridRef.current.children;
     const tween = gsap.fromTo(
       cards,
-      { opacity: 0, y: 60, scale: 0.95 },
+      { opacity: 0, y: 40, scale: 0.95 },
       {
         opacity: 1,
         y: 0,
         scale: 1,
-        duration: 0.6,
-        stagger: 0.15,
+        duration: 0.5,
+        stagger: 0.1,
         ease: "power3.out",
         scrollTrigger: {
           trigger: gridRef.current,
-          start: "top 80%",
+          start: "top 85%",
           toggleActions: "play none none reverse",
         },
       }
@@ -45,7 +61,7 @@ export function ProductsSection() {
       tween.scrollTrigger?.kill();
       tween.kill();
     };
-  }, []);
+  }, [featuredProducts]);
 
   return (
     <section ref={ref} className="py-24 relative" aria-labelledby="products-heading">
@@ -65,51 +81,68 @@ export function ProductsSection() {
           </p>
         </motion.div>
 
-        <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-          {productsData.map((product) => (
-            <Link
-              key={product.slug}
-              href={`/store/${product.slug}`}
-              className="glass-card group hover:glow-sm transition-all duration-300 hover:-translate-y-2 overflow-hidden flex flex-col"
-            >
-              <div className="h-48 bg-muted flex items-center justify-center relative overflow-hidden">
-                <img
-                  src={product.images[0]}
-                  alt={product.name}
-                  className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                  loading="lazy"
-                  width={400}
-                  height={300}
-                />
-                {product.badge && (
-                  <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-md gradient-bg text-white shadow-lg">
-                    {product.badge}
-                  </span>
-                )}
-                {/* Hover overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
-                  <span className="text-white text-xs font-medium">View Details →</span>
-                </div>
+        {isLoading ? (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {[1, 2, 3, 4].map((n) => (
+              <div key={n} className="h-72 rounded-2xl bg-muted/40 animate-pulse" />
+            ))}
+          </div>
+        ) : (
+          <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            {featuredProducts && featuredProducts.length > 0 ? (
+              featuredProducts.map((product: any) => {
+                const imgUrl = getProductImage(product);
+                return (
+                  <Link
+                    key={product.id || product.slug}
+                    href={`/store/${product.slug}`}
+                    className="glass-card group hover:glow-sm transition-all duration-300 hover:-translate-y-2 overflow-hidden flex flex-col"
+                  >
+                    <div className="h-48 bg-muted flex items-center justify-center relative overflow-hidden">
+                      <img
+                        src={imgUrl}
+                        alt={product.name}
+                        className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        loading="lazy"
+                        width={400}
+                        height={300}
+                      />
+                      {product.is_featured && (
+                        <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-md gradient-bg text-white shadow-lg">
+                          Featured
+                        </span>
+                      )}
+                      {/* Hover overlay */}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-4">
+                        <span className="text-white text-xs font-medium">View Details →</span>
+                      </div>
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                      <h3 className="font-semibold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
+                        {product.name}
+                      </h3>
+                      <div className="flex items-center gap-1 mb-3 mt-auto">
+                        <Star className="w-3.5 h-3.5 text-yellow-500 fill-current" aria-hidden="true" />
+                        <span className="text-sm font-medium">{product.avg_rating || "5.0"}</span>
+                        <span className="text-xs text-muted-foreground">({product.review_count || 0})</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="text-lg font-bold gradient-text">₹{parseFloat(product.price || "0").toLocaleString("en-IN")}</span>
+                        {product.compare_at_price && (
+                          <span className="text-xs text-muted-foreground line-through">₹{parseFloat(product.compare_at_price).toLocaleString("en-IN")}</span>
+                        )}
+                      </div>
+                    </div>
+                  </Link>
+                );
+              })
+            ) : (
+              <div className="col-span-4 text-center py-12 text-muted-foreground">
+                No featured products currently available.
               </div>
-              <div className="p-5 flex-1 flex flex-col">
-                <h3 className="font-semibold text-sm mb-2 group-hover:text-primary transition-colors line-clamp-2">
-                  {product.name}
-                </h3>
-                <div className="flex items-center gap-1 mb-3 mt-auto">
-                  <span className="text-yellow-500 text-sm" aria-hidden="true">★</span>
-                  <span className="text-sm font-medium">{product.rating}</span>
-                  <span className="text-xs text-muted-foreground">({product.reviewsCount})</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="text-lg font-bold gradient-text">₹{product.price.toLocaleString("en-IN")}</span>
-                  {product.originalPrice && (
-                    <span className="text-xs text-muted-foreground line-through">₹{product.originalPrice.toLocaleString("en-IN")}</span>
-                  )}
-                </div>
-              </div>
-            </Link>
-          ))}
-        </div>
+            )}
+          </div>
+        )}
 
         <div className="text-center mt-10">
           <Link href="/store">

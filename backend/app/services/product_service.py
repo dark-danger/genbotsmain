@@ -69,11 +69,13 @@ class ProductService:
         self.db.add(product)
         await self.db.flush()
 
-        for img_data in data.images:
+        has_primary = any(img_data.is_primary for img_data in data.images)
+        for idx, img_data in enumerate(data.images):
+            is_pri = img_data.is_primary or (not has_primary and idx == 0)
             img = ProductImage(
                 product_id=product.id, url=img_data.url,
-                alt_text=img_data.alt_text, is_primary=img_data.is_primary,
-                sort_order=img_data.sort_order,
+                alt_text=img_data.alt_text, is_primary=is_pri,
+                sort_order=img_data.sort_order if img_data.sort_order else idx,
             )
             self.db.add(img)
 
@@ -86,17 +88,27 @@ class ProductService:
             )
             self.db.add(var)
 
-        for spec_data in data.specifications:
+        for idx, spec_data in enumerate(data.specifications):
             spec = ProductSpecification(
                 product_id=product.id, key=spec_data.key,
-                value=spec_data.value, sort_order=spec_data.sort_order,
+                value=spec_data.value, sort_order=spec_data.sort_order if spec_data.sort_order else idx,
             )
             self.db.add(spec)
 
         await self.db.flush()
         return await self.get_product_by_id(product.id)
 
-    async def get_product_by_slug(self, slug: str) -> Optional[Product]:
+    async def get_product_by_slug_or_id(self, identifier: str) -> Optional[Product]:
+        # 1. Try as UUID
+        try:
+            val_uuid = UUID(identifier)
+            product = await self.get_product_by_id(val_uuid)
+            if product:
+                return product
+        except (ValueError, AttributeError):
+            pass
+
+        # 2. Try by slug
         result = await self.db.execute(
             select(Product)
             .options(
@@ -106,13 +118,16 @@ class ProductService:
                 selectinload(Product.category),
                 selectinload(Product.brand),
             )
-            .where(Product.slug == slug, Product.status == "active")
+            .where(Product.slug == identifier)
         )
         product = result.scalar_one_or_none()
         if product:
             product.view_count += 1
             await self.db.flush()
         return product
+
+    async def get_product_by_slug(self, slug: str) -> Optional[Product]:
+        return await self.get_product_by_slug_or_id(slug)
 
     async def get_product_by_id(self, product_id: UUID) -> Optional[Product]:
         result = await self.db.execute(
@@ -144,9 +159,13 @@ class ProductService:
     ):
         query = select(Product).options(
             selectinload(Product.images),
+            selectinload(Product.variants),
+            selectinload(Product.specifications),
             selectinload(Product.category),
             selectinload(Product.brand),
-        ).where(Product.status == status)
+        )
+        if status:
+            query = query.where(Product.status == status)
 
         if category_slug:
             query = query.join(Category).where(Category.slug == category_slug)
@@ -215,65 +234,71 @@ class ProductService:
                 continue
             
             # Handle category_id / brand_id string to UUID conversion
-            if key in ("category_id", "brand_id") and isinstance(value, str):
-                try:
-                    value = UUID(value)
-                except ValueError:
+            if key in ("category_id", "brand_id"):
+                if isinstance(value, str) and value.strip():
+                    try:
+                        value = UUID(value.strip())
+                    except ValueError:
+                        value = None
+                elif not value:
                     value = None
 
-            if value is not None:
-                setattr(product, key, value)
+            # Handle status mapping
+            if key == "status" and value == "published":
+                value = "active"
 
-        from sqlalchemy import delete
+            setattr(product, key, value)
 
+        # Relationships update via cascade delete-orphan
         if images_data is not None:
-            await self.db.execute(delete(ProductImage).where(ProductImage.product_id == product_id))
-            for img in images_data:
-                if isinstance(img, dict) and img.get("url"):
-                    new_img = ProductImage(
-                        product_id=product_id,
-                        url=img["url"],
-                        alt_text=img.get("alt_text"),
-                        is_primary=img.get("is_primary", False),
-                        sort_order=img.get("sort_order", 0)
-                    )
-                    self.db.add(new_img)
-                elif hasattr(img, "url"):
-                    new_img = ProductImage(
-                        product_id=product_id,
-                        url=img.url,
-                        alt_text=getattr(img, "alt_text", None),
-                        is_primary=getattr(img, "is_primary", False),
-                        sort_order=getattr(img, "sort_order", 0)
-                    )
-                    self.db.add(new_img)
+            new_images = []
+            for idx, img in enumerate(images_data):
+                url = img.get("url") if isinstance(img, dict) else getattr(img, "url", None)
+                if url:
+                    alt_text = img.get("alt_text") if isinstance(img, dict) else getattr(img, "alt_text", None)
+                    is_primary = img.get("is_primary", False) if isinstance(img, dict) else getattr(img, "is_primary", False)
+                    sort_order = img.get("sort_order", idx) if isinstance(img, dict) else getattr(img, "sort_order", idx)
+                    new_images.append(ProductImage(
+                        product_id=product.id,
+                        url=str(url).strip(),
+                        alt_text=alt_text,
+                        is_primary=bool(is_primary),
+                        sort_order=int(sort_order or 0)
+                    ))
+            if new_images and not any(img.is_primary for img in new_images):
+                new_images[0].is_primary = True
+            product.images = new_images
 
         if specifications_data is not None:
-            await self.db.execute(delete(ProductSpecification).where(ProductSpecification.product_id == product_id))
-            for spec in specifications_data:
-                if isinstance(spec, dict) and spec.get("key") and spec.get("value"):
-                    new_spec = ProductSpecification(
-                        product_id=product_id,
-                        key=spec["key"],
-                        value=spec["value"],
-                        sort_order=spec.get("sort_order", 0)
-                    )
-                    self.db.add(new_spec)
+            new_specs = []
+            for idx, spec in enumerate(specifications_data):
+                key = spec.get("key") if isinstance(spec, dict) else getattr(spec, "key", None)
+                val = spec.get("value") if isinstance(spec, dict) else getattr(spec, "value", None)
+                sort_order = spec.get("sort_order", idx) if isinstance(spec, dict) else getattr(spec, "sort_order", idx)
+                if key is not None and val is not None and str(key).strip():
+                    new_specs.append(ProductSpecification(
+                        product_id=product.id,
+                        key=str(key).strip(),
+                        value=str(val).strip(),
+                        sort_order=int(sort_order or 0)
+                    ))
+            product.specifications = new_specs
 
         if variants_data is not None:
-            await self.db.execute(delete(ProductVariant).where(ProductVariant.product_id == product_id))
+            new_vars = []
             for var in variants_data:
-                if isinstance(var, dict) and var.get("name"):
-                    new_var = ProductVariant(
-                        product_id=product_id,
-                        name=var["name"],
-                        sku=var.get("sku"),
-                        price=var.get("price"),
-                        stock_quantity=var.get("stock_quantity", 0),
-                        attributes=var.get("attributes"),
-                        is_active=var.get("is_active", True)
-                    )
-                    self.db.add(new_var)
+                name = var.get("name") if isinstance(var, dict) else getattr(var, "name", None)
+                if name:
+                    new_vars.append(ProductVariant(
+                        product_id=product.id,
+                        name=str(name),
+                        sku=var.get("sku") if isinstance(var, dict) else getattr(var, "sku", None),
+                        price=var.get("price") if isinstance(var, dict) else getattr(var, "price", None),
+                        stock_quantity=int(var.get("stock_quantity", 0) if isinstance(var, dict) else getattr(var, "stock_quantity", 0)),
+                        attributes=var.get("attributes") if isinstance(var, dict) else getattr(var, "attributes", None),
+                        is_active=bool(var.get("is_active", True) if isinstance(var, dict) else getattr(var, "is_active", True))
+                    ))
+            product.variants = new_vars
 
         await self.db.flush()
         return await self.get_product_by_id(product_id)

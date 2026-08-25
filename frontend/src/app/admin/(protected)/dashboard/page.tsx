@@ -30,11 +30,14 @@ export default function AdminDashboard() {
   // --- STATE FOR MEDIA UPLOADS ---
   const [uploadingFile, setUploadingFile] = useState(false);
   const [uploadError, setUploadError] = useState("");
+  const [customImageUrl, setCustomImageUrl] = useState("");
 
   // --- FORM STATE FOR PRODUCTS ---
   const initialProductState = {
     name: "",
     sku: "",
+    category_id: "",
+    brand_id: "",
     price: "",
     compare_at_price: "",
     tax_rate: "18.00",
@@ -53,7 +56,7 @@ export default function AdminDashboard() {
     warranty_info: "",
     return_policy: "",
     shipping_info: "",
-    images: [] as { url: string; alt_text?: string; is_primary: boolean }[],
+    images: [] as { url: string; alt_text?: string; is_primary: boolean; sort_order?: number }[],
     specifications: [] as { key: string; value: string }[],
     glb_url: "",
     usdz_url: ""
@@ -206,6 +209,18 @@ export default function AdminDashboard() {
   const { data: draftProductsData } = useQuery({
     queryKey: ["adminDraftProducts"],
     queryFn: async () => (await productsApi.list({ status: "draft" })).data,
+    enabled: !!user && activeTab === "products",
+  });
+
+  const { data: productCategories } = useQuery({
+    queryKey: ["adminProductCategories"],
+    queryFn: async () => (await productsApi.categories()).data,
+    enabled: !!user && activeTab === "products",
+  });
+
+  const { data: productBrands } = useQuery({
+    queryKey: ["adminProductBrands"],
+    queryFn: async () => (await productsApi.brands()).data,
     enabled: !!user && activeTab === "products",
   });
 
@@ -615,7 +630,7 @@ export default function AdminDashboard() {
     enabled: !!selectedSoftwareForVersions,
   });
 
-  // --- FILE UPLOAD HANDLER ---
+  // --- FILE UPLOAD HANDLERS & IMAGE MANAGEMENT ---
   const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>, target: "product-primary" | "product-gallery" | "service" | "software" | "project-cover" | "course-cover") => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -634,12 +649,12 @@ export default function AdminDashboard() {
       if (target === "product-primary") {
         setNewProduct(prev => ({
           ...prev,
-          images: [{ url: fileUrl, is_primary: true }, ...prev.images.filter(i => !i.is_primary)]
+          images: [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map(i => ({ ...i, is_primary: false }))]
         }));
       } else if (target === "product-gallery") {
         setNewProduct(prev => ({
           ...prev,
-          images: [...prev.images, { url: fileUrl, is_primary: false }]
+          images: [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
         }));
       } else if (target === "service") {
         setNewService(prev => ({ ...prev, image_url: fileUrl }));
@@ -655,6 +670,8 @@ export default function AdminDashboard() {
       setUploadError(err.response?.data?.detail || "Upload failed. Check file type and size constraints.");
     } finally {
       setUploadingFile(false);
+      // Reset the file input so same file can be uploaded again if needed
+      e.target.value = "";
     }
   };
 
@@ -672,14 +689,122 @@ export default function AdminDashboard() {
       setEditingProduct((prev: any) => ({
         ...prev,
         images: isPrimary
-          ? [{ url: fileUrl, is_primary: true }, ...(prev.images || []).filter((i: any) => !i.is_primary)]
-          : [...(prev.images || []), { url: fileUrl, is_primary: false }]
+          ? [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map((i: any) => ({ ...i, is_primary: false }))]
+          : [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
       }));
+      alert("Image uploaded successfully!");
     } catch (err: any) {
       alert(err.response?.data?.detail || "Upload failed");
     } finally {
       setUploadingFile(false);
+      e.target.value = "";
     }
+  };
+
+  const handleAddImageUrl = (urlToAdd: string) => {
+    if (!urlToAdd || !urlToAdd.trim()) return;
+    const cleanUrl = urlToAdd.trim();
+    if (editingProduct) {
+      setEditingProduct((prev: any) => {
+        const existing = prev.images || [];
+        const isPrimary = existing.length === 0;
+        return {
+          ...prev,
+          images: [...existing, { url: cleanUrl, is_primary: isPrimary, sort_order: existing.length }]
+        };
+      });
+    } else {
+      setNewProduct((prev: any) => {
+        const existing = prev.images || [];
+        const isPrimary = existing.length === 0;
+        return {
+          ...prev,
+          images: [...existing, { url: cleanUrl, is_primary: isPrimary, sort_order: existing.length }]
+        };
+      });
+    }
+    setCustomImageUrl("");
+  };
+
+  const handleRemoveProductImage = (idxToRemove: number) => {
+    if (editingProduct) {
+      setEditingProduct((prev: any) => {
+        const updated = (prev.images || []).filter((_: any, idx: number) => idx !== idxToRemove);
+        if (updated.length > 0 && !updated.some((i: any) => i.is_primary)) {
+          updated[0].is_primary = true;
+        }
+        return { ...prev, images: updated };
+      });
+    } else {
+      setNewProduct((prev: any) => {
+        const updated = (prev.images || []).filter((_: any, idx: number) => idx !== idxToRemove);
+        if (updated.length > 0 && !updated.some((i: any) => i.is_primary)) {
+          updated[0].is_primary = true;
+        }
+        return { ...prev, images: updated };
+      });
+    }
+  };
+
+  const handleSetPrimaryImage = (primaryIndex: number) => {
+    if (editingProduct) {
+      setEditingProduct((prev: any) => ({
+        ...prev,
+        images: (prev.images || []).map((img: any, idx: number) => ({
+          ...img,
+          is_primary: idx === primaryIndex
+        }))
+      }));
+    } else {
+      setNewProduct((prev: any) => ({
+        ...prev,
+        images: (prev.images || []).map((img: any, idx: number) => ({
+          ...img,
+          is_primary: idx === primaryIndex
+        }))
+      }));
+    }
+  };
+
+  const startEditingProduct = (product: any) => {
+    setEditingProduct({
+      id: product.id,
+      name: product.name || "",
+      sku: product.sku || "",
+      category_id: product.category_id || product.category?.id || "",
+      brand_id: product.brand_id || product.brand?.id || "",
+      price: product.price !== undefined && product.price !== null ? product.price.toString() : "",
+      compare_at_price: product.compare_at_price !== undefined && product.compare_at_price !== null ? product.compare_at_price.toString() : "",
+      tax_rate: product.tax_rate !== undefined && product.tax_rate !== null ? product.tax_rate.toString() : "18.00",
+      stock_quantity: product.stock_quantity !== undefined && product.stock_quantity !== null ? product.stock_quantity.toString() : "0",
+      low_stock_threshold: product.low_stock_threshold !== undefined && product.low_stock_threshold !== null ? product.low_stock_threshold.toString() : "5",
+      description: product.description || "",
+      short_description: product.short_description || "",
+      status: product.status || "active",
+      is_featured: Boolean(product.is_featured),
+      is_digital: Boolean(product.is_digital),
+      weight: product.weight !== undefined && product.weight !== null ? product.weight.toString() : "",
+      dimensions: product.dimensions || { length: "", width: "", height: "" },
+      meta_title: product.meta_title || "",
+      meta_description: product.meta_description || "",
+      tags: Array.isArray(product.tags) ? product.tags.join(", ") : (product.tags || ""),
+      warranty_info: product.warranty_info || "",
+      return_policy: product.return_policy || "",
+      shipping_info: product.shipping_info || "",
+      images: (product.images || []).map((img: any, idx: number) => ({
+        url: typeof img === "string" ? img : (img.url || img.image_url || ""),
+        alt_text: typeof img === "object" ? (img.alt_text || "") : "",
+        is_primary: typeof img === "object" ? Boolean(img.is_primary) : (idx === 0),
+        sort_order: typeof img === "object" && typeof img.sort_order === "number" ? img.sort_order : idx
+      })),
+      specifications: (product.specifications || []).map((s: any) => ({
+        key: s.key,
+        value: s.value
+      })),
+      glb_url: product.glb_url || "",
+      usdz_url: product.usdz_url || ""
+    });
+    window.scrollTo({ top: 300, behavior: "smooth" });
   };
 
   // --- EXPORT TO CSV HANDLER ---
@@ -1200,86 +1325,117 @@ export default function AdminDashboard() {
                     onSubmit={(e) => {
                       e.preventDefault();
                       if (editingProduct) {
-                        // Build a clean payload - only send scalar/serializable fields to backend
-                        const {
-                          id,
-                          // strip read-only/virtual fields
-                          glb_url, usdz_url,
-                          category, brand,       // ORM objects – backend resolves via category_id
-                          created_at, updated_at, view_count, average_rating, review_count,
-                          // destructure relationships to handle manually
-                          images: rawImages,
-                          specifications: rawSpecs,
-                          variants: rawVariants,
-                          ...scalarFields
-                        } = editingProduct;
-
-                        const cleanData: Record<string, any> = { ...scalarFields };
-
-                        // Serialize images to plain objects
-                        if (rawImages && rawImages.length > 0) {
-                          cleanData.images = rawImages.map((img: any) => ({
-                            url: img.url || img.image_url || "",
-                            alt_text: img.alt_text || null,
-                            is_primary: img.is_primary || false,
-                            sort_order: img.sort_order || 0,
-                          })).filter((img: any) => img.url);
-                        }
-
-                        // Serialize specifications
-                        if (rawSpecs && rawSpecs.length > 0) {
-                          cleanData.specifications = rawSpecs.map((s: any) => ({
-                            key: s.key,
-                            value: s.value,
-                            sort_order: s.sort_order || 0,
-                          }));
-                        }
-
-                        // Serialize variants
-                        if (rawVariants && rawVariants.length > 0) {
-                          cleanData.variants = rawVariants.map((v: any) => ({
-                            name: v.name,
-                            sku: v.sku || null,
-                            price: v.price || null,
-                            stock_quantity: v.stock_quantity || 0,
-                            attributes: v.attributes || null,
-                            is_active: v.is_active !== undefined ? v.is_active : true,
-                          }));
-                        }
-
-                        // Coerce numeric fields
-                        if (cleanData.price) cleanData.price = parseFloat(cleanData.price);
-                        if (cleanData.compare_at_price) cleanData.compare_at_price = parseFloat(cleanData.compare_at_price) || null;
-                        if (cleanData.stock_quantity !== undefined) cleanData.stock_quantity = parseInt(String(cleanData.stock_quantity)) || 0;
-                        if (cleanData.weight) cleanData.weight = parseFloat(cleanData.weight) || null;
-
-                        updateProductMutation.mutate({ id, data: cleanData });
-                      } else {
-                        // Strip fields not in backend schema; coerce types.
-                        const { glb_url, usdz_url, tags: rawTags, dimensions: rawDims, ...rest } = newProduct;
-                        const tagsArray = rawTags
+                        const rawTags = editingProduct.tags;
+                        const tagsArray = typeof rawTags === "string"
                           ? rawTags.split(",").map((t: string) => t.trim()).filter(Boolean)
-                          : [];
-                        const dims = (rawDims.length && rawDims.width && rawDims.height)
+                          : (Array.isArray(rawTags) ? rawTags : []);
+
+                        const rawDims = editingProduct.dimensions;
+                        const dims = (rawDims && (rawDims.length || rawDims.width || rawDims.height))
+                          ? rawDims
+                          : null;
+
+                        const formattedImages = (editingProduct.images || []).map((img: any, idx: number) => ({
+                          url: (img.url || img.image_url || "").trim(),
+                          alt_text: img.alt_text || null,
+                          is_primary: Boolean(img.is_primary),
+                          sort_order: typeof img.sort_order === "number" ? img.sort_order : idx,
+                        })).filter((img: any) => Boolean(img.url));
+
+                        const formattedSpecs = (editingProduct.specifications || []).map((s: any, idx: number) => ({
+                          key: s.key,
+                          value: s.value,
+                          sort_order: idx,
+                        })).filter((s: any) => Boolean(s.key && s.value));
+
+                        const updatePayload: Record<string, any> = {
+                          name: editingProduct.name,
+                          sku: editingProduct.sku,
+                          status: editingProduct.status,
+                          price: parseFloat(editingProduct.price) || 0,
+                          compare_at_price: editingProduct.compare_at_price ? parseFloat(editingProduct.compare_at_price) : null,
+                          tax_rate: parseFloat(editingProduct.tax_rate) || 18.00,
+                          stock_quantity: parseInt(String(editingProduct.stock_quantity)) || 0,
+                          low_stock_threshold: parseInt(String(editingProduct.low_stock_threshold)) || 5,
+                          weight: editingProduct.weight ? parseFloat(editingProduct.weight) : null,
+                          description: editingProduct.description || "",
+                          short_description: editingProduct.short_description || "",
+                          is_featured: Boolean(editingProduct.is_featured),
+                          is_digital: Boolean(editingProduct.is_digital),
+                          category_id: editingProduct.category_id || null,
+                          brand_id: editingProduct.brand_id || null,
+                          meta_title: editingProduct.meta_title || null,
+                          meta_description: editingProduct.meta_description || null,
+                          tags: tagsArray.length ? tagsArray : null,
+                          dimensions: dims,
+                          warranty_info: editingProduct.warranty_info || null,
+                          return_policy: editingProduct.return_policy || null,
+                          shipping_info: editingProduct.shipping_info || null,
+                          images: formattedImages,
+                          specifications: formattedSpecs,
+                        };
+
+                        updateProductMutation.mutate({ id: editingProduct.id, data: updatePayload });
+                      } else {
+                        const rawTags = newProduct.tags;
+                        const tagsArray = typeof rawTags === "string"
+                          ? rawTags.split(",").map((t: string) => t.trim()).filter(Boolean)
+                          : (Array.isArray(rawTags) ? rawTags : []);
+
+                        const rawDims = newProduct.dimensions;
+                        const dims = (rawDims && (rawDims.length || rawDims.width || rawDims.height))
                           ? rawDims
                           : undefined;
-                        createProductMutation.mutate({
-                          ...rest,
+
+                        const formattedImages = (newProduct.images || []).map((img: any, idx: number) => ({
+                          url: (img.url || img.image_url || "").trim(),
+                          alt_text: img.alt_text || null,
+                          is_primary: Boolean(img.is_primary),
+                          sort_order: typeof img.sort_order === "number" ? img.sort_order : idx,
+                        })).filter((img: any) => Boolean(img.url));
+
+                        const formattedSpecs = (newProduct.specifications || []).map((s: any, idx: number) => ({
+                          key: s.key,
+                          value: s.value,
+                          sort_order: idx,
+                        })).filter((s: any) => Boolean(s.key && s.value));
+
+                        const createPayload: Record<string, any> = {
+                          name: newProduct.name,
+                          sku: newProduct.sku,
+                          status: newProduct.status,
+                          price: parseFloat(newProduct.price) || 0,
+                          compare_at_price: newProduct.compare_at_price ? parseFloat(newProduct.compare_at_price) : null,
+                          tax_rate: parseFloat(newProduct.tax_rate) || 18.00,
+                          stock_quantity: parseInt(newProduct.stock_quantity || "0") || 0,
+                          low_stock_threshold: parseInt(newProduct.low_stock_threshold || "5") || 5,
+                          weight: newProduct.weight ? parseFloat(newProduct.weight) : null,
+                          description: newProduct.description || "",
+                          short_description: newProduct.short_description || "",
+                          is_featured: Boolean(newProduct.is_featured),
+                          is_digital: Boolean(newProduct.is_digital),
+                          category_id: newProduct.category_id || null,
+                          brand_id: newProduct.brand_id || null,
+                          meta_title: newProduct.meta_title || null,
+                          meta_description: newProduct.meta_description || null,
                           tags: tagsArray.length ? tagsArray : undefined,
                           dimensions: dims,
-                          price: parseFloat(newProduct.price),
-                          compare_at_price: newProduct.compare_at_price ? parseFloat(newProduct.compare_at_price) : null,
-                          stock_quantity: parseInt(newProduct.stock_quantity || "0"),
-                          low_stock_threshold: parseInt(newProduct.low_stock_threshold),
-                          weight: newProduct.weight ? parseFloat(newProduct.weight) : null,
-                        });
+                          warranty_info: newProduct.warranty_info || null,
+                          return_policy: newProduct.return_policy || null,
+                          shipping_info: newProduct.shipping_info || null,
+                          images: formattedImages,
+                          specifications: formattedSpecs,
+                        };
+
+                        createProductMutation.mutate(createPayload);
                       }
                     }}
                     className="space-y-4 text-sm"
                   >
+                    {/* Row 1: Name, SKU, Status */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
-                        <label className="text-xs font-semibold block mb-1">Product Name</label>
+                        <label className="text-xs font-semibold block mb-1">Product Name *</label>
                         <Input
                           value={editingProduct ? editingProduct.name : newProduct.name}
                           onChange={(e) => editingProduct
@@ -1287,10 +1443,11 @@ export default function AdminDashboard() {
                             : setNewProduct({ ...newProduct, name: e.target.value })
                           }
                           required
+                          placeholder="e.g. ESP32 IoT Smart Starter Kit"
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold block mb-1">SKU</label>
+                        <label className="text-xs font-semibold block mb-1">SKU (Unique Identifier) *</label>
                         <Input
                           value={editingProduct ? editingProduct.sku : newProduct.sku}
                           onChange={(e) => editingProduct
@@ -1298,6 +1455,7 @@ export default function AdminDashboard() {
                             : setNewProduct({ ...newProduct, sku: e.target.value })
                           }
                           required
+                          placeholder="e.g. GEN-ESP32-01"
                         />
                       </div>
                       <div>
@@ -1318,9 +1476,57 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
+                    {/* Row 2: Category, Brand, Short Description */}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <label className="text-xs font-semibold block mb-1">Category</label>
+                        <select
+                          value={editingProduct ? (editingProduct.category_id || "") : (newProduct.category_id || "")}
+                          onChange={(e) => editingProduct
+                            ? setEditingProduct({ ...editingProduct, category_id: e.target.value })
+                            : setNewProduct({ ...newProduct, category_id: e.target.value })
+                          }
+                          className="w-full h-10 px-2 rounded-md bg-background border border-border"
+                        >
+                          <option value="">-- Select Category --</option>
+                          {productCategories?.map((cat: any) => (
+                            <option key={cat.id} value={cat.id}>{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold block mb-1">Brand</label>
+                        <select
+                          value={editingProduct ? (editingProduct.brand_id || "") : (newProduct.brand_id || "")}
+                          onChange={(e) => editingProduct
+                            ? setEditingProduct({ ...editingProduct, brand_id: e.target.value })
+                            : setNewProduct({ ...newProduct, brand_id: e.target.value })
+                          }
+                          className="w-full h-10 px-2 rounded-md bg-background border border-border"
+                        >
+                          <option value="">-- Select Brand --</option>
+                          {productBrands?.map((b: any) => (
+                            <option key={b.id} value={b.id}>{b.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      <div>
+                        <label className="text-xs font-semibold block mb-1">Short Tagline / Catchphrase</label>
+                        <Input
+                          placeholder="e.g. WiFi & Bluetooth Dual-Core Development Board"
+                          value={editingProduct ? (editingProduct.short_description || "") : newProduct.short_description}
+                          onChange={(e) => editingProduct
+                            ? setEditingProduct({ ...editingProduct, short_description: e.target.value })
+                            : setNewProduct({ ...newProduct, short_description: e.target.value })
+                          }
+                        />
+                      </div>
+                    </div>
+
+                    {/* Row 3: Pricing, Tax, Weight */}
                     <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                       <div>
-                        <label className="text-xs font-semibold block mb-1">Price (₹)</label>
+                        <label className="text-xs font-semibold block mb-1">Price (₹) *</label>
                         <Input
                           type="number" step="0.01"
                           value={editingProduct ? editingProduct.price : newProduct.price}
@@ -1329,10 +1535,11 @@ export default function AdminDashboard() {
                             : setNewProduct({ ...newProduct, price: e.target.value })
                           }
                           required
+                          placeholder="e.g. 1499"
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold block mb-1">Compare At Price (Discount Reference)</label>
+                        <label className="text-xs font-semibold block mb-1">Compare At Price (MRP / Strike-through)</label>
                         <Input
                           type="number" step="0.01"
                           value={editingProduct ? editingProduct.compare_at_price : newProduct.compare_at_price}
@@ -1340,6 +1547,7 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, compare_at_price: e.target.value })
                             : setNewProduct({ ...newProduct, compare_at_price: e.target.value })
                           }
+                          placeholder="e.g. 1999"
                         />
                       </div>
                       <div>
@@ -1351,6 +1559,7 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, tax_rate: e.target.value })
                             : setNewProduct({ ...newProduct, tax_rate: e.target.value })
                           }
+                          placeholder="18.00"
                         />
                       </div>
                       <div>
@@ -1362,10 +1571,12 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, weight: e.target.value })
                             : setNewProduct({ ...newProduct, weight: e.target.value })
                           }
+                          placeholder="0.25"
                         />
                       </div>
                     </div>
 
+                    {/* Row 4: Stock, Threshold, Featured, Digital */}
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div>
                         <label className="text-xs font-semibold block mb-1">Stock Quantity</label>
@@ -1376,10 +1587,11 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, stock_quantity: e.target.value })
                             : setNewProduct({ ...newProduct, stock_quantity: e.target.value })
                           }
+                          placeholder="100"
                         />
                       </div>
                       <div>
-                        <label className="text-xs font-semibold block mb-1">Low Stock Threshold</label>
+                        <label className="text-xs font-semibold block mb-1">Low Stock Threshold Alert</label>
                         <Input
                           type="number"
                           value={editingProduct ? editingProduct.low_stock_threshold : newProduct.low_stock_threshold}
@@ -1387,6 +1599,7 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, low_stock_threshold: e.target.value })
                             : setNewProduct({ ...newProduct, low_stock_threshold: e.target.value })
                           }
+                          placeholder="5"
                         />
                       </div>
                       <div className="flex gap-4 pt-6">
@@ -1399,7 +1612,7 @@ export default function AdminDashboard() {
                               : setNewProduct({ ...newProduct, is_featured: e.target.checked })
                             }
                           />
-                          <span>Featured</span>
+                          <span>Featured Product</span>
                         </label>
                         <label className="flex items-center gap-2 font-medium cursor-pointer">
                           <input
@@ -1441,36 +1654,115 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    {/* Upload Primary & Gallery Images */}
-                    <div className="border border-dashed p-4 rounded-lg bg-background/40">
-                      <p className="font-semibold text-xs mb-2">Image Management Center (Direct Secure Upload)</p>
-                      <div className="flex flex-wrap gap-4 items-center">
-                        <div>
-                          <label className="text-[10px] text-muted-foreground block mb-1">Upload Primary Image</label>
-                          <input
-                            type="file" accept="image/*"
-                            onChange={(e) => editingProduct ? handleEditProductUpload(e, true) : handleFileUpload(e, "product-primary")}
-                            className="text-xs max-w-[200px]"
-                          />
-                        </div>
-                        <div>
-                          <label className="text-[10px] text-muted-foreground block mb-1">Upload Gallery Image</label>
-                          <input
-                            type="file" accept="image/*"
-                            onChange={(e) => editingProduct ? handleEditProductUpload(e, false) : handleFileUpload(e, "product-gallery")}
-                            className="text-xs max-w-[200px]"
-                          />
-                        </div>
-                        {uploadingFile && <span className="text-xs flex items-center gap-1"><RefreshCw className="w-3.5 h-3.5 animate-spin" /> Optimizing file...</span>}
+                    {/* Image Management Center */}
+                    <div className="border border-border/80 p-4 rounded-xl bg-card/40 space-y-3">
+                      <div className="flex justify-between items-center">
+                        <p className="font-semibold text-xs text-primary flex items-center gap-1.5">
+                          <Images className="w-4 h-4" /> Product Images Management Center
+                        </p>
+                        <span className="text-[11px] text-muted-foreground">
+                          {(editingProduct ? editingProduct.images : newProduct.images)?.length || 0} image(s) attached
+                        </span>
                       </div>
 
-                      <div className="flex gap-2 flex-wrap mt-3">
-                        {(editingProduct ? editingProduct.images : newProduct.images)?.map((img: any, idx: number) => (
-                          <div key={idx} className="relative w-16 h-16 rounded border overflow-hidden">
-                            <img src={resolveImageUrl(img.url)} className="w-full h-full object-cover" alt="product preview" />
-                            {img.is_primary && <Badge className="absolute bottom-0 right-0 text-[8px] px-1 py-0 scale-90">Main</Badge>}
+                      {/* Upload and URL input controls */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4 p-3 bg-background/50 rounded-lg border border-dashed">
+                        {/* File Uploads */}
+                        <div className="space-y-2">
+                          <span className="text-[11px] font-semibold block text-foreground">Option 1: Upload from Device</span>
+                          <div className="flex flex-wrap gap-3 items-center">
+                            <div>
+                              <label className="text-[10px] text-muted-foreground block mb-1">Set Main Image</label>
+                              <input
+                                type="file" accept="image/*"
+                                onChange={(e) => editingProduct ? handleEditProductUpload(e, true) : handleFileUpload(e, "product-primary")}
+                                className="text-xs max-w-[180px]"
+                              />
+                            </div>
+                            <div>
+                              <label className="text-[10px] text-muted-foreground block mb-1">Add Gallery Image</label>
+                              <input
+                                type="file" accept="image/*"
+                                onChange={(e) => editingProduct ? handleEditProductUpload(e, false) : handleFileUpload(e, "product-gallery")}
+                                className="text-xs max-w-[180px]"
+                              />
+                            </div>
                           </div>
-                        ))}
+                        </div>
+
+                        {/* Direct URL Input */}
+                        <div className="space-y-2">
+                          <span className="text-[11px] font-semibold block text-foreground">Option 2: Paste External Image URL (Unsplash / CDN / S3)</span>
+                          <div className="flex gap-2">
+                            <Input
+                              placeholder="https://images.unsplash.com/... or /uploads/..."
+                              value={customImageUrl}
+                              onChange={(e) => setCustomImageUrl(e.target.value)}
+                              className="h-8 text-xs flex-1"
+                            />
+                            <Button
+                              type="button"
+                              size="sm"
+                              className="h-8 text-xs"
+                              onClick={() => handleAddImageUrl(customImageUrl)}
+                            >
+                              Add URL
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      {uploadingFile && (
+                        <div className="text-xs text-primary flex items-center gap-1.5 py-1">
+                          <RefreshCw className="w-3.5 h-3.5 animate-spin" /> Optimizing and uploading image...
+                        </div>
+                      )}
+                      {uploadError && (
+                        <div className="text-xs text-destructive py-1">{uploadError}</div>
+                      )}
+
+                      {/* Image Preview Grid */}
+                      <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
+                        {(editingProduct ? editingProduct.images : newProduct.images)?.map((img: any, idx: number) => {
+                          const resolved = resolveImageUrl(img.url);
+                          return (
+                            <div key={idx} className="group relative rounded-lg border overflow-hidden bg-background aspect-square flex flex-col justify-between">
+                              <img
+                                src={resolved}
+                                className="w-full h-full object-cover"
+                                alt="product preview"
+                              />
+                              <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
+                                <div className="flex justify-between items-center">
+                                  <button
+                                    type="button"
+                                    onClick={() => handleSetPrimaryImage(idx)}
+                                    title="Make this the Primary Main Image"
+                                    className={`px-1.5 py-0.5 rounded text-[9px] font-bold transition-colors ${img.is_primary ? "bg-green-600 text-white" : "bg-black/60 text-white hover:bg-green-500"}`}
+                                  >
+                                    {img.is_primary ? "★ Main" : "Set Main"}
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => handleRemoveProductImage(idx)}
+                                    title="Remove this image"
+                                    className="w-5 h-5 rounded-full bg-red-600 text-white flex items-center justify-center text-xs hover:bg-red-700 font-bold"
+                                  >
+                                    ×
+                                  </button>
+                                </div>
+                                <span className="text-[9px] text-white/90 truncate px-1 bg-black/60 rounded">
+                                  {img.url}
+                                </span>
+                              </div>
+                              {img.is_primary && (
+                                <Badge className="absolute bottom-1 left-1 text-[9px] px-1.5 py-0 bg-primary text-primary-foreground shadow">
+                                  Main Cover
+                                </Badge>
+                              )}
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
 
@@ -1534,6 +1826,7 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, meta_title: e.target.value })
                             : setNewProduct({ ...newProduct, meta_title: e.target.value })
                           }
+                          placeholder="e.g. ESP32 IoT Board | GenBots Official"
                         />
                       </div>
                       <div>
@@ -1544,6 +1837,7 @@ export default function AdminDashboard() {
                             ? setEditingProduct({ ...editingProduct, meta_description: e.target.value })
                             : setNewProduct({ ...newProduct, meta_description: e.target.value })
                           }
+                          placeholder="Buy ESP32 microcontroller with high speed dual core processor..."
                         />
                       </div>
                     </div>
@@ -1551,12 +1845,13 @@ export default function AdminDashboard() {
                     <div className="space-y-2">
                       <label className="text-xs font-semibold block mb-1">Full Description (HTML or Raw Rich Text)</label>
                       <Textarea
-                        value={editingProduct ? editingProduct.description : newProduct.description}
+                        value={editingProduct ? (editingProduct.description || "") : newProduct.description}
                         onChange={(e) => editingProduct
                           ? setEditingProduct({ ...editingProduct, description: e.target.value })
                           : setNewProduct({ ...newProduct, description: e.target.value })
                         }
                         rows={3}
+                        placeholder="Detailed technical specifications, pinout, getting started steps, etc."
                       />
                     </div>
 
@@ -1610,7 +1905,7 @@ export default function AdminDashboard() {
                             <Badge variant="default" className="bg-green-600">Active</Badge>
                           </td>
                           <td className="px-4 py-3 flex gap-1.5 flex-wrap">
-                            <Button size="icon" variant="outline" title="Edit Product" onClick={() => setEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="outline" title="Edit Product" onClick={() => startEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="outline" title="Copy Unique Link" onClick={() => {
                               const link = `${window.location.origin}/store/${product.slug}`;
                               navigator.clipboard.writeText(link);
@@ -1643,7 +1938,7 @@ export default function AdminDashboard() {
                           <td className="px-4 py-3">{product.stock_quantity}</td>
                           <td className="px-4 py-3"><Badge variant="outline">Draft</Badge></td>
                           <td className="px-4 py-3 flex gap-2">
-                            <Button size="icon" variant="outline" onClick={() => setEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
+                            <Button size="icon" variant="outline" onClick={() => startEditingProduct(product)}><Edit2 className="w-3.5 h-3.5" /></Button>
                             <Button size="icon" variant="outline" title="Activate" onClick={() => updateProductMutation.mutate({ id: product.id, data: { status: "active" } })}><CheckCircle className="w-3.5 h-3.5 text-green-500" /></Button>
                             <Button size="icon" variant="destructive" onClick={() => { if (confirm("Delete product permanently?")) deleteProductMutation.mutate(product.id); }}><Trash className="w-3.5 h-3.5" /></Button>
                           </td>

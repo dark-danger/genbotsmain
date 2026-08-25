@@ -25,7 +25,7 @@ export function resolveImageUrl(url: string | null | undefined): string {
     cleanUrl = cleanUrl.replace(/^https?:\/\/localhost:8000/, "")
   }
 
-  // Already a full external/data URL (e.g. Unsplash, S3, data:image)
+  // Already a full external/data URL (e.g. Unsplash, S3, data:image, blob:)
   if (
     cleanUrl.startsWith("http://") ||
     cleanUrl.startsWith("https://") ||
@@ -36,7 +36,6 @@ export function resolveImageUrl(url: string | null | undefined): string {
   }
 
   // Relative upload or API paths (/uploads/..., /api/backend/uploads/...)
-  // Browsers automatically resolve relative paths against current origin (e.g. https://thegenbots.in/uploads/...)
   if (cleanUrl.startsWith("/")) {
     return cleanUrl
   }
@@ -52,32 +51,36 @@ export function getProductImage(product: any): string {
     return resolveImageUrl(product)
   }
 
-  let url = ""
-  // Check images array
+  let foundUrl = ""
+
+  // 1. Check images array
   if (Array.isArray(product.images) && product.images.length > 0) {
-    const primary = product.images.find((i: any) => typeof i === "object" && i.is_primary)
-    const first = primary || product.images[0]
-    if (typeof first === "string" && first.trim()) url = first
-    else if (first && typeof first === "object") {
-      const u = first.url || first.image_url || first.src
-      if (u && typeof u === "string" && u.trim()) url = u
+    const primary = product.images.find((i: any) => i && typeof i === "object" && i.is_primary)
+    const target = primary || product.images[0]
+    if (typeof target === "string" && target.trim()) {
+      foundUrl = target.trim()
+    } else if (target && typeof target === "object") {
+      const u = target.url || target.image_url || target.src || target.link
+      if (u && typeof u === "string" && u.trim()) {
+        foundUrl = u.trim()
+      }
     }
   }
 
-  // Check direct properties
-  if (!url) {
-    if (typeof product.image === "string" && product.image.trim()) url = product.image
-    else if (typeof product.image_url === "string" && product.image_url.trim()) url = product.image_url
-    else if (typeof product.product_image === "string" && product.product_image.trim()) url = product.product_image
+  // 2. Check direct properties
+  if (!foundUrl) {
+    if (typeof product.image === "string" && product.image.trim()) foundUrl = product.image.trim()
+    else if (typeof product.image_url === "string" && product.image_url.trim()) foundUrl = product.image_url.trim()
+    else if (typeof product.product_image === "string" && product.product_image.trim()) foundUrl = product.product_image.trim()
   }
 
-  if (url) {
-    return resolveImageUrl(url)
+  if (foundUrl) {
+    return resolveImageUrl(foundUrl)
   }
 
   // Smart fallback by category or name keyword
   const name = (product.name || product.title || product.product_name || "").toLowerCase()
-  const cat = (product.category?.slug || product.category?.name || product.category || "").toLowerCase()
+  const cat = (product.category?.slug || product.category?.name || (typeof product.category === "string" ? product.category : "") || "").toLowerCase()
 
   if (name.includes("arduino") || cat.includes("arduino")) return FALLBACK_IMAGES.arduino
   if (name.includes("esp32") || cat.includes("esp32")) return FALLBACK_IMAGES.esp32

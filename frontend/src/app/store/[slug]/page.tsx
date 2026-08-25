@@ -15,7 +15,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
-import { getProductImage } from "@/lib/utils";
+import { getProductImage, resolveImageUrl } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 
@@ -221,7 +221,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   <div className="aspect-square rounded-2xl overflow-hidden border bg-muted relative group">
                     {activeImage ? (
                       <img
-                        src={activeImage}
+                        src={resolveImageUrl(activeImage)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="eager"
@@ -244,17 +244,21 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
 
                 {/* Thumbnails */}
                 {!show3D && product.images && product.images.length > 1 && (
-                  <div className="flex gap-3">
-                    {product.images.map((img: any, idx: number) => (
-                      <button
-                        key={idx}
-                        onClick={() => setActiveImage(img.url)}
-                        className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${activeImage === img.url ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
-                        aria-label={`View image ${idx + 1}`}
-                      >
-                        <img src={img.url} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
-                      </button>
-                    ))}
+                  <div className="flex gap-3 flex-wrap">
+                    {product.images.map((img: any, idx: number) => {
+                      const resolvedUrl = resolveImageUrl(img.url);
+                      return (
+                        <button
+                          key={idx}
+                          type="button"
+                          onClick={() => setActiveImage(resolvedUrl)}
+                          className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${resolveImageUrl(activeImage) === resolvedUrl ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
+                          aria-label={`View image ${idx + 1}`}
+                        >
+                          <img src={resolvedUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                        </button>
+                      );
+                    })}
                   </div>
                 )}
               </div>

@@ -46,8 +46,10 @@ app.add_middleware(
 
 from fastapi.staticfiles import StaticFiles
 
-# On Vercel the working directory is read-only; use /tmp which is always writable.
-UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
+from pathlib import Path
+
+BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent
+UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else str(BASE_BACKEND_DIR / "uploads")
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

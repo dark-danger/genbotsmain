@@ -69,16 +69,42 @@ async def get_featured_products(db: DbSession, limit: int = Query(8, ge=1, le=20
     return serialized
 
 
+@router.get("/categories", response_model=list[CategoryResponse])
+async def list_categories(db: DbSession):
+    """List all active product categories."""
+    from sqlalchemy import select
+    from app.models.product import Category
+    result = await db.execute(
+        select(Category)
+        .where(Category.is_active == True)
+        .order_by(Category.sort_order.asc(), Category.name.asc())
+    )
+    return result.scalars().all()
+
+
+@router.get("/brands", response_model=list[BrandResponse])
+async def list_brands(db: DbSession):
+    """List all active brands."""
+    from sqlalchemy import select
+    from app.models.product import Brand
+    result = await db.execute(
+        select(Brand)
+        .where(Brand.is_active == True)
+        .order_by(Brand.name.asc())
+    )
+    return result.scalars().all()
+
+
 @router.get("/{slug}", response_model=ProductResponse)
 async def get_product(slug: str, db: DbSession):
-    """Get product details by slug."""
+    """Get product details by slug or ID."""
     cache_key = f"product:{slug}"
     cached = global_cache.get(cache_key)
     if cached is not None:
         return cached
 
     service = ProductService(db)
-    product = await service.get_product_by_slug(slug)
+    product = await service.get_product_by_slug_or_id(slug)
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     serialized = ProductResponse.model_validate(product).model_dump()

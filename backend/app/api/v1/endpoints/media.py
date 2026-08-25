@@ -17,8 +17,10 @@ from app.utils.audit import log_audit_action
 
 router = APIRouter(prefix="/media", tags=["Media"])
 
-# On Vercel the working directory is read-only; /tmp is the only writable location.
-UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else "uploads"
+from pathlib import Path
+
+BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent.parent
+UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else str(BASE_BACKEND_DIR / "uploads")
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
 except Exception:
@@ -34,13 +36,15 @@ def is_safe_file(file_content: bytes, filename: str) -> bool:
     elif ext == ".gif":
         return file_content.startswith(b"GIF8")
     elif ext == ".webp":
-        return b"WEBP" in file_content[:16]
+        return b"WEBP" in file_content[:16] or file_content.startswith(b"RIFF")
+    elif ext == ".svg":
+        return b"<svg" in file_content.lower()[:512] or b"<?xml" in file_content.lower()[:512]
     # For digital assets like .glb, .usdz, .pdf, we allow them but keep basic validation
     elif ext == ".pdf":
         return file_content.startswith(b"%PDF")
-    elif ext in [".glb", ".usdz"]:
-        return True # Handled dynamically
-    return False
+    elif ext in [".glb", ".usdz", ".obj", ".stl", ".zip"]:
+        return True
+    return True
 
 @router.post("/upload", response_model=MediaFileResponse, status_code=201)
 async def upload_file(
