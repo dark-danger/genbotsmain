@@ -3,8 +3,14 @@ from typing import Optional
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query, status
+from sqlalchemy import select, func, or_
+from sqlalchemy.orm import selectinload
 
 from app.core.deps import DbSession, AdminUser, OptionalUser
+from app.models.product import (
+    Product, ProductImage, ProductVariant, ProductSpecification,
+    Category, Brand, Review,
+)
 from app.schemas.product import (
     ProductCreate, ProductResponse, ProductListResponse,
     CategoryCreate, CategoryResponse,
