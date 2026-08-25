@@ -404,6 +404,32 @@ async def create_testimonial(data: TestimonialCreate, db: DbSession, admin: Admi
     await db.flush()
     return t
 
+@public_router.post("/feedback", response_model=TestimonialResponse, status_code=201)
+@public_router.post("/testimonials/submit", response_model=TestimonialResponse, status_code=201)
+async def submit_user_feedback(data: TestimonialCreate, db: DbSession):
+    """Allow customers and visitors to submit their reviews/feedback."""
+    t = Testimonial(
+        name=data.name.strip(),
+        designation=data.designation.strip() if data.designation else "Verified Customer",
+        company=data.company.strip() if data.company else "",
+        content=data.content.strip(),
+        rating=data.rating if data.rating and 1 <= data.rating <= 5 else 5,
+        is_active=False,  # Default to False until approved by Admin to show on home
+        sort_order=0,
+    )
+    db.add(t)
+    await db.flush()
+
+    from app.utils.notifications import trigger_admin_notification
+    await trigger_admin_notification(
+        db,
+        title="New Feedback Received",
+        message=f"New review from {t.name} ({t.rating}★): \"{t.content[:60]}...\"",
+        notification_type="review",
+        link="/admin/dashboard?tab=feedback"
+    )
+    return t
+
 @public_router.get("/faqs", response_model=list[FaqResponse])
 async def list_faqs(db: DbSession, category: Optional[str] = None):
     query = select(Faq).where(Faq.is_active == True)

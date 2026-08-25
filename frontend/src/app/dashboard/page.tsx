@@ -4,12 +4,13 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Package, Heart, Settings, LogOut, ShoppingBag, MapPin, Download, Ticket, User } from "lucide-react";
+import { Package, Heart, Settings, LogOut, ShoppingBag, MapPin, Download, Ticket, User, Star, MessageSquare, CheckCircle2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
-import { ordersApi, wishlistApi, cartApi } from "@/lib/api";
+import { ordersApi, wishlistApi, cartApi, publicApi } from "@/lib/api";
 import { generateInvoice, resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
@@ -111,6 +112,7 @@ export default function CustomerDashboard() {
 
   const tabs = [
     { id: "orders", icon: Package, label: "My Orders" },
+    { id: "feedback", icon: Star, label: "Write Feedback & Review" },
     { id: "downloads", icon: Download, label: "Downloads" },
     { id: "wishlist", icon: Heart, label: "Wishlist" },
     { id: "addresses", icon: MapPin, label: "Addresses" },
@@ -282,6 +284,11 @@ export default function CustomerDashboard() {
                   </div>
                 )}
 
+                {/* FEEDBACK TAB */}
+                {activeTab === "feedback" && (
+                  <FeedbackTab user={user} />
+                )}
+
                 {/* WISHLIST TAB */}
                 {activeTab === "wishlist" && (
                   <WishlistTab />
@@ -301,6 +308,151 @@ export default function CustomerDashboard() {
       </main>
       <Footer />
     </>
+  );
+}
+
+// ── FeedbackTab Component ────────────────────────────────
+function FeedbackTab({ user }: { user: any }) {
+  const [name, setName] = useState(user.name || "");
+  const [designation, setDesignation] = useState("Robotics Enthusiast");
+  const [company, setCompany] = useState("");
+  const [rating, setRating] = useState(5);
+  const [content, setContent] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!content.trim()) {
+      alert("Please write your feedback or review message.");
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await publicApi.submitFeedback({
+        name: name.trim() || user.name || "Verified Customer",
+        designation: designation.trim() || "Customer",
+        company: company.trim(),
+        rating,
+        content: content.trim(),
+      });
+      setSubmitted(true);
+    } catch (err: any) {
+      alert(err.response?.data?.detail || "Failed to submit feedback. Please try again.");
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  if (submitted) {
+    return (
+      <div className="text-center py-12 max-w-lg mx-auto space-y-4">
+        <div className="w-16 h-16 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto">
+          <CheckCircle2 className="w-8 h-8" />
+        </div>
+        <h2 className="text-2xl font-bold">Thank You for Your Feedback!</h2>
+        <p className="text-muted-foreground text-sm">
+          Your review has been submitted successfully! Once approved by the GenBots team, it will be showcased on our main home page.
+        </p>
+        <Button
+          variant="outline"
+          className="rounded-xl mt-4"
+          onClick={() => {
+            setContent("");
+            setSubmitted(false);
+          }}
+        >
+          Submit Another Review
+        </Button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-2xl">
+      <div className="mb-6">
+        <h2 className="text-2xl font-bold flex items-center gap-2">
+          <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" /> Share Your Experience & Review
+        </h2>
+        <p className="text-sm text-muted-foreground mt-1">
+          Tell us how GenBots products and robotics kits helped your learning and projects. Approved reviews get featured on the main homepage!
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <div>
+          <label className="text-sm font-medium mb-2 block">Rating (1 to 5 Stars)</label>
+          <div className="flex items-center gap-2">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                type="button"
+                key={star}
+                onClick={() => setRating(star)}
+                className="p-1 hover:scale-110 transition-transform focus:outline-none"
+                title={`${star} Star${star > 1 ? "s" : ""}`}
+              >
+                <Star
+                  className={`w-7 h-7 ${star <= rating ? "text-yellow-500 fill-yellow-500" : "text-muted-foreground/30"}`}
+                />
+              </button>
+            ))}
+            <span className="text-sm font-semibold ml-2 text-yellow-600 dark:text-yellow-400">{rating} / 5 Stars</span>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Your Name *</label>
+            <Input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              placeholder="e.g. Arjun Sharma"
+              required
+              className="rounded-xl"
+            />
+          </div>
+          <div>
+            <label className="text-sm font-medium mb-1.5 block">Role / Designation</label>
+            <Input
+              value={designation}
+              onChange={(e) => setDesignation(e.target.value)}
+              placeholder="e.g. Robotics Student, Maker, Engineer"
+              className="rounded-xl"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">School / College / Company (Optional)</label>
+          <Input
+            value={company}
+            onChange={(e) => setCompany(e.target.value)}
+            placeholder="e.g. IIT Delhi, Tech Enthusiast Club"
+            className="rounded-xl"
+          />
+        </div>
+
+        <div>
+          <label className="text-sm font-medium mb-1.5 block">Your Review / Feedback Message *</label>
+          <Textarea
+            value={content}
+            onChange={(e) => setContent(e.target.value)}
+            placeholder="Write your honest review about GenBots kits, delivery speed, product quality, or customer support..."
+            rows={4}
+            required
+            className="rounded-xl"
+          />
+        </div>
+
+        <Button
+          type="submit"
+          disabled={submitting}
+          className="gradient-bg text-white rounded-xl px-6"
+        >
+          {submitting ? "Submitting Review..." : "Submit Review & Feedback"}
+        </Button>
+      </form>
+    </div>
   );
 }
 

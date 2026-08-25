@@ -485,3 +485,48 @@ async def delete_review(id: UUID, db: DbSession, admin: AdminUser):
     )
     return MessageResponse(message="Review deleted successfully")
 
+
+@router.get("/testimonials")
+async def list_admin_testimonials(db: DbSession, admin: AdminUser):
+    """List all testimonials / customer feedback for admin moderation."""
+    result = await db.execute(select(Testimonial).order_by(Testimonial.created_at.desc()))
+    items = result.scalars().all()
+    return [
+        {
+            "id": str(t.id),
+            "name": t.name,
+            "designation": t.designation or "Customer",
+            "company": t.company or "",
+            "content": t.content,
+            "rating": t.rating,
+            "is_active": t.is_active,
+            "created_at": t.created_at.isoformat() if t.created_at else None,
+        }
+        for t in items
+    ]
+
+
+@router.patch("/testimonials/{id}/toggle")
+async def toggle_testimonial_home(id: UUID, db: DbSession, admin: AdminUser):
+    """Toggle whether this feedback is displayed on the main home page."""
+    result = await db.execute(select(Testimonial).where(Testimonial.id == id))
+    t = result.scalar_one_or_none()
+    if not t:
+        raise HTTPException(status_code=404, detail="Feedback / Testimonial not found")
+    t.is_active = not t.is_active
+    await db.flush()
+    return {"message": f"Homepage status updated to {t.is_active}", "is_active": t.is_active}
+
+
+@router.delete("/testimonials/{id}")
+async def delete_testimonial(id: UUID, db: DbSession, admin: AdminUser):
+    """Delete a testimonial / feedback."""
+    result = await db.execute(select(Testimonial).where(Testimonial.id == id))
+    t = result.scalar_one_or_none()
+    if not t:
+        raise HTTPException(status_code=404, detail="Feedback not found")
+    await db.delete(t)
+    await db.flush()
+    return MessageResponse(message="Feedback deleted successfully")
+
+

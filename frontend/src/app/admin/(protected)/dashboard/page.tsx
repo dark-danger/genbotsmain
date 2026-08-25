@@ -285,6 +285,12 @@ export default function AdminDashboard() {
     enabled: !!user && activeTab === "feedback",
   });
 
+  const { data: testimonials, refetch: refetchTestimonials, isLoading: testimonialsLoading } = useQuery({
+    queryKey: ["adminTestimonials"],
+    queryFn: async () => (await adminApi.testimonials()).data,
+    enabled: !!user && activeTab === "feedback",
+  });
+
   const { data: projects, isLoading: projectsLoading } = useQuery({
     queryKey: ["adminProjects"],
     queryFn: async () => (await projectsApi.list()).data,
@@ -554,6 +560,22 @@ export default function AdminDashboard() {
     onSuccess: () => {
       refetchReviews();
       alert("Review deleted successfully!");
+    }
+  });
+
+  const toggleTestimonialMutation = useMutation({
+    mutationFn: async (id: string) => (await adminApi.toggleTestimonial(id)).data,
+    onSuccess: (data) => {
+      refetchTestimonials();
+      alert(data.is_active ? "Review is now LIVE on the Home Page! 🌟" : "Review removed from Home Page.");
+    }
+  });
+
+  const deleteTestimonialMutation = useMutation({
+    mutationFn: async (id: string) => (await adminApi.deleteTestimonial(id)).data,
+    onSuccess: () => {
+      refetchTestimonials();
+      alert("Feedback deleted successfully!");
     }
   });
 
@@ -3205,65 +3227,159 @@ export default function AdminDashboard() {
 
           {/* FEEDBACK & REVIEWS TAB */}
           {activeTab === "feedback" && (
-            <div className="space-y-6">
-              <div className="flex justify-between items-center">
-                <h3 className="text-lg font-bold">Customer Feedback & Reviews Moderation</h3>
-                <Button onClick={handleExportReviews} className="flex items-center gap-2">
-                  <Download className="w-4 h-4" /> Export as CSV
-                </Button>
+            <div className="space-y-8">
+              {/* HOMEPAGE TESTIMONIALS & USER FEEDBACK */}
+              <div className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <h3 className="text-lg font-bold flex items-center gap-2">
+                      <Star className="w-5 h-5 text-yellow-500 fill-yellow-500" />
+                      Customer Feedback & Home Page Reviews
+                    </h3>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Click &ldquo;Show on Home&rdquo; on any review to instantly display it in the Testimonials section on the main website!
+                    </p>
+                  </div>
+                  <Button onClick={handleExportReviews} variant="outline" size="sm" className="flex items-center gap-2">
+                    <Download className="w-4 h-4" /> Export CSV
+                  </Button>
+                </div>
+
+                <div className="glass-card p-6 border bg-card/50">
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Customer Name</th>
+                          <th className="px-4 py-3 font-medium">Role / Title</th>
+                          <th className="px-4 py-3 font-medium">Rating</th>
+                          <th className="px-4 py-3 font-medium">Review Message</th>
+                          <th className="px-4 py-3 font-medium">Home Page Status</th>
+                          <th className="px-4 py-3 font-medium text-right">Actions</th>
+                        </tr>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {testimonials?.map((t: any) => (
+                          <tr key={t.id} className="hover:bg-muted/30">
+                            <td className="px-4 py-3 font-semibold">{t.name}</td>
+                            <td className="px-4 py-3 text-xs text-muted-foreground">
+                              {t.designation}{t.company ? ` • ${t.company}` : ""}
+                            </td>
+                            <td className="px-4 py-3">
+                              <div className="flex text-yellow-500">
+                                {Array.from({ length: t.rating || 5 }).map((_, idx) => (
+                                  <Star key={idx} className="w-3.5 h-3.5 fill-current" />
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3 text-xs max-w-xs">
+                              <p className="line-clamp-2 italic text-foreground">&ldquo;{t.content}&rdquo;</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge
+                                variant={t.is_active ? "default" : "secondary"}
+                                className={t.is_active ? "bg-emerald-600 hover:bg-emerald-700 text-white" : ""}
+                              >
+                                {t.is_active ? "🌟 Showing on Home" : "Hidden"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                <Button
+                                  size="sm"
+                                  variant={t.is_active ? "outline" : "default"}
+                                  className={`text-xs h-8 ${t.is_active ? "border-emerald-500/50 text-emerald-600 hover:bg-emerald-500/10" : "gradient-bg text-white"}`}
+                                  onClick={() => toggleTestimonialMutation.mutate(t.id)}
+                                  disabled={toggleTestimonialMutation.isPending}
+                                >
+                                  {t.is_active ? "Hide from Home" : "Show on Home"}
+                                </Button>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="w-8 h-8 text-destructive hover:bg-destructive/10"
+                                  onClick={() => {
+                                    if (confirm(`Delete feedback from "${t.name}" permanently?`)) {
+                                      deleteTestimonialMutation.mutate(t.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {(!testimonials || testimonials.length === 0) && (
+                          <tr>
+                            <td colSpan={6} className="p-6 text-center text-muted-foreground">
+                              No customer testimonials or feedbacks submitted yet. Customers can write reviews directly from their dashboard.
+                            </td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
               </div>
 
-              <div className="glass-card p-6 border bg-card/50">
-                <div className="border border-border rounded-lg overflow-hidden">
-                  <table className="w-full text-sm text-left">
-                    <thead className="bg-muted/50 text-muted-foreground">
-                      <tr>
-                        <th className="px-4 py-3 font-medium">Product</th>
-                        <th className="px-4 py-3 font-medium">User</th>
-                        <th className="px-4 py-3 font-medium">Rating</th>
-                        <th className="px-4 py-3 font-medium">Comment</th>
-                        <th className="px-4 py-3 font-medium">Status</th>
-                        <th className="px-4 py-3 font-medium">Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-border">
-                      {reviews?.map((r: any) => (
-                        <tr key={r.id} className="hover:bg-muted/30">
-                          <td className="px-4 py-3 font-medium">{r.product_name}</td>
-                          <td className="px-4 py-3 text-xs">{r.user_email}</td>
-                          <td className="px-4 py-3">
-                            <div className="flex text-yellow-500">
-                              {Array.from({ length: r.rating }).map((_, idx) => (
-                                <Star key={idx} className="w-3.5 h-3.5 fill-current" />
-                              ))}
-                            </div>
-                          </td>
-                          <td className="px-4 py-3">
-                            <p className="font-bold text-xs">{r.title}</p>
-                            <p className="text-muted-foreground text-xs">{r.comment}</p>
-                          </td>
-                          <td className="px-4 py-3">
-                            <Badge variant={r.is_approved ? "default" : "secondary"}>
-                              {r.is_approved ? "Approved" : "Pending Approval"}
-                            </Badge>
-                          </td>
-                          <td className="px-4 py-3 flex gap-2">
-                            {!r.is_approved && (
-                              <Button size="sm" onClick={() => approveReviewMutation.mutate(r.id)} className="flex items-center gap-1 bg-green-600 hover:bg-green-700">
-                                <Check className="w-3 h-3" /> Approve
-                              </Button>
-                            )}
-                            <Button size="icon" variant="destructive" onClick={() => { if (confirm("Delete feedback permanently?")) deleteReviewMutation.mutate(r.id); }}>
-                              <Trash className="w-3.5 h-3.5" />
-                            </Button>
-                          </td>
+              {/* PRODUCT REVIEWS */}
+              <div className="space-y-4 pt-4 border-t border-border">
+                <h3 className="text-lg font-bold">Product-Specific Reviews</h3>
+                <div className="glass-card p-6 border bg-card/50">
+                  <div className="border border-border rounded-lg overflow-hidden">
+                    <table className="w-full text-sm text-left">
+                      <thead className="bg-muted/50 text-muted-foreground">
+                        <tr>
+                          <th className="px-4 py-3 font-medium">Product</th>
+                          <th className="px-4 py-3 font-medium">User</th>
+                          <th className="px-4 py-3 font-medium">Rating</th>
+                          <th className="px-4 py-3 font-medium">Comment</th>
+                          <th className="px-4 py-3 font-medium">Status</th>
+                          <th className="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
-                      ))}
-                      {(!reviews || reviews.length === 0) && (
-                        <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No customer reviews submitted yet.</td></tr>
-                      )}
-                    </tbody>
-                  </table>
+                      </thead>
+                      <tbody className="divide-y divide-border">
+                        {reviews?.map((r: any) => (
+                          <tr key={r.id} className="hover:bg-muted/30">
+                            <td className="px-4 py-3 font-medium">{r.product_name}</td>
+                            <td className="px-4 py-3 text-xs">{r.user_email}</td>
+                            <td className="px-4 py-3">
+                              <div className="flex text-yellow-500">
+                                {Array.from({ length: r.rating }).map((_, idx) => (
+                                  <Star key={idx} className="w-3.5 h-3.5 fill-current" />
+                                ))}
+                              </div>
+                            </td>
+                            <td className="px-4 py-3">
+                              <p className="font-bold text-xs">{r.title}</p>
+                              <p className="text-muted-foreground text-xs">{r.comment}</p>
+                            </td>
+                            <td className="px-4 py-3">
+                              <Badge variant={r.is_approved ? "default" : "secondary"}>
+                                {r.is_approved ? "Approved" : "Pending Approval"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              <div className="flex items-center justify-end gap-2">
+                                {!r.is_approved && (
+                                  <Button size="sm" onClick={() => approveReviewMutation.mutate(r.id)} className="flex items-center gap-1 bg-green-600 hover:bg-green-700 h-8 text-xs">
+                                    <Check className="w-3 h-3" /> Approve
+                                  </Button>
+                                )}
+                                <Button size="icon" variant="ghost" className="w-8 h-8 text-destructive hover:bg-destructive/10" onClick={() => { if (confirm("Delete feedback permanently?")) deleteReviewMutation.mutate(r.id); }}>
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                        {(!reviews || reviews.length === 0) && (
+                          <tr><td colSpan={6} className="p-4 text-center text-muted-foreground">No product reviews submitted yet.</td></tr>
+                        )}
+                      </tbody>
+                    </table>
+                  </div>
                 </div>
               </div>
             </div>

@@ -160,6 +160,8 @@ export const cmsApi = {
 
 export const publicApi = {
   testimonials: () => api.get("/testimonials"),
+  submitFeedback: (data: { name: string; designation?: string; company?: string; content: string; rating?: number }) =>
+    api.post("/feedback", data),
   faqs: (category?: string) => api.get("/faqs", { params: category ? { category } : {} }),
   newsletter: (email: string) => api.post("/newsletter", { email }),
   contact: (data: Record<string, string>) => api.post("/contact", data),
@@ -230,6 +232,9 @@ export const adminApi = {
   reviews: () => adminAxios.get("/admin/reviews"),
   approveReview: (id: string) => adminAxios.patch(`/admin/reviews/${id}/approve`),
   deleteReview: (id: string) => adminAxios.delete(`/admin/reviews/${id}`),
+  testimonials: () => adminAxios.get("/admin/testimonials"),
+  toggleTestimonial: (id: string) => adminAxios.patch(`/admin/testimonials/${id}/toggle`),
+  deleteTestimonial: (id: string) => adminAxios.delete(`/admin/testimonials/${id}`),
   analytics: () => adminAxios.get("/admin/analytics"),
   resetRevenue: () => adminAxios.post("/admin/reset-revenue"),
   deleteOrder: (id: string) => adminAxios.delete(`/admin/orders/${id}`),
