@@ -1,4 +1,5 @@
-"""Database session configuration."""
+import os
+import uuid
 from typing import AsyncGenerator
 from sqlalchemy.ext.asyncio import (
     AsyncSession,
@@ -10,17 +11,29 @@ from sqlalchemy.pool import NullPool
 
 from app.core.config import settings
 
-engine = create_async_engine(
-    settings.DATABASE_URL,
-    echo=settings.DEBUG,
-    pool_size=5,
-    max_overflow=5,
-    pool_recycle=300,
-    pool_pre_ping=True,
-    connect_args={
+IS_SERVERLESS = bool(os.getenv("VERCEL")) or bool(os.getenv("AWS_LAMBDA_FUNCTION_NAME"))
+
+# Configure engine for PgBouncer transaction pooling and serverless
+engine_kwargs = {
+    "echo": settings.DEBUG,
+    "connect_args": {
         "statement_cache_size": 0,
         "prepared_statement_cache_size": 0,
+        "prepared_statement_name_func": lambda: f"__asyncpg_{uuid.uuid4().hex}__",
     },
+}
+
+if IS_SERVERLESS or ":6543" in settings.DATABASE_URL or "pooler" in settings.DATABASE_URL or "pgbouncer" in settings.DATABASE_URL.lower():
+    engine_kwargs["poolclass"] = NullPool
+else:
+    engine_kwargs["pool_size"] = 5
+    engine_kwargs["max_overflow"] = 5
+    engine_kwargs["pool_recycle"] = 300
+    engine_kwargs["pool_pre_ping"] = True
+
+engine = create_async_engine(
+    settings.DATABASE_URL,
+    **engine_kwargs,
 )
 
 async_session_factory = async_sessionmaker(
