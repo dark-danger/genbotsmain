@@ -21,7 +21,7 @@ async def get_wishlist(db: DbSession, user: CurrentUser):
     result = await db.execute(
         select(Wishlist)
         .where(Wishlist.user_id == user.id)
-        .options(selectinload(Wishlist.product))
+        .options(selectinload(Wishlist.product).selectinload(Product.images))
         .order_by(Wishlist.created_at.desc())
     )
     items = result.scalars().all()
@@ -31,15 +31,16 @@ async def get_wishlist(db: DbSession, user: CurrentUser):
             {
                 "id": str(item.id),
                 "product_id": str(item.product_id),
-                "product_name": item.product.name,
-                "product_slug": item.product.slug,
-                "product_price": float(item.product.price),
-                "product_compare_price": float(item.product.compare_at_price) if item.product.compare_at_price else None,
-                "product_image": item.product.images[0].url if item.product.images else None,
-                "in_stock": item.product.stock_quantity > 0,
+                "product_name": item.product.name if item.product else "Unknown Product",
+                "product_slug": item.product.slug if item.product else "",
+                "product_price": float(item.product.price) if item.product else 0.0,
+                "product_compare_price": float(item.product.compare_at_price) if item.product and item.product.compare_at_price else None,
+                "product_image": item.product.images[0].url if (item.product and item.product.images) else None,
+                "in_stock": (item.product.stock_quantity > 0) if item.product else False,
                 "added_at": item.created_at.isoformat(),
             }
             for item in items
+            if item.product is not None
         ],
         "count": len(items),
     }
@@ -48,7 +49,10 @@ async def get_wishlist(db: DbSession, user: CurrentUser):
 @router.post("", status_code=status.HTTP_200_OK)
 async def toggle_wishlist(data: WishlistToggleRequest, db: DbSession, user: CurrentUser):
     """Toggle a product in/out of wishlist. Returns whether item is now wishlisted."""
-    product_id = UUID(data.product_id)
+    try:
+        product_id = UUID(data.product_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid product ID format")
 
     # Verify product exists
     result = await db.execute(select(Product).where(Product.id == product_id))

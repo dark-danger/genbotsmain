@@ -4,7 +4,7 @@ import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Package, Heart, CreditCard, Settings, LogOut, ShoppingBag, MapPin, Download, Ticket, Bell, User } from "lucide-react";
+import { Package, Heart, Settings, LogOut, ShoppingBag, MapPin, Download, Ticket, User } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";

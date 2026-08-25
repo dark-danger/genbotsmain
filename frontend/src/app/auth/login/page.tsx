@@ -30,8 +30,7 @@ export default function LoginPage() {
       localStorage.setItem("refresh_token", refresh_token);
 
       // We must set the token in the store right away so that getMe() can use it via interceptor
-      // Zustand state update might be async depending on how it's used, but usually it's synchronous.
-      loginStore({ id: "", email: "", role: "user" } as any, access_token);
+      loginStore({ id: "", email, role: "customer" } as any, access_token);
 
       // 2. Fetch user profile
       const userRes = await authApi.getMe();
@@ -40,21 +39,22 @@ export default function LoginPage() {
       loginStore(userRes.data, access_token);
 
       window.location.href = "/dashboard";
-    } catch (err: any) {
-      const d = err.response?.data;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: unknown } | string }; message?: string };
+      const d = axiosErr.response?.data;
       let msg: string;
       if (!d) {
-        msg = err.message || "Login failed";
-      } else if (typeof d.detail === "string") {
+        msg = axiosErr.message || "Login failed";
+      } else if (typeof d === "object" && typeof d.detail === "string") {
         msg = d.detail;
-      } else if (Array.isArray(d.detail)) {
-        msg = d.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ");
-      } else if (typeof d.detail === "object" && d.detail !== null) {
+      } else if (typeof d === "object" && Array.isArray(d.detail)) {
+        msg = d.detail.map((e: { msg?: string }) => e.msg ?? JSON.stringify(e)).join("; ");
+      } else if (typeof d === "object" && d.detail !== null) {
         msg = JSON.stringify(d.detail);
       } else if (typeof d === "string") {
         msg = d;
       } else {
-        msg = `HTTP ${err.response?.status}: ${JSON.stringify(d)}`;
+        msg = `HTTP ${axiosErr.response?.status}: ${JSON.stringify(d)}`;
       }
       alert(msg);
     } finally {
@@ -68,8 +68,8 @@ export default function LoginPage() {
       <div className="hidden lg:flex lg:w-1/2 gradient-bg items-center justify-center p-12 relative overflow-hidden">
         <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px]" />
         <div className="relative z-10 text-white text-center max-w-md">
-          <div className="w-16 h-16 rounded-2xl bg-white/20 flex items-center justify-center mx-auto mb-6">
-            <Bot className="w-10 h-10" />
+          <div className="w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm p-1.5 flex items-center justify-center mx-auto mb-6 shadow-xl border border-white/20">
+            <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain rounded-xl" />
           </div>
           <h2 className="text-3xl font-bold mb-4">Welcome to GenBots</h2>
           <p className="text-white/70">Access your dashboard, manage orders, track shipments, and explore our ecosystem.</p>
@@ -79,9 +79,9 @@ export default function LoginPage() {
       {/* Right Panel */}
       <div className="flex-1 flex items-center justify-center p-8">
         <div className="w-full max-w-md">
-          <Link href="/" className="flex items-center gap-2 mb-8 lg:hidden">
-            <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center">
-              <Bot className="w-6 h-6 text-white" />
+          <Link href="/" className="flex items-center gap-3 mb-8 lg:hidden">
+            <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-md">
+              <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
             </div>
             <span className="text-xl font-bold">Gen<span className="gradient-text">Bots</span></span>
           </Link>

@@ -90,7 +90,7 @@ export function ProductsSection() {
         ) : (
           <div ref={gridRef} className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
             {featuredProducts && featuredProducts.length > 0 ? (
-              featuredProducts.map((product: any) => {
+              featuredProducts.map((product: Record<string, any>) => {
                 const imgUrl = getProductImage(product);
                 return (
                   <Link

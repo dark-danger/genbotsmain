@@ -38,21 +38,22 @@ export default function AdminLoginPage() {
       loginStore(userRes.data, access_token);
 
       window.location.href = "/admin/dashboard";
-    } catch (err: any) {
-      const d = err.response?.data;
+    } catch (err: unknown) {
+      const axiosErr = err as { response?: { status?: number; data?: { detail?: unknown } | string }; message?: string };
+      const d = axiosErr.response?.data;
       let msg: string;
       if (!d) {
-        msg = err.message || "Admin login failed";
-      } else if (typeof d.detail === "string") {
+        msg = axiosErr.message || "Admin login failed";
+      } else if (typeof d === "object" && typeof d.detail === "string") {
         msg = d.detail;
-      } else if (Array.isArray(d.detail)) {
-        msg = d.detail.map((e: any) => e.msg ?? JSON.stringify(e)).join("; ");
-      } else if (typeof d.detail === "object" && d.detail !== null) {
+      } else if (typeof d === "object" && Array.isArray(d.detail)) {
+        msg = d.detail.map((e: { msg?: string }) => e.msg ?? JSON.stringify(e)).join("; ");
+      } else if (typeof d === "object" && d.detail !== null) {
         msg = JSON.stringify(d.detail);
       } else if (typeof d === "string") {
         msg = d;
       } else {
-        msg = `HTTP ${err.response?.status}: ${JSON.stringify(d)}`;
+        msg = `HTTP ${axiosErr.response?.status}: ${JSON.stringify(d)}`;
       }
       alert(msg);
     } finally {
@@ -63,12 +64,12 @@ export default function AdminLoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <div className="w-full max-w-md p-8 bg-white rounded-2xl shadow-xl border border-gray-100">
-        <div className="w-16 h-16 rounded-2xl bg-blue-600/10 flex items-center justify-center mx-auto mb-6">
-          <Shield className="w-10 h-10 text-blue-600" />
+        <div className="w-20 h-20 rounded-2xl p-1.5 bg-muted/30 border border-gray-200 flex items-center justify-center mx-auto mb-6 shadow-md overflow-hidden">
+          <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
         </div>
 
-        <h1 className="text-2xl font-bold mb-2 text-center text-gray-900">Admin Portal</h1>
-        <p className="text-muted-foreground mb-8 text-center">Authorized personnel only</p>
+        <h1 className="text-2xl font-bold mb-1 text-center text-gray-900">Gen<span className="text-primary">Bots</span> Admin</h1>
+        <p className="text-muted-foreground mb-8 text-center text-sm">Authorized personnel only</p>
 
         <form onSubmit={handleSubmit} className="space-y-5">
           <div>

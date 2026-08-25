@@ -1,19 +1,36 @@
 "use client";
 
-import { useState, useEffect, useDeferredValue } from "react";
+import { useState, useDeferredValue } from "react";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle, ShoppingCart, Heart, Check, Trash2 } from "lucide-react";
+import { Search, SlidersHorizontal, ArrowUpDown, X, Star, AlertCircle, ShoppingCart, Check, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
-import { productsApi, cartApi, wishlistApi } from "@/lib/api";
+import { productsApi, cartApi } from "@/lib/api";
 import { getProductImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import Link from "next/link";
+
+interface ProductItem {
+  id: string;
+  name: string;
+  slug: string;
+  sku?: string;
+  price: string | number;
+  compare_at_price?: string | number | null;
+  description?: string;
+  stock_quantity?: number;
+  is_featured?: boolean;
+  avg_rating?: number;
+  review_count?: number;
+  category?: { name: string; slug: string } | null;
+  brand?: { name: string; slug: string } | null;
+  images?: { url: string; is_primary?: boolean }[];
+}
 
 export default function StorePage() {
   const { token } = useAuthStore();
@@ -21,24 +38,22 @@ export default function StorePage() {
 
   const [search, setSearch] = useState("");
   const deferredSearch = useDeferredValue(search);
-  const [selectedCategory, setSelectedCategory] = useState("all");
+  const [selectedCategory, setSelectedCategory] = useState(() => {
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      const cat = params.get("category");
+      if (cat && cat !== "all") return cat;
+    }
+    return "all";
+  });
   const [selectedBrand, setSelectedBrand] = useState("All");
   const [maxPrice, setMaxPrice] = useState(100000);
   const [sortBy, setSortBy] = useState("featured");
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
-  // Check URL params on initial load
-  useEffect(() => {
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      const cat = params.get("category");
-      if (cat) setSelectedCategory(cat);
-    }
-  }, []);
-
   // Fetch products from API
-  const { data: apiProducts, isLoading } = useQuery({
+  const { data: apiProducts, isLoading } = useQuery<ProductItem[]>({
     queryKey: ["storeProducts"],
     queryFn: async () => {
       const res = await productsApi.list({ page_size: 100 });
@@ -47,24 +62,25 @@ export default function StorePage() {
     staleTime: 30000,
   });
 
-  const products: any[] = (apiProducts && apiProducts.length > 0) ? apiProducts : [];
+  const products: ProductItem[] = apiProducts && apiProducts.length > 0 ? apiProducts : [];
 
   // Extract unique categories and brands from data
   const categories = [
     { name: "All Categories", slug: "all", icon: "🌐" },
-    ...Array.from(new Set(products.map((p: any) => p.category?.slug).filter(Boolean))).map(
+    ...Array.from(new Set(products.map((p) => p.category?.slug).filter(Boolean))).map(
       (slug) => {
-        const cat = products.find((p: any) => p.category?.slug === slug)?.category;
-        return { name: cat?.name || slug, slug: slug as string, icon: "📦" };
+        const cat = products.find((p) => p.category?.slug === slug)?.category;
+        return { name: cat?.name || (slug as string), slug: slug as string, icon: "📦" };
       }
     ),
   ];
 
-  const brands = ["All", ...Array.from(new Set(products.map((p: any) => p.brand?.name).filter(Boolean)))];
+  const brands = ["All", ...Array.from(new Set(products.map((p) => p.brand?.name).filter((b): b is string => Boolean(b))))];
 
   // Add to cart mutation
   const addToCartMutation = useMutation({
-    mutationFn: (productId: string) => cartApi.addItem({ product_id: productId, quantity: 1 }),
+    mutationFn: (productId: string) =>
+      cartApi.addItem({ product_id: productId, quantity: 1 }),
     onSuccess: (_, productId) => {
       setAddedIds((prev) => new Set(prev).add(productId));
       openCart();
@@ -97,27 +113,27 @@ export default function StorePage() {
         window.dispatchEvent(new Event("cart-updated"));
       }
     },
-    onError: (err: any) => {
+    onError: () => {
       alert("Failed to remove item.");
     }
   });
 
   // Filter and Sort logic
   const filteredProducts = products
-    .filter((product: any) => {
+    .filter((product) => {
       const matchesSearch =
-        product.name?.toLowerCase().includes(deferredSearch.toLowerCase()) ||
-        product.description?.toLowerCase().includes(deferredSearch.toLowerCase());
+        (product.name || "").toLowerCase().includes(deferredSearch.toLowerCase()) ||
+        (product.description || "").toLowerCase().includes(deferredSearch.toLowerCase());
       const matchesCategory =
         selectedCategory === "all" || product.category?.slug === selectedCategory;
       const matchesBrand =
         selectedBrand === "All" || product.brand?.name === selectedBrand;
-      const matchesPrice = parseFloat(product.price) <= maxPrice;
+      const matchesPrice = parseFloat(String(product.price || 0)) <= maxPrice;
       return matchesSearch && matchesCategory && matchesBrand && matchesPrice;
     })
-    .sort((a: any, b: any) => {
-      if (sortBy === "price-low") return parseFloat(a.price) - parseFloat(b.price);
-      if (sortBy === "price-high") return parseFloat(b.price) - parseFloat(a.price);
+    .sort((a, b) => {
+      if (sortBy === "price-low") return parseFloat(String(a.price || 0)) - parseFloat(String(b.price || 0));
+      if (sortBy === "price-high") return parseFloat(String(b.price || 0)) - parseFloat(String(a.price || 0));
       if (sortBy === "rating") return (b.avg_rating || 0) - (a.avg_rating || 0);
       return 0;
     });

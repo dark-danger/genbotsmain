@@ -1,1 +1,1 @@
-export const productsData: any[] = [];
+export const productsData: Record<string, unknown>[] = [];

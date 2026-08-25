@@ -4,7 +4,6 @@ import { motion, useInView } from "framer-motion";
 import { useRef, useEffect } from "react";
 import Link from "next/link";
 import { School, GraduationCap, Cpu, CircuitBoard, Brain, Factory, ArrowRight } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";

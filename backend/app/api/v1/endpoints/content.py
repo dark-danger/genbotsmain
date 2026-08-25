@@ -324,6 +324,22 @@ async def delete_course(id: UUID, db: DbSession, admin: AdminUser):
 
 @training_router.post("/{course_id}/enroll", response_model=MessageResponse)
 async def enroll_course(course_id: UUID, db: DbSession, user: CurrentUser):
+    # Verify course exists
+    result = await db.execute(select(TrainingCourse).where(TrainingCourse.id == course_id, TrainingCourse.is_active == True))
+    course = result.scalar_one_or_none()
+    if not course:
+        raise HTTPException(status_code=404, detail="Training course not found or inactive")
+
+    # Check existing enrollment
+    existing = await db.execute(
+        select(TrainingEnrollment).where(
+            TrainingEnrollment.course_id == course_id,
+            TrainingEnrollment.user_id == user.id
+        )
+    )
+    if existing.scalar_one_or_none():
+        return MessageResponse(message="Already enrolled in this course")
+
     enrollment = TrainingEnrollment(course_id=course_id, user_id=user.id)
     db.add(enrollment)
     await db.flush()
@@ -489,7 +505,22 @@ async def create_ticket(data: SupportTicketCreate, db: DbSession, user: CurrentU
 
 @support_router.post("/tickets/{ticket_id}/messages", response_model=TicketMessageResponse, status_code=201)
 async def add_ticket_message(ticket_id: UUID, data: TicketMessageCreate, db: DbSession, user: CurrentUser):
-    msg = TicketMessage(ticket_id=ticket_id, user_id=user.id, message=data.message)
+    # Verify ticket exists and belongs to user
+    result = await db.execute(select(SupportTicket).where(SupportTicket.id == ticket_id))
+    ticket = result.scalar_one_or_none()
+    if not ticket:
+        raise HTTPException(status_code=404, detail="Support ticket not found")
+    if ticket.user_id != user.id and user.role not in ("admin", "superadmin", "staff"):
+        raise HTTPException(status_code=403, detail="Not authorized to post to this ticket")
+
+    msg = TicketMessage(
+        ticket_id=ticket_id,
+        user_id=user.id,
+        message=data.message,
+        is_staff_reply=(user.role in ("admin", "superadmin", "staff")),
+    )
     db.add(msg)
+    if ticket.status == "closed":
+        ticket.status = "open"
     await db.flush()
     return msg

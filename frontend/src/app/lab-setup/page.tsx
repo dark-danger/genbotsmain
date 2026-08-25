@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { CheckCircle2, ArrowRight, X, Send, School, User, Mail, Phone, MapPin, Building } from "lucide-react";
+import { CheckCircle2, ArrowRight, X, Send, User, Mail, Phone, MapPin, Building } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -109,7 +109,7 @@ ${formData.message || "No additional comments provided."}`;
         address: "",
         message: "",
       });
-    } catch (err: any) {
+    } catch {
       alert("Failed to submit request. Please try again or contact us directly.");
     } finally {
       setIsSubmitting(false);
@@ -123,79 +123,73 @@ ${formData.message || "No additional comments provided."}`;
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {/* Hero Section */}
           <div className="text-center mb-16">
-            <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">Educational Solutions</Badge>
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Next-Gen <span className="gradient-text">Innovation Labs</span></h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto text-lg">We provide turnkey solutions to establish state-of-the-art IoT and Robotics laboratories for educational institutions.</p>
+            <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">Complete Infrastructure</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">
+              Robotics & IoT <span className="gradient-text">Lab Setup</span>
+            </h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">
+              Transform your school or college with turnkey robotics, AI, and IoT labs. We supply hardware, curriculum, trainer support, and annual maintenance.
+            </p>
           </div>
 
-          {/* Packages */}
-          <div className="grid md:grid-cols-3 gap-8 mb-20">
+          {/* Package Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">
             {packages.map((pkg) => (
-              <div key={pkg.name} className={`glass-card p-8 flex flex-col relative ${pkg.popular ? 'border-primary ring-1 ring-primary' : ''}`}>
-                {pkg.popular && (
-                  <Badge className="absolute top-0 left-1/2 -translate-x-1/2 -translate-y-1/2 gradient-bg text-white border-0">Most Popular</Badge>
-                )}
-                <div className="mb-6">
-                  <h3 className="text-2xl font-bold mb-1">{pkg.name}</h3>
-                  <p className="text-primary font-medium text-sm mb-3">{pkg.target}</p>
-                  <p className="text-muted-foreground text-sm">{pkg.desc}</p>
-                </div>
-                <div className="flex-1 space-y-4 mb-8">
-                  {pkg.features.map((feature, i) => (
-                    <div key={i} className="flex items-start gap-3">
-                      <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
-                      <span className="text-sm">{feature}</span>
-                    </div>
-                  ))}
+              <div key={pkg.name} className="glass-card p-8 rounded-2xl flex flex-col justify-between hover:glow-sm transition-all duration-300">
+                <div>
+                  <Badge variant="secondary" className="mb-4">{pkg.target}</Badge>
+                  <h2 className="text-2xl font-bold mb-2">{pkg.name}</h2>
+                  <p className="text-muted-foreground text-sm mb-6">{pkg.desc}</p>
+                  <ul className="space-y-3 mb-8">
+                    {pkg.features.map((feat) => (
+                      <li key={feat} className="flex items-center gap-2 text-sm">
+                        <CheckCircle2 className="w-4 h-4 text-primary shrink-0" />
+                        <span>{feat}</span>
+                      </li>
+                    ))}
+                  </ul>
                 </div>
                 <Button
-                  onClick={() => handleOpenModal(pkg.name)}
-                  className={pkg.popular ? "gradient-bg text-white w-full rounded-xl" : "w-full rounded-xl"}
-                  variant={pkg.popular ? "default" : "outline"}
+                  onClick={() => {
+                    setSelectedPackage(pkg.name);
+                    setIsModalOpen(true);
+                  }}
+                  className="w-full gradient-bg text-white rounded-xl"
                 >
-                  Request Quote
+                  Request Quote <ArrowRight className="w-4 h-4 ml-2" />
                 </Button>
               </div>
             ))}
           </div>
 
           {/* Process Section */}
-          <div className="glass-card p-10 md:p-14 text-center">
-            <h2 className="text-3xl font-bold mb-10">Our Setup <span className="gradient-text">Process</span></h2>
-            <div className="grid sm:grid-cols-2 md:grid-cols-4 gap-8">
+          <div className="glass-card p-8 md:p-12 rounded-3xl mb-16">
+            <h2 className="text-2xl md:text-3xl font-bold text-center mb-12">How We Set Up Your Lab</h2>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
               {[
-                { step: "01", title: "Consultation", desc: "Understanding requirements and space assessment" },
-                { step: "02", title: "Design", desc: "Lab layout, equipment selection, and curriculum mapping" },
-                { step: "03", title: "Deployment", desc: "Delivery, installation, and setup of all equipment" },
-                { step: "04", title: "Training", desc: "Comprehensive training for teachers and staff" },
-              ].map((process) => (
-                <div key={process.step} className="relative">
-                  <div className="w-16 h-16 rounded-full gradient-bg mx-auto flex items-center justify-center text-white font-bold text-xl mb-4 relative z-10">
-                    {process.step}
-                  </div>
-                  <h3 className="font-semibold mb-2">{process.title}</h3>
-                  <p className="text-sm text-muted-foreground">{process.desc}</p>
+                { step: "01", title: "Requirement Analysis", desc: "We understand your space, student strength, and educational objectives." },
+                { step: "02", title: "Custom Lab Proposal", desc: "Detailed bill of materials, equipment plan, and customized curriculum." },
+                { step: "03", title: "Installation & Setup", desc: "Complete delivery, bench setup, wiring, safety protocols, and testing." },
+                { step: "04", title: "Teacher Training & Handover", desc: "Comprehensive faculty enablement workshops and ongoing support." },
+              ].map((s) => (
+                <div key={s.step} className="space-y-2">
+                  <span className="text-3xl font-black gradient-text">{s.step}</span>
+                  <h3 className="font-bold text-lg">{s.title}</h3>
+                  <p className="text-muted-foreground text-sm">{s.desc}</p>
                 </div>
               ))}
-            </div>
-
-            <div className="mt-12 pt-12 border-t border-border">
-              <h3 className="text-2xl font-bold mb-4">Ready to transform your campus?</h3>
-              <Button size="lg" onClick={() => handleOpenModal("Free Consultation")} className="gradient-bg text-white rounded-xl px-8 h-12">
-                Schedule a Free Consultation <ArrowRight className="w-5 h-5 ml-2" />
-              </Button>
             </div>
           </div>
         </div>
       </main>
 
-      {/* REQUEST QUOTE MODAL */}
+      {/* Quote Modal */}
       {isModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
-          <div className="glass-card bg-background border border-border w-full max-w-xl p-6 md:p-8 rounded-2xl relative shadow-2xl overflow-y-auto max-h-[90vh]">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background/80 backdrop-blur-sm">
+          <div className="glass-card w-full max-w-lg p-6 md:p-8 rounded-3xl border border-border shadow-2xl relative">
             <button
               onClick={() => setIsModalOpen(false)}
-              className="absolute top-4 right-4 text-muted-foreground hover:text-foreground p-2 rounded-full hover:bg-muted"
+              className="absolute top-6 right-6 p-2 rounded-full hover:bg-muted transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
@@ -207,7 +201,7 @@ ${formData.message || "No additional comments provided."}`;
                 </div>
                 <h3 className="text-2xl font-bold">Quote Request Submitted!</h3>
                 <p className="text-muted-foreground text-sm max-w-md mx-auto">
-                  Thank you! Our lab setup team will review your institution's requirements and get in touch with you shortly.
+                  Thank you! Our lab setup team will review your institution&apos;s requirements and get in touch with you shortly.
                 </p>
                 <Button onClick={() => setIsModalOpen(false)} className="gradient-bg text-white mt-4 rounded-xl px-6">
                   Close Window

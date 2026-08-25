@@ -6,27 +6,56 @@ from app.core.deps import CurrentAdmin
 
 router = APIRouter(prefix="/settings", tags=["Settings"])
 
-SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "settings.json")
+DEFAULT_SETTINGS = {"enable_gst": False}
+_in_memory_settings = dict(DEFAULT_SETTINGS)
+
+PRIMARY_SETTINGS_FILE = os.path.join(os.path.dirname(__file__), "settings.json")
+FALLBACK_SETTINGS_FILE = "/tmp/genbots_settings.json"
+
+
+def _get_target_file():
+    if os.path.exists(PRIMARY_SETTINGS_FILE):
+        return PRIMARY_SETTINGS_FILE
+    if os.path.exists(FALLBACK_SETTINGS_FILE):
+        return FALLBACK_SETTINGS_FILE
+    return PRIMARY_SETTINGS_FILE
+
 
 def get_settings():
-    if not os.path.exists(SETTINGS_FILE):
-        return {"enable_gst": False}
-    with open(SETTINGS_FILE, "r") as f:
+    target = _get_target_file()
+    if os.path.exists(target):
         try:
-            return json.load(f)
-        except:
-            return {"enable_gst": False}
+            with open(target, "r") as f:
+                data = json.load(f)
+                _in_memory_settings.update(data)
+                return _in_memory_settings
+        except Exception:
+            pass
+    return _in_memory_settings
+
 
 @router.get("")
 async def fetch_settings():
-    """Get current store settings (publicly readable so frontend cart knows it, or we could keep it admin-only, but frontend doesn't actually calculate tax, only backend does)."""
+    """Get current store settings."""
     return get_settings()
+
 
 @router.post("")
 async def update_settings(data: dict, admin: CurrentAdmin):
     """Update store settings."""
     settings = get_settings()
     settings.update(data)
-    with open(SETTINGS_FILE, "w") as f:
-        json.dump(settings, f)
-    return settings
+    _in_memory_settings.update(settings)
+
+    # Attempt to write to primary or fallback
+    written = False
+    for path in (PRIMARY_SETTINGS_FILE, FALLBACK_SETTINGS_FILE):
+        try:
+            with open(path, "w") as f:
+                json.dump(_in_memory_settings, f)
+            written = True
+            break
+        except Exception:
+            continue
+
+    return _in_memory_settings

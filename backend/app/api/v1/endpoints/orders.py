@@ -244,7 +244,11 @@ async def verify_payment(data: VerifyPaymentRequest, db: DbSession, user: Curren
         raise HTTPException(status_code=400, detail="Payment verification failed: signature mismatch")
 
     # Update order
-    order_id = uuid.UUID(data.order_id)
+    try:
+        order_id = uuid.UUID(data.order_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=400, detail="Invalid order ID format")
+
     result = await db.execute(select(Order).where(Order.id == order_id, Order.user_id == user.id))
     order = result.scalar_one_or_none()
     if not order:
@@ -391,9 +395,14 @@ async def get_my_orders(db: DbSession, user: CurrentUser):
 @router.get("/{order_id}")
 async def get_order_detail(order_id: str, db: DbSession, user: CurrentUser):
     """Get single order details."""
+    try:
+        order_uuid = uuid.UUID(order_id)
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=404, detail="Order not found")
+
     result = await db.execute(
         select(Order)
-        .where(Order.id == uuid.UUID(order_id), Order.user_id == user.id)
+        .where(Order.id == order_uuid, Order.user_id == user.id)
         .options(selectinload(Order.items))
     )
     order = result.scalar_one_or_none()

@@ -1,6 +1,6 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { ExternalLink, Users, Calendar } from "lucide-react";
+import { ExternalLink, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Metadata } from "next";
 

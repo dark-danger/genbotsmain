@@ -44,16 +44,21 @@ export default function CheckoutPage() {
   });
 
   // Fetch cart on mount
-  const { isLoading: cartLoading } = useQuery({
+  const { data: cartData, isLoading: cartLoading } = useQuery({
     queryKey: ["cart"],
     queryFn: async () => {
       const res = await cartApi.get();
-      setCart(res.data);
       return res.data;
     },
     enabled: !!token,
     staleTime: 0,
   });
+
+  useEffect(() => {
+    if (cartData) {
+      setCart(cartData);
+    }
+  }, [cartData, setCart]);
 
   // Load Razorpay script
   useEffect(() => {
@@ -62,7 +67,9 @@ export default function CheckoutPage() {
     script.async = true;
     document.head.appendChild(script);
     return () => {
-      document.head.removeChild(script);
+      if (script.parentNode) {
+        script.parentNode.removeChild(script);
+      }
     };
   }, []);
 

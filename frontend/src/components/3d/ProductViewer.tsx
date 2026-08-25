@@ -2,7 +2,7 @@
 
 import { useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
-import { OrbitControls, Float, MeshDistortMaterial, Environment, ContactShadows } from "@react-three/drei";
+import { OrbitControls, Float, ContactShadows } from "@react-three/drei";
 import * as THREE from "three";
 
 function ProductMesh({ color = "#10b981" }: { color?: string }) {

@@ -1,9 +1,8 @@
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Clock, Users, Star, ArrowRight } from "lucide-react";
+import { Clock, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Training", description: "Enroll in IoT, robotics, and AI courses, bootcamps, and workshops by GenBots." };

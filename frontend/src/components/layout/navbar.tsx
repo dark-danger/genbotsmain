@@ -1,19 +1,21 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useSyncExternalStore } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useTheme } from "next-themes";
 import {
-  Menu, X, Sun, Moon, ShoppingCart, User, Search,
-  ChevronDown, Cpu, Bot, Code, Wrench, GraduationCap,
-  BookOpen, Briefcase, Phone, LayoutDashboard, LogIn,
+  Menu, Sun, Moon, ShoppingCart, User, Search,
+  ChevronDown, Cpu, Code, Wrench, GraduationCap,
+  BookOpen, Briefcase, Phone, LogIn,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
+
+const emptySubscribe = () => () => {};
 
 const mainNav = [
   { label: "Home", href: "/" },
@@ -34,11 +36,13 @@ export function Navbar() {
   const [mobileOpen, setMobileOpen] = useState(false);
   const pathname = usePathname();
   const { theme, setTheme } = useTheme();
-  const [mounted, setMounted] = useState(false);
-  const { user, isAuthenticated } = useAuthStore();
+  const mounted = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false
+  );
+  const { isAuthenticated } = useAuthStore();
   const { itemCount } = useCartStore();
-
-  useEffect(() => { setMounted(true); }, []);
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);

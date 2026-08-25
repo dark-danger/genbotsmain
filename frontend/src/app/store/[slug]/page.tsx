@@ -45,33 +45,25 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     queryKey: ["productDetail", slug],
     queryFn: async () => {
       const res = await productsApi.getBySlug(slug);
-      const data = res.data;
-      // Set active image initially
-      setActiveImage(getProductImage(data));
-      return data;
+      return res.data;
     },
     staleTime: 30000,
   });
 
   const product = apiProduct;
-
-  // Set default active image from fallback if not set
-  useEffect(() => {
-    if (product && !activeImage) {
-      setActiveImage(getProductImage(product));
-    }
-  }, [product, activeImage]);
+  const currentImage = activeImage || (product ? getProductImage(product) : "");
 
   // Check if product is in wishlist
-  useQuery({
+  const { data: wishlistData } = useQuery({
     queryKey: ["checkWishlist", product?.id],
     queryFn: async () => {
       const res = await wishlistApi.check(product.id);
-      setWishlisted(res.data.wishlisted);
       return res.data;
     },
     enabled: !!token && !!product?.id,
   });
+
+  const isItemWishlisted = wishlistData?.wishlisted ?? wishlisted;
 
   // Add to cart mutation
   const addToCartMutation = useMutation({
@@ -94,7 +86,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         window.dispatchEvent(new Event("cart-updated"));
       }
     },
-    onError: (err: any) => {
+    onError: () => {
       alert("Failed to remove item.");
     }
   });
@@ -102,8 +94,8 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   // Toggle wishlist mutation
   const toggleWishlistMutation = useMutation({
     mutationFn: () => wishlistApi.toggle(product.id),
-    onSuccess: (data: any) => {
-      setWishlisted(data.data.wishlisted);
+    onSuccess: (data: { data?: { wishlisted?: boolean } }) => {
+      setWishlisted(Boolean(data.data?.wishlisted));
     },
     onError: (err: any) => {
       alert(err.response?.data?.detail || "Failed to toggle wishlist. Please log in.");
@@ -219,9 +211,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                   </div>
                 ) : (
                   <div className="aspect-square rounded-2xl overflow-hidden border bg-muted relative group">
-                    {activeImage ? (
+                    {currentImage ? (
                       <img
-                        src={resolveImageUrl(activeImage)}
+                        src={resolveImageUrl(currentImage)}
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="eager"
@@ -245,14 +237,14 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 {/* Thumbnails */}
                 {!show3D && product.images && product.images.length > 1 && (
                   <div className="flex gap-3 flex-wrap">
-                    {product.images.map((img: any, idx: number) => {
+                    {product.images.map((img: { url: string; is_primary?: boolean }, idx: number) => {
                       const resolvedUrl = resolveImageUrl(img.url);
                       return (
                         <button
                           key={idx}
                           type="button"
                           onClick={() => setActiveImage(resolvedUrl)}
-                          className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${resolveImageUrl(activeImage) === resolvedUrl ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
+                          className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${resolveImageUrl(currentImage) === resolvedUrl ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
                           aria-label={`View image ${idx + 1}`}
                         >
                           <img src={resolvedUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />

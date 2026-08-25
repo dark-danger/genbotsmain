@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   LayoutDashboard, Users, ShoppingCart, Package, Settings,
@@ -303,17 +303,8 @@ export default function AdminDashboard() {
   });
 
   // --- REAL LOCAL ANALYTICS (from VisitorTracker localStorage) ---
-  const [localAnalytics, setLocalAnalytics] = useState<{
-    todayViews: number;
-    dailyViews: { date: string; views: number; unique_visitors: number }[];
-    topPages: { path: string; title: string; views: number; category: string }[];
-    deviceBreakdown: { device: string; percentage: number; count: number }[];
-    browserBreakdown: { name: string; percentage: number }[];
-    recentActivities: any[];
-  } | null>(null);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
+  const localAnalytics = useMemo(() => {
+    if (typeof window === "undefined" || activeTab !== "analytics") return null;
     try {
       const today = new Date().toISOString().split("T")[0];
 
@@ -370,7 +361,7 @@ export default function AdminDashboard() {
       }));
 
       // Recent activities with human-readable time
-      const recentActivities = activities.slice(0, 10).map((a, i) => ({
+      const recentActivities = activities.slice(0, 10).map((a) => ({
         ...a,
         visitor: `Visitor ${a.visitor_id}`,
         time: (() => {
@@ -381,16 +372,17 @@ export default function AdminDashboard() {
         })(),
       }));
 
-      setLocalAnalytics({
+      return {
         todayViews: dailyViewsMap[today] || 0,
         dailyViews,
         topPages,
         deviceBreakdown,
         browserBreakdown,
         recentActivities,
-      });
+      };
     } catch (e) {
       console.error("Failed to load local analytics:", e);
+      return null;
     }
   }, [activeTab]);
 
@@ -847,9 +839,11 @@ export default function AdminDashboard() {
 
       {/* Sidebar */}
       <div className="w-64 border-r border-border bg-card flex flex-col shrink-0">
-        <div className="h-16 flex items-center px-6 border-b border-border gap-2">
-          <Shield className="w-6 h-6 text-primary" />
-          <span className="text-xl font-bold">Gen<span className="gradient-text">Bots</span> Admin</span>
+        <div className="h-16 flex items-center px-6 border-b border-border gap-3">
+          <div className="w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shadow-sm">
+            <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
+          </div>
+          <span className="text-xl font-bold">Gen<span className="gradient-text">Bots</span> <span className="text-xs font-normal text-muted-foreground ml-0.5">Admin</span></span>
         </div>
 
         <div className="flex-1 overflow-y-auto py-4">
@@ -1002,7 +996,7 @@ export default function AdminDashboard() {
               <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div className="glass-card p-5 border bg-card/60">
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today's Page Views</span>
+                    <span className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">Today&apos;s Page Views</span>
                     <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
                       <Eye className="w-4 h-4 text-primary" />
                     </div>
@@ -3343,7 +3337,7 @@ function LabQuotesSection() {
           <div className="text-center py-12 text-muted-foreground">
             <School className="w-12 h-12 mx-auto mb-3 opacity-30" />
             <p className="text-sm">No lab quote requests received yet.</p>
-            <p className="text-xs mt-1">They will appear here when schools submit the "Request a Quote" form on the Lab Setup page.</p>
+            <p className="text-xs mt-1">They will appear here when schools submit the &quot;Request a Quote&quot; form on the Lab Setup page.</p>
           </div>
         ) : (
           <div className="space-y-4">

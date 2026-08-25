@@ -14,18 +14,22 @@ import Link from "next/link";
 export default function CartPage() {
   const { user, token } = useAuthStore();
   const { items, itemCount, subtotal, taxAmount, total, setCart, clearLocal } = useCartStore();
-  const queryClient = useQueryClient();
 
-  const { isLoading, refetch } = useQuery({
+  const { data: cartData, isLoading, refetch } = useQuery({
     queryKey: ["cart"],
     queryFn: async () => {
       const res = await cartApi.get();
-      setCart(res.data);
       return res.data;
     },
     enabled: !!token,
     staleTime: 0,
   });
+
+  useEffect(() => {
+    if (cartData) {
+      setCart(cartData);
+    }
+  }, [cartData, setCart]);
 
   useEffect(() => {
     const handleCartUpdated = () => {

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { Bot, Mail, Phone, MapPin, ArrowRight } from "lucide-react";
+import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
@@ -67,8 +67,8 @@ export function Footer() {
           {/* Brand Column */}
           <div className="col-span-2 md:col-span-1">
             <Link href="/" className="flex items-center gap-2 mb-4">
-              <div className="w-10 h-10 rounded-xl gradient-bg flex items-center justify-center overflow-hidden">
-                <img src="/logo.jpg" alt="GenBots Logo" className="w-full h-full object-contain bg-white" />
+              <div className="w-10 h-10 rounded-xl flex items-center justify-center overflow-hidden shadow-md">
+                <img src="/logo.png" alt="GenBots Logo" className="w-full h-full object-contain" />
               </div>
               <span className="text-xl font-bold">
                 Gen<span className="gradient-text">Bots</span>

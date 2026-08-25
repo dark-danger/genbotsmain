@@ -2,15 +2,14 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, User, ArrowRight, Search, Tag, Eye } from "lucide-react";
+import { Calendar, User, Search, Tag, Eye } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import { blogApi } from "@/lib/api";
 import { useState } from "react";
-import { ScrollReveal, StaggerReveal } from "@/components/animations/ScrollAnimations";
-import Image from "next/image";
+import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 
 // Static published posts for GenBots blog platform
 const fallbackPosts = [

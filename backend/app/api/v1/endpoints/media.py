@@ -174,16 +174,13 @@ async def delete_media(media_id: uuid.UUID, db: DbSession, admin: AdminUser):
     if not media:
         raise HTTPException(status_code=404, detail="Media file not found")
         
-    # Resolve physical path
-    # relative url is like /uploads/folder/filename
-    parts = media.url.lstrip("/").split("/")
-    if len(parts) >= 2:
-        physical_path = os.path.join(UPLOAD_DIR, *parts[1:])
-        if os.path.exists(physical_path):
-            try:
-                os.remove(physical_path)
-            except Exception as e:
-                pass # Continue with DB deletion even if file removal fails
+    # Resolve physical path safely using folder and filename
+    physical_path = os.path.join(UPLOAD_DIR, media.folder or "general", media.filename)
+    if os.path.exists(physical_path):
+        try:
+            os.remove(physical_path)
+        except Exception:
+            pass # Continue with DB deletion even if file removal fails
 
     await db.delete(media)
     await db.flush()

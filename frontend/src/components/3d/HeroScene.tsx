@@ -13,13 +13,21 @@ function ParticleField() {
     const positions = new Float32Array(count * 3);
     const colors = new Float32Array(count * 3);
     for (let i = 0; i < count; i++) {
-      positions[i * 3] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 1] = (Math.random() - 0.5) * 20;
-      positions[i * 3 + 2] = (Math.random() - 0.5) * 20;
+      // Deterministic pseudo-random generation to maintain render purity and avoid hydration mismatches
+      const pseudoX = Math.sin(i * 12.9898 + 78.233) * 43758.5453;
+      const pseudoY = Math.cos(i * 39.346 + 11.135) * 43758.5453;
+      const pseudoZ = Math.sin(i * 73.156 + 45.164) * 43758.5453;
+      const randX = pseudoX - Math.floor(pseudoX);
+      const randY = pseudoY - Math.floor(pseudoY);
+      const randZ = pseudoZ - Math.floor(pseudoZ);
+
+      positions[i * 3] = (randX - 0.5) * 20;
+      positions[i * 3 + 1] = (randY - 0.5) * 20;
+      positions[i * 3 + 2] = (randZ - 0.5) * 20;
       // Emerald/cyan palette
-      colors[i * 3] = 0.06 + Math.random() * 0.1;
-      colors[i * 3 + 1] = 0.5 + Math.random() * 0.3;
-      colors[i * 3 + 2] = 0.3 + Math.random() * 0.5;
+      colors[i * 3] = 0.06 + randX * 0.1;
+      colors[i * 3 + 1] = 0.5 + randY * 0.3;
+      colors[i * 3 + 2] = 0.3 + randZ * 0.5;
     }
     return { positions, colors };
   }, []);

@@ -3,7 +3,7 @@
 import { useState, use } from "react";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { ArrowLeft, Download, Monitor, ExternalLink, ShieldCheck, Cpu, History, MessageSquare, BookOpen, Star } from "lucide-react";
+import { ArrowLeft, Download, Monitor, ExternalLink, ShieldCheck, Cpu, History, MessageSquare, BookOpen } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";

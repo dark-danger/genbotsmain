@@ -74,7 +74,11 @@ async def get_cart(db: DbSession, user: CurrentUser):
 @router.post("/items", status_code=status.HTTP_201_CREATED)
 async def add_to_cart(data: AddToCartRequest, db: DbSession, user: CurrentUser):
     """Add a product to cart. If already in cart, increment quantity."""
-    product_id = UUID(data.product_id)
+    try:
+        product_id = UUID(data.product_id)
+        variant_id = UUID(data.variant_id) if data.variant_id else None
+    except (ValueError, AttributeError):
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid product or variant ID format")
 
     # Verify product exists and is active
     result = await db.execute(select(Product).where(Product.id == product_id, Product.status == "active"))
@@ -90,7 +94,7 @@ async def add_to_cart(data: AddToCartRequest, db: DbSession, user: CurrentUser):
         select(CartItem).where(
             CartItem.user_id == user.id,
             CartItem.product_id == product_id,
-            CartItem.variant_id == (UUID(data.variant_id) if data.variant_id else None),
+            CartItem.variant_id == variant_id,
         )
     )
     cart_item = existing.scalar_one_or_none()
@@ -103,7 +107,7 @@ async def add_to_cart(data: AddToCartRequest, db: DbSession, user: CurrentUser):
         cart_item = CartItem(
             user_id=user.id,
             product_id=product_id,
-            variant_id=UUID(data.variant_id) if data.variant_id else None,
+            variant_id=variant_id,
             quantity=data.quantity,
         )
         db.add(cart_item)

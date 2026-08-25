@@ -44,23 +44,25 @@ export function resolveImageUrl(url: string | null | undefined): string {
   return `/${cleanUrl}`
 }
 
-export function getProductImage(product: any): string {
+export function getProductImage(product: unknown): string {
   if (!product) return FALLBACK_IMAGES.default
 
   if (typeof product === "string" && product.trim()) {
     return resolveImageUrl(product)
   }
 
+  const p = product as Record<string, unknown>
   let foundUrl = ""
 
   // 1. Check images array
-  if (Array.isArray(product.images) && product.images.length > 0) {
-    const primary = product.images.find((i: any) => i && typeof i === "object" && i.is_primary)
-    const target = primary || product.images[0]
+  if (Array.isArray(p.images) && p.images.length > 0) {
+    const primary = p.images.find((i: unknown) => i && typeof i === "object" && (i as Record<string, unknown>).is_primary)
+    const target = primary || p.images[0]
     if (typeof target === "string" && target.trim()) {
       foundUrl = target.trim()
     } else if (target && typeof target === "object") {
-      const u = target.url || target.image_url || target.src || target.link
+      const t = target as Record<string, unknown>
+      const u = t.url || t.image_url || t.src || t.link
       if (u && typeof u === "string" && u.trim()) {
         foundUrl = u.trim()
       }
@@ -69,9 +71,9 @@ export function getProductImage(product: any): string {
 
   // 2. Check direct properties
   if (!foundUrl) {
-    if (typeof product.image === "string" && product.image.trim()) foundUrl = product.image.trim()
-    else if (typeof product.image_url === "string" && product.image_url.trim()) foundUrl = product.image_url.trim()
-    else if (typeof product.product_image === "string" && product.product_image.trim()) foundUrl = product.product_image.trim()
+    if (typeof p.image === "string" && p.image.trim()) foundUrl = p.image.trim()
+    else if (typeof p.image_url === "string" && p.image_url.trim()) foundUrl = p.image_url.trim()
+    else if (typeof p.product_image === "string" && p.product_image.trim()) foundUrl = p.product_image.trim()
   }
 
   if (foundUrl) {
@@ -79,8 +81,11 @@ export function getProductImage(product: any): string {
   }
 
   // Smart fallback by category or name keyword
-  const name = (product.name || product.title || product.product_name || "").toLowerCase()
-  const cat = (product.category?.slug || product.category?.name || (typeof product.category === "string" ? product.category : "") || "").toLowerCase()
+  const name = String(p.name || p.title || p.product_name || "").toLowerCase()
+  const catObj = p.category as Record<string, unknown> | string | undefined
+  const cat = typeof catObj === "object" && catObj !== null
+    ? String(catObj.slug || catObj.name || "").toLowerCase()
+    : String(catObj || "").toLowerCase()
 
   if (name.includes("arduino") || cat.includes("arduino")) return FALLBACK_IMAGES.arduino
   if (name.includes("esp32") || cat.includes("esp32")) return FALLBACK_IMAGES.esp32
@@ -93,7 +98,7 @@ export function getProductImage(product: any): string {
   return FALLBACK_IMAGES.default
 }
 
-export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_order") => {
+export const generateDocumentHtml = (order: Record<string, any>, docType: "invoice" | "purchase_order") => {
   const isInvoice = docType === "invoice";
   const docTitle = isInvoice ? "TAX INVOICE" : "PURCHASE ORDER";
   const docNumber = isInvoice
@@ -103,15 +108,14 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
     ? new Date(order.created_at).toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" })
     : new Date().toLocaleDateString("en-IN", { day: "2-digit", month: "short", year: "numeric" });
 
-  const items = order.items || [];
+  const items = Array.isArray(order.items) ? order.items : [];
   const subtotal = parseFloat(order.subtotal || (order.total_amount * 100 / 118).toString());
-  const taxAmount = parseFloat(order.tax_amount || (subtotal * 0.18).toString());
   const totalAmount = parseFloat(order.total_amount);
   const shippingAmount = parseFloat(order.shipping_amount || "0");
   const discountAmount = parseFloat(order.discount_amount || "0");
 
   const itemsHtml = items.length > 0
-    ? items.map((item: any, i: number) => `
+    ? items.map((item: Record<string, any>, i: number) => `
       <tr>
         <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${i + 1}</td>
         <td style="padding:10px 12px;border-bottom:1px solid #e5e7eb;">${item.product_name || "Product"}<br><span style="color:#6b7280;font-size:11px;">SKU: ${item.product_sku || "N/A"}</span></td>
@@ -121,6 +125,8 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
       </tr>
     `).join("")
     : `<tr><td colspan="5" style="padding:20px;text-align:center;color:#6b7280;">Order items details not available</td></tr>`;
+
+  const logoOrigin = typeof window !== "undefined" ? window.location.origin : "";
 
   return `<!DOCTYPE html>
 <html lang="en">
@@ -173,7 +179,7 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
   <div class="doc-container">
     <div class="header">
       <div class="logo-section">
-        <img src="${window.location.origin}/logo.jpg" alt="GenBots Logo" />
+        <img src="${logoOrigin}/logo.jpg" alt="GenBots Logo" />
         <p>IoT • Robotics • AI Solutions</p>
       </div>
       <div class="doc-type">
@@ -273,13 +279,15 @@ export const generateDocumentHtml = (order: any, docType: "invoice" | "purchase_
 </html>`;
 };
 
-export const generateInvoice = (order: any) => {
+export const generateInvoice = (order: Record<string, any>) => {
+  if (typeof window === "undefined") return;
   const html = generateDocumentHtml(order, "invoice");
   const win = window.open("", "_blank");
   if (win) { win.document.write(html); win.document.close(); }
 };
 
-export const generatePurchaseOrder = (order: any) => {
+export const generatePurchaseOrder = (order: Record<string, any>) => {
+  if (typeof window === "undefined") return;
   const html = generateDocumentHtml(order, "purchase_order");
   const win = window.open("", "_blank");
   if (win) { win.document.write(html); win.document.close(); }

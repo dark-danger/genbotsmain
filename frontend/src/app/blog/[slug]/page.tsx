@@ -2,7 +2,7 @@
 
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
-import { Calendar, User, ArrowLeft, Clock, Eye, Share2, BookOpen } from "lucide-react";
+import { Calendar, User, ArrowLeft, Clock, Eye, BookOpen } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
@@ -167,7 +167,7 @@ export default function BlogDetailPage() {
                 <main className="pt-28 pb-20 min-h-screen">
                     <div className="max-w-3xl mx-auto px-4 text-center">
                         <h1 className="text-3xl font-bold mb-4">Blog Post Not Found</h1>
-                        <p className="text-muted-foreground mb-6">The article you're looking for doesn't exist or has been removed.</p>
+                        <p className="text-muted-foreground mb-6">The article you&apos;re looking for doesn&apos;t exist or has been removed.</p>
                         <Link href="/blog">
                             <Button variant="outline" className="rounded-xl">
                                 <ArrowLeft className="w-4 h-4 mr-2" /> Back to Blog

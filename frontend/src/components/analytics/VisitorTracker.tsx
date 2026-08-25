@@ -53,7 +53,17 @@ export function VisitorTracker() {
 
             // Track recent visitor activities (Max 50 items)
             const activitiesRaw = localStorage.getItem("genbots_visitor_activities");
-            let activities: any[] = activitiesRaw ? JSON.parse(activitiesRaw) : [];
+            let activities: Array<{
+                id: string;
+                visitor_id: string;
+                path: string;
+                action: string;
+                device: string;
+                browser: string;
+                time: string;
+                timestamp: string;
+                date: string;
+            }> = activitiesRaw ? JSON.parse(activitiesRaw) : [];
 
             const newActivity = {
                 id: `act_${Date.now()}_${Math.random().toString(36).substring(2, 6)}`,
