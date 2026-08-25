@@ -37,7 +37,7 @@ class MediaFile(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     filename = Column(String(300), nullable=False)
     original_filename = Column(String(300), nullable=False)
-    url = Column(String(500), nullable=False)
+    url = Column(Text, nullable=False)
     file_type = Column(String(50), nullable=False)
     file_size = Column(Integer, nullable=True)
     mime_type = Column(String(100), nullable=True)

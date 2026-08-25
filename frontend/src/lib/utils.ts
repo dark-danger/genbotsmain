@@ -20,37 +20,52 @@ export function resolveImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== "string" || !url.trim()) return FALLBACK_IMAGES.default
   let cleanUrl = url.trim()
 
-  const isClient = typeof window !== "undefined"
-  const isLocalHost = isClient
-    ? (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
-    : (process.env.NODE_ENV === "development" || (process.env.NEXT_PUBLIC_API_URL || "").includes("localhost"))
-
-  // If URL has localhost in production, strip it to relative
-  if (!isLocalHost && cleanUrl.includes("localhost:8000")) {
-    cleanUrl = cleanUrl.replace(/^https?:\/\/localhost:8000/, "")
-  }
-
-  // Already a full external/data URL (e.g. Unsplash, S3, data:image, blob:)
-  if (
-    cleanUrl.startsWith("http://") ||
-    cleanUrl.startsWith("https://") ||
-    cleanUrl.startsWith("data:") ||
-    cleanUrl.startsWith("blob:")
-  ) {
+  // 1. Data URLs and Blob URLs are self-contained and ready to render
+  if (cleanUrl.startsWith("data:") || cleanUrl.startsWith("blob:")) {
     return cleanUrl
   }
 
-  // Ensure leading slash
+  // 2. Full HTTP/HTTPS URLs (Unsplash, S3, Cloudinary, CDN)
+  if (cleanUrl.startsWith("http://") || cleanUrl.startsWith("https://")) {
+    return cleanUrl
+  }
+
+  // 3. Ensure leading slash for relative paths
   if (!cleanUrl.startsWith("/")) {
     cleanUrl = `/${cleanUrl}`
   }
 
-  // If in local development, route uploads directly to FastAPI on port 8000
-  if (isLocalHost && cleanUrl.startsWith("/uploads/")) {
-    return `http://localhost:8000${cleanUrl}`
+  const isClient = typeof window !== "undefined"
+  const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
+
+  // 4. Handle backend upload paths
+  if (cleanUrl.startsWith("/uploads/")) {
+    if (apiUrl && !apiUrl.startsWith("/")) {
+      try {
+        const base = new URL(apiUrl).origin
+        return `${base}${cleanUrl}`
+      } catch {
+        // fallback
+      }
+    }
+    if (isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      return `http://localhost:8000${cleanUrl}`
+    }
   }
-  if (isLocalHost && cleanUrl.startsWith("/api/backend/uploads/")) {
-    return `http://localhost:8000${cleanUrl.replace("/api/backend", "")}`
+
+  if (cleanUrl.startsWith("/api/backend/uploads/")) {
+    const rawPath = cleanUrl.replace("/api/backend", "")
+    if (apiUrl && !apiUrl.startsWith("/")) {
+      try {
+        const base = new URL(apiUrl).origin
+        return `${base}${rawPath}`
+      } catch {
+        // fallback
+      }
+    }
+    if (isClient && (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")) {
+      return `http://localhost:8000${rawPath}`
+    }
   }
 
   return cleanUrl

@@ -85,13 +85,19 @@ async def upload_file(
     temp_path = file_path + ".tmp"
     success = False
     
-    for attempt in range(3): # Retry logic
+    for attempt in range(3):  # Retry logic
         try:
-            if ext in [".jpg", ".jpeg", ".png", ".webp"] and file.content_type.startswith("image/"):
+            file.file.seek(0)
+            if ext in [".jpg", ".jpeg", ".png", ".webp"] and (file.content_type or "").startswith("image/"):
                 # Open with PIL
                 img = Image.open(file.file)
-                # Strip EXIF and save optimized image
-                img.save(temp_path, format=img.format, optimize=True, quality=85)
+                save_format = "JPEG" if ext in [".jpg", ".jpeg"] else ("PNG" if ext == ".png" else "WEBP")
+                if save_format == "JPEG" and img.mode in ("RGBA", "LA", "P"):
+                    img = img.convert("RGB")
+                if save_format in ("JPEG", "WEBP"):
+                    img.save(temp_path, format=save_format, optimize=True, quality=85)
+                else:
+                    img.save(temp_path, format=save_format, optimize=True)
                 success = True
             else:
                 # Direct stream copy for non-image assets
@@ -99,7 +105,7 @@ async def upload_file(
                     shutil.copyfileobj(file.file, buffer)
                 success = True
             break
-        except Exception as e:
+        except Exception:
             time.sleep(0.1 * (attempt + 1))
             
     if not success:
