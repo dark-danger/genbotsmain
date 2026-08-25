@@ -531,6 +531,16 @@ export default function AdminDashboard() {
     }
   });
 
+  const deleteUserMutation = useMutation({
+    mutationFn: async (userId: string) => (await adminApi.deleteUser(userId)).data,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["adminUsers"] });
+      queryClient.invalidateQueries({ queryKey: ["adminStats"] });
+      alert("User account deleted successfully!");
+    },
+    onError: (err: any) => alert(err.response?.data?.detail || "Failed to delete user")
+  });
+
   const approveReviewMutation = useMutation({
     mutationFn: async (id: string) => (await adminApi.approveReview(id)).data,
     onSuccess: () => {
@@ -2090,6 +2100,7 @@ export default function AdminDashboard() {
                           <th className="px-4 py-3 font-medium">Email</th>
                           <th className="px-4 py-3 font-medium">Role</th>
                           <th className="px-4 py-3 font-medium">Change Role</th>
+                          <th className="px-4 py-3 font-medium text-right">Actions</th>
                         </tr>
                       </thead>
                       <tbody className="divide-y divide-border">
@@ -2113,6 +2124,23 @@ export default function AdminDashboard() {
                                 <option value="admin">Admin</option>
                                 <option value="superadmin">Superadmin</option>
                               </select>
+                            </td>
+                            <td className="px-4 py-3 text-right">
+                              {u.id !== user?.id && (
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="w-7 h-7 text-destructive hover:bg-destructive/10"
+                                  title={`Delete user ${u.email}`}
+                                  onClick={() => {
+                                    if (confirm(`Are you sure you want to permanently delete user "${u.email}"?`)) {
+                                      deleteUserMutation.mutate(u.id);
+                                    }
+                                  }}
+                                >
+                                  <Trash className="w-3.5 h-3.5" />
+                                </Button>
+                              )}
                             </td>
                           </tr>
                         ))}

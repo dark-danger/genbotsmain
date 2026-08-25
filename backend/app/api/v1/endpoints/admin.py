@@ -154,6 +154,31 @@ async def update_user(user_id: UUID, data: UserAdminUpdate, db: DbSession, admin
     return user
 
 
+@router.delete("/users/{user_id}")
+async def delete_user(user_id: UUID, db: DbSession, admin: AdminUser):
+    """Delete a user and clean up their associated records (admin only)."""
+    if user_id == admin.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own admin account")
+    result = await db.execute(select(User).where(User.id == user_id))
+    user = result.scalar_one_or_none()
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    user_email = user.email
+    await db.delete(user)
+    await db.flush()
+    
+    await log_audit_action(
+        db,
+        user_id=admin.id,
+        action="delete_user",
+        resource_type="user",
+        resource_id=user_id,
+        details={"email": user_email}
+    )
+    return {"message": f"User {user_email} deleted successfully"}
+
+
 @router.get("/orders")
 async def list_admin_orders(
     db: DbSession, admin: AdminUser,

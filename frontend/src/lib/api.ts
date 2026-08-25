@@ -211,6 +211,7 @@ export const adminApi = {
   dashboard: () => adminAxios.get("/admin/dashboard"),
   users: (params?: Record<string, string | number>) => adminAxios.get("/admin/users", { params }),
   updateUser: (id: string, data: Record<string, unknown>) => adminAxios.patch(`/admin/users/${id}`, data),
+  deleteUser: (id: string) => adminAxios.delete(`/admin/users/${id}`),
   orders: (params?: Record<string, string | number>) => adminAxios.get("/admin/orders", { params }),
   updateOrderStatus: (id: string, status: string) =>
     adminAxios.patch(`/admin/orders/${id}/status?status=${status}`),
