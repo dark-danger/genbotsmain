@@ -5,7 +5,7 @@ export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs))
 }
 
-const FALLBACK_IMAGES: Record<string, string> = {
+export const FALLBACK_IMAGES: Record<string, string> = {
   iot: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
   arduino: "https://images.unsplash.com/photo-1553406830-ef2513450d76?w=800&q=80",
   esp32: "https://images.unsplash.com/photo-1608564697071-ddf911bf41fb?w=800&q=80",
@@ -20,8 +20,13 @@ export function resolveImageUrl(url: string | null | undefined): string {
   if (!url || typeof url !== "string" || !url.trim()) return FALLBACK_IMAGES.default
   let cleanUrl = url.trim()
 
-  // Clean up legacy hardcoded localhost URLs if stored in DB
-  if (cleanUrl.includes("localhost:8000")) {
+  const isClient = typeof window !== "undefined"
+  const isLocalHost = isClient
+    ? (window.location.hostname === "localhost" || window.location.hostname === "127.0.0.1")
+    : (process.env.NODE_ENV === "development" || (process.env.NEXT_PUBLIC_API_URL || "").includes("localhost"))
+
+  // If URL has localhost in production, strip it to relative
+  if (!isLocalHost && cleanUrl.includes("localhost:8000")) {
     cleanUrl = cleanUrl.replace(/^https?:\/\/localhost:8000/, "")
   }
 
@@ -35,13 +40,20 @@ export function resolveImageUrl(url: string | null | undefined): string {
     return cleanUrl
   }
 
-  // Relative upload or API paths (/uploads/..., /api/backend/uploads/...)
-  if (cleanUrl.startsWith("/")) {
-    return cleanUrl
+  // Ensure leading slash
+  if (!cleanUrl.startsWith("/")) {
+    cleanUrl = `/${cleanUrl}`
   }
 
-  // Fallback for paths missing leading slash
-  return `/${cleanUrl}`
+  // If in local development, route uploads directly to FastAPI on port 8000
+  if (isLocalHost && cleanUrl.startsWith("/uploads/")) {
+    return `http://localhost:8000${cleanUrl}`
+  }
+  if (isLocalHost && cleanUrl.startsWith("/api/backend/uploads/")) {
+    return `http://localhost:8000${cleanUrl.replace("/api/backend", "")}`
+  }
+
+  return cleanUrl
 }
 
 export function getProductImage(product: unknown): string {
@@ -67,13 +79,28 @@ export function getProductImage(product: unknown): string {
         foundUrl = u.trim()
       }
     }
+  } else if (typeof p.images === "string" && p.images.trim().startsWith("[")) {
+    try {
+      const parsed = JSON.parse(p.images)
+      if (Array.isArray(parsed) && parsed.length > 0) {
+        const first = parsed[0]
+        if (typeof first === "string") foundUrl = first
+        else if (first && typeof first === "object") foundUrl = first.url || first.image_url || first.src || ""
+      }
+    } catch {
+      // ignore
+    }
   }
 
   // 2. Check direct properties
   if (!foundUrl) {
-    if (typeof p.image === "string" && p.image.trim()) foundUrl = p.image.trim()
+    if (typeof p.primary_image === "string" && p.primary_image.trim()) foundUrl = p.primary_image.trim()
+    else if (typeof p.image === "string" && p.image.trim()) foundUrl = p.image.trim()
     else if (typeof p.image_url === "string" && p.image_url.trim()) foundUrl = p.image_url.trim()
     else if (typeof p.product_image === "string" && p.product_image.trim()) foundUrl = p.product_image.trim()
+    else if (typeof p.cover_image === "string" && p.cover_image.trim()) foundUrl = p.cover_image.trim()
+    else if (typeof p.thumbnail === "string" && p.thumbnail.trim()) foundUrl = p.thumbnail.trim()
+    else if (typeof p.thumbnail_url === "string" && p.thumbnail_url.trim()) foundUrl = p.thumbnail_url.trim()
   }
 
   if (foundUrl) {

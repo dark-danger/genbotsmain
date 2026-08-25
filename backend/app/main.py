@@ -45,11 +45,8 @@ app.add_middleware(
 )
 
 from fastapi.staticfiles import StaticFiles
+from app.core.config import UPLOAD_DIR
 
-from pathlib import Path
-
-BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent
-UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else str(BASE_BACKEND_DIR / "uploads")
 try:
     os.makedirs(UPLOAD_DIR, exist_ok=True)
     app.mount("/uploads", StaticFiles(directory=UPLOAD_DIR), name="uploads")

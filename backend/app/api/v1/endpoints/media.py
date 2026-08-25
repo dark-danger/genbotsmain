@@ -8,7 +8,7 @@ from fastapi import APIRouter, UploadFile, File, Form, HTTPException, status
 from PIL import Image
 from sqlalchemy import select
 
-from app.core.config import settings
+from app.core.config import settings, UPLOAD_DIR
 from app.core.deps import DbSession, AdminUser
 from app.models.cms import MediaFile
 from app.schemas.content import MediaFileResponse
@@ -16,15 +16,6 @@ from app.schemas.common import MessageResponse
 from app.utils.audit import log_audit_action
 
 router = APIRouter(prefix="/media", tags=["Media"])
-
-from pathlib import Path
-
-BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent.parent
-UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else str(BASE_BACKEND_DIR / "uploads")
-try:
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-except Exception:
-    pass
 
 # Helper to verify magic bytes for safety
 def is_safe_file(file_content: bytes, filename: str) -> bool:

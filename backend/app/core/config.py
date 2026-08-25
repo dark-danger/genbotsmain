@@ -1,7 +1,17 @@
 """GenBots Enterprise Platform - Core Configuration."""
+import os
+from pathlib import Path
 from typing import Optional
 from pydantic_settings import BaseSettings
 from pydantic import field_validator
+
+BASE_BACKEND_DIR = Path(__file__).resolve().parent.parent.parent
+UPLOAD_DIR = "/tmp/uploads" if os.getenv("VERCEL") else str(BASE_BACKEND_DIR / "uploads")
+try:
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+except Exception:
+    pass
+
 
 
 class Settings(BaseSettings):

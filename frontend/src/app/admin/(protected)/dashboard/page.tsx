@@ -1718,13 +1718,18 @@ export default function AdminDashboard() {
                       {/* Image Preview Grid */}
                       <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 gap-3 pt-2">
                         {(editingProduct ? editingProduct.images : newProduct.images)?.map((img: any, idx: number) => {
-                          const resolved = resolveImageUrl(img.url);
+                          const rawUrl = typeof img === "string" ? img : (img?.url || img?.image_url || "");
+                          const resolved = resolveImageUrl(rawUrl);
                           return (
                             <div key={idx} className="group relative rounded-lg border overflow-hidden bg-background aspect-square flex flex-col justify-between">
                               <img
                                 src={resolved}
                                 className="w-full h-full object-cover"
                                 alt="product preview"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).onerror = null;
+                                  (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                }}
                               />
                               <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col justify-between p-1.5">
                                 <div className="flex justify-between items-center">
@@ -1888,7 +1893,15 @@ export default function AdminDashboard() {
                         <tr key={product.id} className="hover:bg-muted/30">
                           <td className="px-4 py-3 font-mono text-xs">{product.sku}</td>
                           <td className="px-4 py-3 font-medium flex items-center gap-2">
-                            <img src={getProductImage(product)} className="w-8 h-8 rounded object-cover" alt={product.name} />
+                            <img
+                              src={getProductImage(product)}
+                              className="w-8 h-8 rounded object-cover shrink-0"
+                              alt={product.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).onerror = null;
+                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                              }}
+                            />
                             <span>{product.name}</span>
                           </td>
                           <td className="px-4 py-3">₹{product.price}</td>
@@ -1927,7 +1940,18 @@ export default function AdminDashboard() {
                       {draftProductsData?.items?.map((product: any) => (
                         <tr key={product.id} className="hover:bg-muted/30 opacity-75">
                           <td className="px-4 py-3 font-mono text-xs">{product.sku}</td>
-                          <td className="px-4 py-3 font-medium">{product.name}</td>
+                          <td className="px-4 py-3 font-medium flex items-center gap-2">
+                            <img
+                              src={getProductImage(product)}
+                              className="w-8 h-8 rounded object-cover shrink-0"
+                              alt={product.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).onerror = null;
+                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                              }}
+                            />
+                            <span>{product.name}</span>
+                          </td>
                           <td className="px-4 py-3">₹{product.price}</td>
                           <td className="px-4 py-3">{product.stock_quantity}</td>
                           <td className="px-4 py-3"><Badge variant="outline">Draft</Badge></td>
@@ -1943,7 +1967,18 @@ export default function AdminDashboard() {
                       {archivedProductsData?.items?.map((product: any) => (
                         <tr key={product.id} className="hover:bg-muted/30 bg-muted/20 opacity-50">
                           <td className="px-4 py-3 font-mono text-xs">{product.sku}</td>
-                          <td className="px-4 py-3 font-medium">{product.name}</td>
+                          <td className="px-4 py-3 font-medium flex items-center gap-2">
+                            <img
+                              src={getProductImage(product)}
+                              className="w-8 h-8 rounded object-cover shrink-0"
+                              alt={product.name}
+                              onError={(e) => {
+                                (e.currentTarget as HTMLImageElement).onerror = null;
+                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                              }}
+                            />
+                            <span>{product.name}</span>
+                          </td>
                           <td className="px-4 py-3">₹{product.price}</td>
                           <td className="px-4 py-3">{product.stock_quantity}</td>
                           <td className="px-4 py-3"><Badge variant="secondary">Archived</Badge></td>
@@ -2299,7 +2334,15 @@ export default function AdminDashboard() {
                     <label className="text-xs font-semibold block mb-1">Service Banner/Illustration (Secure Upload)</label>
                     <input type="file" onChange={(e) => handleFileUpload(e, "service")} className="text-xs mb-2 block" />
                     {newService.image_url && (
-                      <img src={newService.image_url.startsWith("http") ? newService.image_url : `http://localhost:8000${newService.image_url}`} className="w-32 h-20 object-cover border rounded mt-1" alt="preview" />
+                      <img
+                        src={resolveImageUrl(newService.image_url)}
+                        className="w-32 h-20 object-cover border rounded mt-1"
+                        alt="preview"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).onerror = null;
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                        }}
+                      />
                     )}
                   </div>
 
@@ -2502,7 +2545,15 @@ export default function AdminDashboard() {
                     <label className="text-xs font-semibold block mb-1">Showcase Photo (Secure Image Upload)</label>
                     <input type="file" onChange={(e) => handleFileUpload(e, "project-cover")} className="text-xs mb-2 block" />
                     {(editingProject ? editingProject.cover_image : newProject.cover_image) && (
-                      <img src={editingProject ? editingProject.cover_image : newProject.cover_image} className="w-32 h-20 object-cover border rounded mt-1" alt="preview" />
+                      <img
+                        src={resolveImageUrl(editingProject ? editingProject.cover_image : newProject.cover_image)}
+                        className="w-32 h-20 object-cover border rounded mt-1"
+                        alt="preview"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).onerror = null;
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                        }}
+                      />
                     )}
                   </div>
 
@@ -2559,7 +2610,15 @@ export default function AdminDashboard() {
                           <tr key={proj.id} className="hover:bg-muted/30">
                             <td className="px-4 py-3">
                               {proj.cover_image && (
-                                <img src={proj.cover_image} className="w-12 h-8 rounded object-cover" alt="cover" />
+                                <img
+                                  src={resolveImageUrl(proj.cover_image)}
+                                  className="w-12 h-8 rounded object-cover"
+                                  alt="cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).onerror = null;
+                                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                  }}
+                                />
                               )}
                             </td>
                             <td className="px-4 py-3 font-medium">{proj.title}</td>
@@ -2715,7 +2774,15 @@ export default function AdminDashboard() {
                       <label className="text-xs font-semibold block mb-1">Upload Banner Image</label>
                       <input type="file" onChange={(e) => handleFileUpload(e, "course-cover")} className="text-xs mb-2 block" />
                       {(editingCourse ? editingCourse.cover_image : newCourse.cover_image) && (
-                        <img src={editingCourse ? editingCourse.cover_image : newCourse.cover_image} className="w-32 h-20 object-cover border rounded mt-1" alt="preview" />
+                        <img
+                          src={resolveImageUrl(editingCourse ? editingCourse.cover_image : newCourse.cover_image)}
+                          className="w-32 h-20 object-cover border rounded mt-1"
+                          alt="preview"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).onerror = null;
+                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                          }}
+                        />
                       )}
                     </div>
                   </div>
@@ -2773,7 +2840,15 @@ export default function AdminDashboard() {
                           <tr key={c.id} className="hover:bg-muted/30">
                             <td className="px-4 py-3">
                               {c.cover_image && (
-                                <img src={c.cover_image} className="w-12 h-8 rounded object-cover" alt="cover" />
+                                <img
+                                  src={resolveImageUrl(c.cover_image)}
+                                  className="w-12 h-8 rounded object-cover"
+                                  alt="cover"
+                                  onError={(e) => {
+                                    (e.currentTarget as HTMLImageElement).onerror = null;
+                                    (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                  }}
+                                />
                               )}
                             </td>
                             <td className="px-4 py-3 font-medium">{c.title}</td>

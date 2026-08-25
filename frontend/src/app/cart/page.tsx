@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { cartApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
 export default function CartPage() {
@@ -127,9 +128,13 @@ export default function CartPage() {
                     <div className="w-20 h-20 rounded-xl bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                       {item.product_image ? (
                         <img
-                          src={item.product_image}
+                          src={resolveImageUrl(item.product_image)}
                           alt={item.product_name}
                           className="w-full h-full object-cover"
+                          onError={(e) => {
+                            (e.currentTarget as HTMLImageElement).onerror = null;
+                            (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                          }}
                         />
                       ) : (
                         <Package className="w-8 h-8 text-muted-foreground" />

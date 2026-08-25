@@ -217,6 +217,10 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         alt={product.name}
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                         loading="eager"
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).onerror = null;
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                        }}
                       />
                     ) : (
                       <div className="w-full h-full flex items-center justify-center bg-muted text-muted-foreground text-4xl">📦</div>
@@ -237,8 +241,10 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 {/* Thumbnails */}
                 {!show3D && product.images && product.images.length > 1 && (
                   <div className="flex gap-3 flex-wrap">
-                    {product.images.map((img: { url: string; is_primary?: boolean }, idx: number) => {
-                      const resolvedUrl = resolveImageUrl(img.url);
+                    {product.images.map((img: any, idx: number) => {
+                      const imgRaw = typeof img === "string" ? img : (img?.url || img?.image_url || img?.src || "");
+                      if (!imgRaw) return null;
+                      const resolvedUrl = resolveImageUrl(imgRaw);
                       return (
                         <button
                           key={idx}
@@ -247,7 +253,16 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                           className={`w-20 h-20 rounded-xl overflow-hidden border-2 transition-all ${resolveImageUrl(currentImage) === resolvedUrl ? "border-primary shadow-lg ring-2 ring-primary/20" : "border-transparent hover:border-primary/50"}`}
                           aria-label={`View image ${idx + 1}`}
                         >
-                          <img src={resolvedUrl} alt={`${product.name} thumbnail ${idx + 1}`} className="w-full h-full object-cover" loading="lazy" />
+                          <img
+                            src={resolvedUrl}
+                            alt={`${product.name} thumbnail ${idx + 1}`}
+                            className="w-full h-full object-cover"
+                            loading="lazy"
+                            onError={(e) => {
+                              (e.currentTarget as HTMLImageElement).onerror = null;
+                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                            }}
+                          />
                         </button>
                       );
                     })}

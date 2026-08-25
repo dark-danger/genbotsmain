@@ -106,6 +106,10 @@ export function ProductsSection() {
                         loading="lazy"
                         width={400}
                         height={300}
+                        onError={(e) => {
+                          (e.currentTarget as HTMLImageElement).onerror = null;
+                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                        }}
                       />
                       {product.is_featured && (
                         <span className="absolute top-3 left-3 text-xs font-medium px-2.5 py-1 rounded-md gradient-bg text-white shadow-lg">

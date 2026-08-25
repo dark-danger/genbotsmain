@@ -13,6 +13,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { cartApi, ordersApi } from "@/lib/api";
+import { resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
 declare global {
@@ -476,9 +477,13 @@ export default function CheckoutPage() {
                           <div className="w-12 h-12 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                             {item.product_image ? (
                               <img
-                                src={item.product_image}
+                                src={resolveImageUrl(item.product_image)}
                                 alt={item.product_name}
                                 className="w-full h-full object-cover"
+                                onError={(e) => {
+                                  (e.currentTarget as HTMLImageElement).onerror = null;
+                                  (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                }}
                               />
                             ) : (
                               "📦"

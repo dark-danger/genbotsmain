@@ -10,7 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { useAuthStore } from "@/store/auth";
 import { ordersApi, wishlistApi, cartApi } from "@/lib/api";
-import { generateInvoice } from "@/lib/utils";
+import { generateInvoice, resolveImageUrl } from "@/lib/utils";
 import Link from "next/link";
 
 export default function CustomerDashboard() {
@@ -197,9 +197,23 @@ export default function CustomerDashboard() {
                             </div>
                             {order.items?.map((item: any) => (
                               <div key={item.id} className="flex items-center gap-3 py-2 border-t border-border">
-                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-xs">📦</div>
-                                <div className="flex-1">
-                                  <p className="text-sm font-medium">{item.product_name}</p>
+                                <div className="w-10 h-10 rounded bg-muted flex items-center justify-center text-xs overflow-hidden shrink-0">
+                                  {item.product_image ? (
+                                    <img
+                                      src={resolveImageUrl(item.product_image)}
+                                      alt={item.product_name}
+                                      className="w-full h-full object-cover"
+                                      onError={(e) => {
+                                        (e.currentTarget as HTMLImageElement).onerror = null;
+                                        (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                      }}
+                                    />
+                                  ) : (
+                                    "📦"
+                                  )}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="text-sm font-medium line-clamp-1">{item.product_name}</p>
                                   <p className="text-xs text-muted-foreground">Qty: {item.quantity} × ₹{parseFloat(item.unit_price).toLocaleString("en-IN")}</p>
                                 </div>
                               </div>
@@ -340,7 +354,15 @@ function WishlistTab() {
             <div key={item.id} className="border rounded-xl p-4 flex gap-4 items-center">
               <div className="w-16 h-16 rounded-lg bg-muted flex items-center justify-center shrink-0 overflow-hidden">
                 {item.product_image ? (
-                  <img src={item.product_image} alt={item.product_name} className="w-full h-full object-cover" />
+                  <img
+                    src={resolveImageUrl(item.product_image)}
+                    alt={item.product_name}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      (e.currentTarget as HTMLImageElement).onerror = null;
+                      (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                    }}
+                  />
                 ) : (
                   <span className="text-2xl">📦</span>
                 )}
