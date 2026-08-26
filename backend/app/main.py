@@ -16,11 +16,12 @@ from app.services.telegram_bot import start_telegram_polling, stop_telegram_poll
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
-    # Start Telegram background listener for button clicks
-    try:
-        start_telegram_polling()
-    except Exception as e:
-        logger.warning(f"Could not start Telegram polling: {e}")
+    # Start Telegram background listener for local development
+    if not os.getenv("VERCEL"):
+        try:
+            start_telegram_polling()
+        except Exception as e:
+            logger.warning(f"Could not start Telegram polling: {e}")
 
     yield
 
