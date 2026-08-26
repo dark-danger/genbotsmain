@@ -1,10 +1,17 @@
 """Telegram notification utility for order alerts, interactive actions, and admin broadcasts."""
+import os
 import httpx
 import logging
 from typing import Optional, List, Dict, Any
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+def _get_bot_token(override: Optional[str] = None) -> Optional[str]:
+    return override or getattr(settings, "TELEGRAM_BOT_TOKEN", None) or os.getenv("TELEGRAM_BOT_TOKEN")
+
+def _get_chat_id(override: Optional[str] = None) -> Optional[str]:
+    return override or getattr(settings, "TELEGRAM_CHAT_ID", None) or os.getenv("TELEGRAM_CHAT_ID")
 
 async def send_telegram_message(
     message: str,
@@ -14,11 +21,11 @@ async def send_telegram_message(
     reply_markup: Optional[Dict[str, Any]] = None,
 ) -> bool:
     """Send a text message with optional inline keyboard buttons to Telegram."""
-    token = bot_token or getattr(settings, "TELEGRAM_BOT_TOKEN", None)
-    target_chat_id = chat_id or getattr(settings, "TELEGRAM_CHAT_ID", None)
+    token = _get_bot_token(bot_token)
+    target_chat_id = _get_chat_id(chat_id)
 
     if not token or not target_chat_id:
-        logger.debug("Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured.")
+        logger.warning("Telegram notification skipped: TELEGRAM_BOT_TOKEN or TELEGRAM_CHAT_ID not configured.")
         return False
 
     url = f"https://api.telegram.org/bot{token}/sendMessage"

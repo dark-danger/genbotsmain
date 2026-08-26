@@ -232,6 +232,20 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
         notification_type="order",
         link="/admin/orders"
     )
+    try:
+        from app.utils.telegram import send_order_telegram_notification
+        await send_order_telegram_notification(
+            order_number=order.order_number,
+            customer_name=order.shipping_name or getattr(user, "full_name", user.email),
+            customer_phone=order.shipping_phone or getattr(user, "phone", "N/A"),
+            city=order.shipping_city,
+            total_amount=float(total_amount),
+            payment_method="Razorpay",
+            status="pending",
+            items=order_items
+        )
+    except Exception:
+        pass
 
     return {
         "order_id": str(order.id),
@@ -366,6 +380,18 @@ async def razorpay_webhook(request: Request, db: DbSession):
         order.confirmed_at = datetime.now(timezone.utc)
         payment.gateway_payment_id = rz_payment_id
         payment.status = "success"
+        try:
+            from app.utils.telegram import send_telegram_message
+            await send_telegram_message(
+                f"💳 <b>Payment Captured via Webhook!</b>\n"
+                f"━━━━━━━━━━━━━━━━━━━\n"
+                f"🆔 <b>Order ID:</b> <code>{order.order_number}</code>\n"
+                f"💰 <b>Amount:</b> ₹{order.total_amount:,.2f}\n"
+                f"✅ <b>Status:</b> PAID & CONFIRMED\n"
+                f"━━━━━━━━━━━━━━━━━━━"
+            )
+        except Exception:
+            pass
     elif event == "payment.failed":
         order.payment_status = "failed"
         payment.status = "failed"

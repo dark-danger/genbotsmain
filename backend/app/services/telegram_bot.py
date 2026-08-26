@@ -10,7 +10,12 @@ from sqlalchemy import select
 from app.core.config import settings
 from app.core.database import async_session_factory
 from app.models.order import Order
-from app.utils.telegram import answer_callback_query, send_telegram_message
+from app.utils.telegram import (
+    answer_callback_query,
+    send_telegram_message,
+    _get_bot_token,
+    _get_chat_id,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +32,7 @@ async def handle_telegram_update(update: Dict[str, Any]) -> None:
         data = cb.get("data", "")
         
         # Security check: only allow admin chat ID
-        admin_chat_id = str(settings.TELEGRAM_CHAT_ID or "")
+        admin_chat_id = str(_get_chat_id() or "")
         if admin_chat_id and sender_id != admin_chat_id:
             await answer_callback_query(cb_id, text="⚠️ Unauthorized action.", show_alert=True)
             return
@@ -62,7 +67,7 @@ async def handle_telegram_update(update: Dict[str, Any]) -> None:
         sender_id = str(from_user.get("id"))
         text = msg.get("text", "").strip()
 
-        admin_chat_id = str(settings.TELEGRAM_CHAT_ID or "")
+        admin_chat_id = str(_get_chat_id() or "")
         if admin_chat_id and sender_id != admin_chat_id:
             return
 
@@ -141,7 +146,7 @@ _polling_task: Optional[asyncio.Task] = None
 
 async def telegram_polling_loop():
     """Lightweight background worker to receive updates from Telegram in development/runtime."""
-    bot_token = settings.TELEGRAM_BOT_TOKEN
+    bot_token = _get_bot_token()
     if not bot_token:
         return
 
@@ -175,7 +180,7 @@ def start_telegram_polling() -> Optional[asyncio.Task]:
     """Start polling background task."""
     global _polling_task
     if _polling_task is None or _polling_task.done():
-        if settings.TELEGRAM_BOT_TOKEN and settings.TELEGRAM_CHAT_ID:
+        if _get_bot_token() and _get_chat_id():
             _polling_task = asyncio.create_task(telegram_polling_loop())
     return _polling_task
 
