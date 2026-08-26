@@ -1366,6 +1366,7 @@ export default function AdminDashboard() {
                           <th className="px-4 py-3 font-medium">Order ID</th>
                           <th className="px-4 py-3 font-medium">Customer</th>
                           <th className="px-4 py-3 font-medium">Total Amount</th>
+                          <th className="px-4 py-3 font-medium">Payment</th>
                           <th className="px-4 py-3 font-medium">Status</th>
                           <th className="px-4 py-3 font-medium">Update Status</th>
                           <th className="px-4 py-3 font-medium">Documents</th>
@@ -1378,6 +1379,11 @@ export default function AdminDashboard() {
                             <td className="px-4 py-3 font-medium">#{order.order_number || order.id.slice(0, 8)}</td>
                             <td className="px-4 py-3">{order.user?.email || order.shipping_name || "Guest"}</td>
                             <td className="px-4 py-3 font-medium">₹{order.total_amount}</td>
+                            <td className="px-4 py-3">
+                              <Badge variant={order.payment_status === "paid" ? "default" : "secondary"} className="capitalize">
+                                {order.payment_status || "pending"} {order.payment_method ? `(${order.payment_method.toUpperCase()})` : ""}
+                              </Badge>
+                            </td>
                             <td className="px-4 py-3">
                               <Badge className="capitalize">{order.status}</Badge>
                             </td>
@@ -1432,7 +1438,7 @@ export default function AdminDashboard() {
                           </tr>
                         ))}
                         {(!orders?.items || orders?.items.length === 0) && (
-                          <tr><td colSpan={7} className="p-8 text-center text-muted-foreground">No orders yet. Real orders will appear here automatically when placed by customers.</td></tr>
+                          <tr><td colSpan={8} className="p-8 text-center text-muted-foreground">No orders yet. Real orders will appear here automatically when placed by customers.</td></tr>
                         )}
                       </tbody>
                     </table>

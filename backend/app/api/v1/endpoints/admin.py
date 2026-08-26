@@ -1,7 +1,8 @@
 """Admin API endpoints - dashboard analytics and management."""
 from uuid import UUID
+from datetime import datetime, timezone
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.orm import selectinload
 
 from app.core.deps import DbSession, AdminUser
@@ -52,7 +53,11 @@ async def get_dashboard_stats(db: DbSession, admin: AdminUser):
         select(func.count(User.id)).scalar_subquery().label("total_users"),
         select(func.count(Product.id)).scalar_subquery().label("total_products"),
         select(func.count(Order.id)).scalar_subquery().label("total_orders"),
-        select(func.coalesce(func.sum(Order.total_amount), 0)).where(Order.payment_status == "paid").scalar_subquery().label("total_revenue"),
+        select(func.coalesce(func.sum(Order.total_amount), 0)).where(
+            or_(Order.payment_status == "paid", Order.status == "delivered"),
+            Order.status.notin_(["cancelled", "refunded"]),
+            Order.payment_status != "refunded"
+        ).scalar_subquery().label("total_revenue"),
         select(func.count(Order.id)).where(Order.status == "pending").scalar_subquery().label("pending_orders"),
         select(func.count(BlogPost.id)).scalar_subquery().label("total_blog_posts"),
         select(func.count(Software.id)).scalar_subquery().label("total_software"),
@@ -203,6 +208,20 @@ async def update_order_status(order_id: UUID, status: str, db: DbSession, admin:
         raise HTTPException(status_code=404, detail="Order not found")
     old_status = order.status
     order.status = status
+
+    now = datetime.now(timezone.utc)
+    if status == "delivered":
+        order.delivered_at = now
+        order.payment_status = "paid"
+    elif status == "shipped":
+        order.shipped_at = now
+    elif status == "confirmed":
+        order.confirmed_at = now
+    elif status == "cancelled":
+        order.cancelled_at = now
+    elif status == "refunded":
+        order.payment_status = "refunded"
+
     await db.flush()
     await log_audit_action(
         db,
@@ -210,9 +229,9 @@ async def update_order_status(order_id: UUID, status: str, db: DbSession, admin:
         action="update_order_status",
         resource_type="order",
         resource_id=order_id,
-        details={"old_status": old_status, "new_status": status}
+        details={"old_status": old_status, "new_status": status, "payment_status": order.payment_status}
     )
-    return {"message": "Order status updated", "status": status}
+    return {"message": "Order status updated", "status": status, "payment_status": order.payment_status}
 
 
 @router.post("/reset-revenue")
