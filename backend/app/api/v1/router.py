@@ -14,6 +14,7 @@ from app.api.v1.endpoints.orders import router as orders_router
 from app.api.v1.endpoints.cart import router as cart_router
 from app.api.v1.endpoints.wishlist import router as wishlist_router
 from app.api.v1.endpoints.settings import router as settings_router
+from app.api.v1.endpoints.telegram import router as telegram_router
 
 api_router = APIRouter(prefix="/api/v1")
 
@@ -34,3 +35,4 @@ api_router.include_router(public_router)
 api_router.include_router(careers_router)
 api_router.include_router(support_router)
 api_router.include_router(settings_router)
+api_router.include_router(telegram_router)

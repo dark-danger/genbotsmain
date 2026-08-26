@@ -9,13 +9,22 @@ from sqlalchemy import text
 
 from app.core.config import settings
 from app.api.v1.router import api_router
+from app.services.telegram_bot import start_telegram_polling, stop_telegram_polling
 
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+    # Start Telegram background listener for button clicks
+    try:
+        start_telegram_polling()
+    except Exception as e:
+        logger.warning(f"Could not start Telegram polling: {e}")
+
     yield
+
+    stop_telegram_polling()
     logger.info("Shutting down application")
 
 

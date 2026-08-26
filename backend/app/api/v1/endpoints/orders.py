@@ -171,6 +171,21 @@ async def create_order(data: CheckoutRequest, db: DbSession, user: CurrentUser):
             notification_type="order",
             link="/admin/orders"
         )
+        try:
+            from app.utils.telegram import send_order_telegram_notification
+            await send_order_telegram_notification(
+                order_number=order.order_number,
+                customer_name=order.shipping_name or getattr(user, "full_name", user.email),
+                customer_phone=order.shipping_phone or getattr(user, "phone", "N/A"),
+                city=order.shipping_city,
+                total_amount=float(total_amount),
+                payment_method="COD",
+                status="confirmed",
+                items=order_items
+            )
+        except Exception:
+            pass
+
         return {
             "order_id": str(order.id),
             "order_number": order.order_number,
@@ -279,6 +294,19 @@ async def verify_payment(data: VerifyPaymentRequest, db: DbSession, user: Curren
         notification_type="payment",
         link="/admin/orders"
     )
+    try:
+        from app.utils.telegram import send_order_telegram_notification
+        await send_order_telegram_notification(
+            order_number=order.order_number,
+            customer_name=order.shipping_name or getattr(user, "full_name", user.email),
+            customer_phone=order.shipping_phone or getattr(user, "phone", "N/A"),
+            city=order.shipping_city,
+            total_amount=float(order.total_amount),
+            payment_method="Razorpay (Online)",
+            status="paid"
+        )
+    except Exception:
+        pass
 
     return {
         "verified": True,
