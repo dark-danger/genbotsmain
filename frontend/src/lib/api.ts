@@ -18,6 +18,9 @@ api.interceptors.request.use((config) => {
       config.headers.Authorization = `Bearer ${token}`;
     }
   }
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
+  }
   return config;
 });
 
@@ -65,6 +68,9 @@ adminAxios.interceptors.request.use((config) => {
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+  }
+  if (typeof FormData !== "undefined" && config.data instanceof FormData) {
+    delete config.headers["Content-Type"];
   }
   return config;
 });
@@ -246,9 +252,7 @@ export const adminApi = {
 };
 
 export const mediaApi = {
-  upload: (formData: FormData) => adminAxios.post("/media/upload", formData, {
-    headers: { "Content-Type": "multipart/form-data" }
-  }),
+  upload: (formData: FormData) => adminAxios.post("/media/upload", formData),
   list: (folder?: string) => adminAxios.get("/media", { params: folder ? { folder } : {} }),
   delete: (id: string) => adminAxios.delete(`/media/${id}`),
 };

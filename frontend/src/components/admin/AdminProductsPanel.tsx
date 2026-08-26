@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useRef } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Edit2, Trash2, Copy, Archive, CheckCircle,
@@ -91,7 +91,9 @@ export function AdminProductsPanel() {
   const [specKeyInput, setSpecKeyInput] = useState("");
   const [specValInput, setSpecValInput] = useState("");
   const [uploadingImage, setUploadingImage] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const showFeedback = (msg: string) => {
     setActionFeedback(msg);
@@ -330,14 +332,18 @@ export function AdminProductsPanel() {
     }
   };
 
-  // Image Upload Handler
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
+  // Helper to process uploaded files
+  const processFiles = async (files: FileList | File[]) => {
     if (!files || files.length === 0) return;
     setUploadingImage(true);
+    let successCount = 0;
     try {
       for (let i = 0; i < files.length; i++) {
         const file = files[i];
+        if (!file.type.startsWith("image/")) {
+          alert(`File "${file.name}" is not an image.`);
+          continue;
+        }
         const uploadFormData = new FormData();
         uploadFormData.append("file", file);
         uploadFormData.append("folder", "products");
@@ -346,6 +352,7 @@ export function AdminProductsPanel() {
         const res = await mediaApi.upload(uploadFormData);
         const uploadedUrl = res.data?.url || res.data?.file_url;
         if (uploadedUrl) {
+          successCount++;
           setFormData((prev) => ({
             ...prev,
             images: [
@@ -360,12 +367,45 @@ export function AdminProductsPanel() {
           }));
         }
       }
-      showFeedback("🖼️ Image(s) uploaded successfully!");
+      if (successCount > 0) {
+        showFeedback(`🖼️ ${successCount} image(s) uploaded and attached successfully!`);
+      }
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Failed to upload image.");
+      console.error("Upload error:", err);
+      const errMsg = err.response?.data?.detail || err.message || "Failed to upload image. Check server connection.";
+      alert(`Upload error: ${errMsg}`);
     } finally {
       setUploadingImage(false);
-      e.target.value = "";
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files) {
+      processFiles(e.target.files);
+    }
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(true);
+  };
+
+  const handleDragLeave = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsDragging(false);
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+      processFiles(e.dataTransfer.files);
     }
   };
 
@@ -737,33 +777,53 @@ export function AdminProductsPanel() {
               {/* TAB 3: MEDIA & IMAGES */}
               {activeFormTab === "media" && (
                 <div className="space-y-5">
-                  <div className="p-4 bg-muted/30 border border-dashed rounded-xl flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    className={`p-6 border-2 border-dashed rounded-2xl transition-all text-center flex flex-col items-center justify-center gap-3 ${
+                      isDragging
+                        ? "border-primary bg-primary/10 scale-[1.01]"
+                        : "border-border bg-card/40 hover:bg-card/70"
+                    }`}
+                  >
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center text-primary">
+                      {uploadingImage ? (
+                        <RefreshCw className="w-6 h-6 animate-spin" />
+                      ) : (
+                        <Upload className="w-6 h-6" />
+                      )}
+                    </div>
+
                     <div>
-                      <h4 className="font-semibold text-xs mb-1">Upload Product Photos</h4>
-                      <p className="text-[11px] text-muted-foreground">
-                        Upload high-resolution PNG, JPG, or WebP images from your computer.
+                      <h4 className="font-bold text-sm text-foreground mb-0.5">
+                        {uploadingImage ? "Uploading & Optimizing Images..." : "Upload High-Resolution Photos"}
+                      </h4>
+                      <p className="text-xs text-muted-foreground">
+                        Drag &amp; drop images here, or click the button below to browse from your device.
                       </p>
                     </div>
 
-                    <label className="cursor-pointer">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        disabled={uploadingImage}
-                        className="rounded-xl text-xs flex items-center gap-1.5 pointer-events-none"
-                      >
-                        <Upload className="w-3.5 h-3.5 text-primary" />
-                        {uploadingImage ? "Uploading..." : "Browse & Upload File"}
-                      </Button>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        multiple
-                        onChange={handleFileUpload}
-                        className="hidden"
-                      />
-                    </label>
+                    <input
+                      ref={fileInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      onChange={handleFileUpload}
+                      className="hidden"
+                    />
+
+                    <Button
+                      type="button"
+                      variant="default"
+                      size="sm"
+                      disabled={uploadingImage}
+                      onClick={() => fileInputRef.current?.click()}
+                      className="gradient-bg text-white rounded-xl text-xs flex items-center gap-2 shadow-md hover:shadow-lg px-5 py-2"
+                    >
+                      <Upload className="w-4 h-4" />
+                      {uploadingImage ? "Uploading..." : "Browse & Upload Images"}
+                    </Button>
                   </div>
 
                   {/* Add via direct URL or public path */}
