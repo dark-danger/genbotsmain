@@ -311,7 +311,7 @@ export default function StorePage() {
                               loading="lazy"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).onerror = null;
-                                (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                                (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
                               }}
                             />
                           ) : (

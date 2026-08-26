@@ -219,7 +219,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         loading="eager"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).onerror = null;
-                          (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                          (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
                         }}
                       />
                     ) : (
@@ -239,7 +239,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                 )}
 
                 {/* Thumbnails */}
-                {!show3D && product.images && product.images.length > 1 && (
+                {!show3D && product.images && product.images.length > 0 && (
                   <div className="flex gap-3 flex-wrap">
                     {product.images.map((img: any, idx: number) => {
                       const imgRaw = typeof img === "string" ? img : (img?.url || img?.image_url || img?.src || "");
@@ -260,7 +260,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                             loading="lazy"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).onerror = null;
-                              (e.currentTarget as HTMLImageElement).src = "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80";
+                              (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
                             }}
                           />
                         </button>

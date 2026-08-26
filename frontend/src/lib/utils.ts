@@ -6,14 +6,17 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const FALLBACK_IMAGES: Record<string, string> = {
-  iot: "https://images.unsplash.com/photo-1518770660439-4636190af475?w=800&q=80",
-  arduino: "https://images.unsplash.com/photo-1553406830-ef2513450d76?w=800&q=80",
-  esp32: "https://images.unsplash.com/photo-1608564697071-ddf911bf41fb?w=800&q=80",
-  robot: "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=800&q=80",
-  stem: "https://images.unsplash.com/photo-1532094349884-543bc11b234d?w=800&q=80",
-  ai: "https://images.unsplash.com/photo-1526374965328-7f61d4dc18c5?w=800&q=80",
-  home: "https://images.unsplash.com/photo-1558002038-1055907df827?w=800&q=80",
-  default: "https://images.unsplash.com/photo-1517077304055-6e89abbf09b0?w=800&q=80",
+  iot: "/products/esp32-development-board.jpg",
+  arduino: "/products/arduino-uno-r3.jpg",
+  esp32: "/products/esp32-development-board.jpg",
+  robot: "/products/robotic-arm-kit.jpg",
+  robotics: "/products/spider-robot-kit.jpg",
+  stem: "/products/3d-printer-stem.jpg",
+  sensor: "/products/hc-sr04-ultrasonic.jpg",
+  tools: "/products/soldering-iron-kit.jpg",
+  multimeter: "/products/digital-multimeter.jpg",
+  home: "/products/relay-module-5v.jpg",
+  default: "/products/arduino-uno-r3.jpg",
 }
 
 export function resolveImageUrl(url: string | null | undefined): string {
@@ -30,7 +33,12 @@ export function resolveImageUrl(url: string | null | undefined): string {
     return cleanUrl
   }
 
-  // 3. Ensure leading slash for relative paths
+  // 3. Next.js public static assets (e.g. /products/...)
+  if (cleanUrl.startsWith("/products/") || cleanUrl.startsWith("/logo") || cleanUrl.startsWith("/favicon") || cleanUrl.startsWith("/og-")) {
+    return cleanUrl
+  }
+
+  // 4. Ensure leading slash for relative paths
   if (!cleanUrl.startsWith("/")) {
     cleanUrl = `/${cleanUrl}`
   }
@@ -38,7 +46,7 @@ export function resolveImageUrl(url: string | null | undefined): string {
   const isClient = typeof window !== "undefined"
   const apiUrl = process.env.NEXT_PUBLIC_API_URL || ""
 
-  // 4. Handle backend upload paths
+  // 5. Handle backend upload paths
   if (cleanUrl.startsWith("/uploads/")) {
     if (apiUrl && !apiUrl.startsWith("/")) {
       try {
@@ -94,16 +102,21 @@ export function getProductImage(product: unknown): string {
         foundUrl = u.trim()
       }
     }
-  } else if (typeof p.images === "string" && p.images.trim().startsWith("[")) {
-    try {
-      const parsed = JSON.parse(p.images)
-      if (Array.isArray(parsed) && parsed.length > 0) {
-        const first = parsed[0]
-        if (typeof first === "string") foundUrl = first
-        else if (first && typeof first === "object") foundUrl = first.url || first.image_url || first.src || ""
+  } else if (typeof p.images === "string" && p.images.trim()) {
+    const raw = p.images.trim()
+    if (raw.startsWith("[")) {
+      try {
+        const parsed = JSON.parse(raw)
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          const first = parsed[0]
+          if (typeof first === "string") foundUrl = first
+          else if (first && typeof first === "object") foundUrl = first.url || first.image_url || first.src || ""
+        }
+      } catch {
+        // ignore
       }
-    } catch {
-      // ignore
+    } else {
+      foundUrl = raw
     }
   }
 
@@ -131,10 +144,12 @@ export function getProductImage(product: unknown): string {
 
   if (name.includes("arduino") || cat.includes("arduino")) return FALLBACK_IMAGES.arduino
   if (name.includes("esp32") || cat.includes("esp32")) return FALLBACK_IMAGES.esp32
-  if (name.includes("robot") || cat.includes("robot")) return FALLBACK_IMAGES.robot
-  if (name.includes("stem") || cat.includes("stem")) return FALLBACK_IMAGES.stem
-  if (name.includes("ai") || cat.includes("ai")) return FALLBACK_IMAGES.ai
-  if (name.includes("home") || cat.includes("home")) return FALLBACK_IMAGES.home
+  if (name.includes("arm") || name.includes("spider") || name.includes("otto") || name.includes("robot") || cat.includes("robot")) return FALLBACK_IMAGES.robot
+  if (name.includes("printer") || name.includes("3d") || name.includes("stem") || cat.includes("stem")) return FALLBACK_IMAGES.stem
+  if (name.includes("sensor") || name.includes("detector") || name.includes("sonar") || cat.includes("sensor")) return FALLBACK_IMAGES.sensor
+  if (name.includes("multimeter") || name.includes("tester")) return FALLBACK_IMAGES.multimeter
+  if (name.includes("soldering") || name.includes("plier") || name.includes("tool") || name.includes("stripper")) return FALLBACK_IMAGES.tools
+  if (name.includes("relay") || name.includes("home") || cat.includes("home")) return FALLBACK_IMAGES.home
   if (name.includes("iot") || cat.includes("iot")) return FALLBACK_IMAGES.iot
 
   return FALLBACK_IMAGES.default

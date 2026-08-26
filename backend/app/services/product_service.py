@@ -253,17 +253,29 @@ class ProductService:
         if images_data is not None:
             new_images = []
             for idx, img in enumerate(images_data):
-                url = img.get("url") if isinstance(img, dict) else getattr(img, "url", None)
+                if isinstance(img, str):
+                    url = img.strip()
+                    alt_text = product.name
+                    is_primary = idx == 0
+                    sort_order = idx
+                elif isinstance(img, dict):
+                    url = str(img.get("url") or img.get("image_url") or "").strip()
+                    alt_text = img.get("alt_text") or product.name
+                    is_primary = bool(img.get("is_primary", idx == 0))
+                    sort_order = int(img.get("sort_order", idx) or idx)
+                else:
+                    url = str(getattr(img, "url", getattr(img, "image_url", "")) or "").strip()
+                    alt_text = getattr(img, "alt_text", product.name)
+                    is_primary = bool(getattr(img, "is_primary", idx == 0))
+                    sort_order = int(getattr(img, "sort_order", idx) or idx)
+
                 if url:
-                    alt_text = img.get("alt_text") if isinstance(img, dict) else getattr(img, "alt_text", None)
-                    is_primary = img.get("is_primary", False) if isinstance(img, dict) else getattr(img, "is_primary", False)
-                    sort_order = img.get("sort_order", idx) if isinstance(img, dict) else getattr(img, "sort_order", idx)
                     new_images.append(ProductImage(
                         product_id=product.id,
-                        url=str(url).strip(),
+                        url=url,
                         alt_text=alt_text,
-                        is_primary=bool(is_primary),
-                        sort_order=int(sort_order or 0)
+                        is_primary=is_primary,
+                        sort_order=sort_order
                     ))
             if new_images and not any(img.is_primary for img in new_images):
                 new_images[0].is_primary = True
