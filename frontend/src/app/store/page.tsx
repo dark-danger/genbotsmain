@@ -10,7 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { productsApi, cartApi } from "@/lib/api";
-import { getProductImage } from "@/lib/utils";
+import { getProductImage, getProductFallbackImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import Link from "next/link";
@@ -311,7 +311,7 @@ export default function StorePage() {
                               loading="lazy"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).onerror = null;
-                                (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                                (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(product);
                               }}
                             />
                           ) : (

@@ -15,7 +15,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
-import { getProductImage, resolveImageUrl } from "@/lib/utils";
+import { getProductImage, resolveImageUrl, getProductFallbackImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 
@@ -219,7 +219,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                         loading="eager"
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).onerror = null;
-                          (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                          (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(product);
                         }}
                       />
                     ) : (
@@ -260,7 +260,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
                             loading="lazy"
                             onError={(e) => {
                               (e.currentTarget as HTMLImageElement).onerror = null;
-                              (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                              (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(product);
                             }}
                           />
                         </button>

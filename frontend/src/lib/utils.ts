@@ -6,17 +6,126 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export const FALLBACK_IMAGES: Record<string, string> = {
-  iot: "/products/esp32-development-board.jpg",
   arduino: "/products/arduino-uno-r3.jpg",
   esp32: "/products/esp32-development-board.jpg",
-  robot: "/products/robotic-arm-kit.jpg",
-  robotics: "/products/spider-robot-kit.jpg",
-  stem: "/products/3d-printer-stem.jpg",
-  sensor: "/products/hc-sr04-ultrasonic.jpg",
+  battery_holder: "/products/battery-holder-18650.jpg",
+  battery: "/products/rechargeable-18650-battery.jpg",
+  lipo: "/products/lithium-battery-74v.jpg",
+  resistor: "/products/10k-ohm-resistors.jpg",
+  resistor_pack: "/products/resistor-kit-pack.jpg",
+  servo: "/products/sg90-servo-motor.jpg",
+  motor: "/products/dc-gear-bo-motor-wheel.jpg",
+  breadboard: "/products/mb102-breadboard.jpg",
+  pcb: "/products/dot-matrix-pcb.jpg",
+  wire: "/products/jumper-wire-male-male.jpg",
+  usb_cable: "/products/usb-programming-cable.jpg",
+  led: "/products/rgb-led-5mm.jpg",
+  oled: "/products/oled-display-096.jpg",
+  button: "/products/push-button-module.jpg",
+  ultrasonic: "/products/hc-sr04-ultrasonic.jpg",
+  temperature: "/products/dht11-sensor.jpg",
+  gas: "/products/mq2-gas-sensor.jpg",
+  motion: "/products/pir-motion-sensor.jpg",
+  bluetooth: "/products/hc05-bluetooth-module.jpg",
+  rfid: "/products/rfid-rc522-kit.jpg",
+  sound: "/products/sound-detection-sensor.jpg",
+  light: "/products/ldr-light-sensor.jpg",
+  soil: "/products/soil-moisture-sensor.jpg",
+  rain: "/products/rain-sensor-module.jpg",
+  flame: "/products/flame-detection-sensor.jpg",
+  tilt: "/products/tilt-sensor-module.jpg",
+  touch: "/products/touch-sensor-ttp223.jpg",
+  water: "/products/water-level-sensor.jpg",
+  hall: "/products/hall-effect-sensor.jpg",
+  amplifier: "/products/pam8403-amplifier.jpg",
+  box: "/products/plastic-project-box.jpg",
+  tape: "/products/insulation-tape.jpg",
+  zip_ties: "/products/cable-zip-ties.jpg",
+  glue_gun: "/products/hot-glue-gun.jpg",
+  extension: "/products/extension-board.jpg",
   tools: "/products/soldering-iron-kit.jpg",
   multimeter: "/products/digital-multimeter.jpg",
-  home: "/products/relay-module-5v.jpg",
-  default: "/products/arduino-uno-r3.jpg",
+  relay: "/products/relay-module-5v.jpg",
+  robot_arm: "/products/robotic-arm-kit.jpg",
+  spider_robot: "/products/spider-robot-kit.jpg",
+  otto_robot: "/products/otto-bot-kit.jpg",
+  robot_6wd: "/products/6wheel-robot-kit.jpg",
+  printer_3d: "/products/3d-printer-stem.jpg",
+  default: "/products/esp32-development-board.jpg",
+}
+
+export function getProductFallbackImage(nameOrProduct: unknown): string {
+  if (!nameOrProduct) return FALLBACK_IMAGES.default
+  const p = typeof nameOrProduct === "object" ? (nameOrProduct as Record<string, unknown>) : {}
+  const rawName = typeof nameOrProduct === "string" ? nameOrProduct : String(p.name || p.title || p.product_name || "")
+  const catObj = p.category as Record<string, unknown> | string | undefined
+  const cat = typeof catObj === "object" && catObj !== null
+    ? String(catObj.slug || catObj.name || "").toLowerCase()
+    : String(catObj || "").toLowerCase()
+  const name = rawName.toLowerCase()
+
+  // 1. Batteries & Power
+  if (name.includes("holder") || name.includes("battery holder") || name.includes("slot")) return FALLBACK_IMAGES.battery_holder
+  if (name.includes("lipo") || name.includes("li-po") || name.includes("2200") || name.includes("7.4v") || name.includes("11.1v")) return FALLBACK_IMAGES.lipo
+  if (name.includes("battery") || name.includes("18650") || name.includes("lithium") || name.includes("cell") || name.includes("rechargeable") || name.includes("power")) return FALLBACK_IMAGES.battery
+
+  // 2. Resistors & Passive Components
+  if (name.includes("resistor kit") || name.includes("resistor pack") || name.includes("assorted resistor")) return FALLBACK_IMAGES.resistor_pack
+  if (name.includes("resistor") || name.includes("ohm") || name.includes("10k") || name.includes("220r") || name.includes("carbon film")) return FALLBACK_IMAGES.resistor
+  if (name.includes("breadboard") || name.includes("mb-102") || name.includes("mb102") || name.includes("solderless")) return FALLBACK_IMAGES.breadboard
+  if (name.includes("pcb") || name.includes("perfboard") || name.includes("dot matrix") || name.includes("clad")) return FALLBACK_IMAGES.pcb
+  if (name.includes("usb") || name.includes("type-b") || name.includes("programming cable")) return FALLBACK_IMAGES.usb_cable
+  if (name.includes("jumper") || name.includes("wire") || name.includes("cable") || name.includes("ribbon") || name.includes("pin male") || name.includes("pin female")) return FALLBACK_IMAGES.wire
+  if (name.includes("led") || name.includes("rgb") || name.includes("diode") || name.includes("flasher") || name.includes("i-blink")) return FALLBACK_IMAGES.led
+  if (name.includes("oled") || name.includes("display") || name.includes("lcd") || name.includes("screen") || name.includes("0.96")) return FALLBACK_IMAGES.oled
+  if (name.includes("button") || name.includes("push") || name.includes("tactile") || name.includes("switch module")) return FALLBACK_IMAGES.button
+
+  // 3. Motors & Actuators
+  if (name.includes("servo") || name.includes("sg90") || name.includes("mg90") || name.includes("micro servo")) return FALLBACK_IMAGES.servo
+  if (name.includes("motor") || name.includes("bo motor") || name.includes("gear motor") || name.includes("wheel") || name.includes("chassis")) return FALLBACK_IMAGES.motor
+
+  // 4. Sensors
+  if (name.includes("ultrasonic") || name.includes("sonar") || name.includes("hc-sr04") || name.includes("distance sensor")) return FALLBACK_IMAGES.ultrasonic
+  if (name.includes("dht") || name.includes("dht11") || name.includes("temperature") || name.includes("humidity") || name.includes("lm35")) return FALLBACK_IMAGES.temperature
+  if (name.includes("gas") || name.includes("smoke") || name.includes("mq-2") || name.includes("mq2") || name.includes("mq-135") || name.includes("mq135") || name.includes("air quality")) return FALLBACK_IMAGES.gas
+  if (name.includes("pir") || name.includes("motion") || name.includes("radar") || name.includes("rcwl") || name.includes("presence")) return FALLBACK_IMAGES.motion
+  if (name.includes("bluetooth") || name.includes("hc-05") || name.includes("hc05") || name.includes("wireless") || name.includes("transceiver")) return FALLBACK_IMAGES.bluetooth
+  if (name.includes("rfid") || name.includes("rc522") || name.includes("nfc") || name.includes("mifare")) return FALLBACK_IMAGES.rfid
+  if (name.includes("sound") || name.includes("acoustic") || name.includes("microphone") || name.includes("noise")) return FALLBACK_IMAGES.sound
+  if (name.includes("ldr") || name.includes("light sensor") || name.includes("lux") || name.includes("bh1750") || name.includes("ambient")) return FALLBACK_IMAGES.light
+  if (name.includes("soil") || name.includes("moisture") || name.includes("agriculture")) return FALLBACK_IMAGES.soil
+  if (name.includes("rain") || name.includes("droplet") || name.includes("water level") || name.includes("depth")) return FALLBACK_IMAGES.rain
+  if (name.includes("flame") || name.includes("fire detector")) return FALLBACK_IMAGES.flame
+  if (name.includes("tilt") || name.includes("sw-520") || name.includes("sw520") || name.includes("vibration") || name.includes("sw-420") || name.includes("shock")) return FALLBACK_IMAGES.tilt
+  if (name.includes("touch") || name.includes("ttp223") || name.includes("capacitive touch")) return FALLBACK_IMAGES.touch
+  if (name.includes("hall") || name.includes("a3144") || name.includes("magnetic") || name.includes("reed") || name.includes("proximity")) return FALLBACK_IMAGES.hall
+  if (name.includes("flex") || name.includes("bend")) return "/products/flex-sensor-22.jpg"
+  if (name.includes("pressure") || name.includes("barometric") || name.includes("bmp180")) return "/products/bmp180-pressure-sensor.jpg"
+  if (name.includes("ir") || name.includes("obstacle") || name.includes("tracking") || name.includes("tcrt5000")) return "/products/ir-obstacle-sensor.jpg"
+  if (name.includes("sensor") || cat.includes("sensor") || cat.includes("iot")) return FALLBACK_IMAGES.ultrasonic
+
+  // 5. Tools & Workshop
+  if (name.includes("amplifier") || name.includes("pam8403") || name.includes("audio")) return FALLBACK_IMAGES.amplifier
+  if (name.includes("box") || name.includes("enclosure") || name.includes("case")) return FALLBACK_IMAGES.box
+  if (name.includes("tape") || name.includes("insulation")) return FALLBACK_IMAGES.tape
+  if (name.includes("zip") || name.includes("tie") || name.includes("fastener")) return FALLBACK_IMAGES.zip_ties
+  if (name.includes("glue") || name.includes("stick") || name.includes("hot melt")) return FALLBACK_IMAGES.glue_gun
+  if (name.includes("extension") || name.includes("multi-plug") || name.includes("socket")) return FALLBACK_IMAGES.extension
+  if (name.includes("plier") || name.includes("nose plier") || name.includes("stripper") || name.includes("cutter") || name.includes("screwdriver") || name.includes("tool")) return "/products/long-nose-plier.jpg"
+  if (name.includes("soldering") || name.includes("solder") || name.includes("iron")) return FALLBACK_IMAGES.tools
+  if (name.includes("multimeter") || name.includes("tester") || name.includes("dt-830") || name.includes("voltmeter")) return FALLBACK_IMAGES.multimeter
+  if (name.includes("relay") || name.includes("home automation") || cat.includes("home")) return FALLBACK_IMAGES.relay
+
+  // 6. Complete Robotics & Development Boards
+  if (name.includes("spider") || name.includes("quadruped")) return FALLBACK_IMAGES.spider_robot
+  if (name.includes("otto") || name.includes("biped") || name.includes("dancing robot")) return FALLBACK_IMAGES.otto_robot
+  if (name.includes("arm") || name.includes("robotic arm") || name.includes("4-dof") || name.includes("claw")) return FALLBACK_IMAGES.robot_arm
+  if (name.includes("6-wheel") || name.includes("6wd") || name.includes("all-terrain") || name.includes("robot kit") || cat.includes("robot")) return FALLBACK_IMAGES.robot_6wd
+  if (name.includes("3d printer") || name.includes("printer") || name.includes("stem lab") || cat.includes("stem")) return FALLBACK_IMAGES.printer_3d
+  if (name.includes("esp32") || name.includes("nodemcu") || name.includes("wroom") || cat.includes("esp32")) return FALLBACK_IMAGES.esp32
+  if (name.includes("arduino") || name.includes("uno") || name.includes("mega") || name.includes("nano") || name.includes("atmega") || cat.includes("arduino")) return FALLBACK_IMAGES.arduino
+
+  return FALLBACK_IMAGES.default
 }
 
 export function resolveImageUrl(url: string | null | undefined): string {
@@ -135,24 +244,8 @@ export function getProductImage(product: unknown): string {
     return resolveImageUrl(foundUrl)
   }
 
-  // Smart fallback by category or name keyword
-  const name = String(p.name || p.title || p.product_name || "").toLowerCase()
-  const catObj = p.category as Record<string, unknown> | string | undefined
-  const cat = typeof catObj === "object" && catObj !== null
-    ? String(catObj.slug || catObj.name || "").toLowerCase()
-    : String(catObj || "").toLowerCase()
-
-  if (name.includes("arduino") || cat.includes("arduino")) return FALLBACK_IMAGES.arduino
-  if (name.includes("esp32") || cat.includes("esp32")) return FALLBACK_IMAGES.esp32
-  if (name.includes("arm") || name.includes("spider") || name.includes("otto") || name.includes("robot") || cat.includes("robot")) return FALLBACK_IMAGES.robot
-  if (name.includes("printer") || name.includes("3d") || name.includes("stem") || cat.includes("stem")) return FALLBACK_IMAGES.stem
-  if (name.includes("sensor") || name.includes("detector") || name.includes("sonar") || cat.includes("sensor")) return FALLBACK_IMAGES.sensor
-  if (name.includes("multimeter") || name.includes("tester")) return FALLBACK_IMAGES.multimeter
-  if (name.includes("soldering") || name.includes("plier") || name.includes("tool") || name.includes("stripper")) return FALLBACK_IMAGES.tools
-  if (name.includes("relay") || name.includes("home") || cat.includes("home")) return FALLBACK_IMAGES.home
-  if (name.includes("iot") || cat.includes("iot")) return FALLBACK_IMAGES.iot
-
-  return FALLBACK_IMAGES.default
+  // 3. Smart contextual fallback by product name / category
+  return getProductFallbackImage(p)
 }
 
 export const generateDocumentHtml = (order: Record<string, any>, docType: "invoice" | "purchase_order") => {

@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { productsApi, mediaApi } from "@/lib/api";
-import { getProductImage, resolveImageUrl } from "@/lib/utils";
+import { getProductImage, resolveImageUrl, getProductFallbackImage } from "@/lib/utils";
 
 interface ProductImageItem {
   id?: string;
@@ -827,13 +827,65 @@ export function AdminProductsPanel() {
                   </div>
 
                   {/* Add via direct URL or public path */}
+                  {/* Smart Suggested Image based on Product Name */}
+                  {formData.name.trim() && (
+                    <div className="p-4 bg-primary/5 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-14 h-14 rounded-xl overflow-hidden bg-background border shrink-0">
+                          <img
+                            src={getProductFallbackImage(formData.name)}
+                            alt="Smart suggestion"
+                            className="w-full h-full object-cover"
+                          />
+                        </div>
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs font-bold text-foreground">Smart Auto-Matched Photo</span>
+                            <Badge variant="outline" className="text-[10px] text-primary border-primary/30">Recommended</Badge>
+                          </div>
+                          <p className="text-[11px] text-muted-foreground mt-0.5">
+                            Matching photo identified based on &quot;{formData.name}&quot;.
+                          </p>
+                        </div>
+                      </div>
+                      <Button
+                        type="button"
+                        size="sm"
+                        onClick={() => {
+                          const suggestedUrl = getProductFallbackImage(formData.name);
+                          if (!formData.images.some(img => img.url === suggestedUrl)) {
+                            setFormData(prev => ({
+                              ...prev,
+                              images: [
+                                {
+                                  url: suggestedUrl,
+                                  alt_text: prev.name,
+                                  is_primary: prev.images.length === 0,
+                                  sort_order: prev.images.length,
+                                },
+                                ...prev.images,
+                              ],
+                            }));
+                            showFeedback("✨ Attached smart matching photo!");
+                          } else {
+                            showFeedback("ℹ️ Photo already attached.");
+                          }
+                        }}
+                        className="gradient-bg text-white rounded-xl text-xs shrink-0"
+                      >
+                        <Plus className="w-3.5 h-3.5 mr-1" /> Use Suggested Photo
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Add via direct URL or public path */}
                   <div className="space-y-1.5">
                     <label className="text-xs font-semibold block">Or Add Image URL / Relative Path</label>
                     <div className="flex gap-2">
                       <Input
                         value={imageUrlInput}
                         onChange={(e) => setImageUrlInput(e.target.value)}
-                        placeholder="e.g. /products/arduino-uno-r3.jpg or /uploads/products/... or https://images.unsplash.com/..."
+                        placeholder="e.g. /products/battery-holder-18650.jpg, /products/rechargeable-18650-battery.jpg, or https://..."
                         className="text-xs rounded-xl"
                       />
                       <Button
@@ -862,13 +914,105 @@ export function AdminProductsPanel() {
                     </div>
                   </div>
 
+                  {/* Quick Component Photo Library Picker */}
+                  <div className="p-4 bg-muted/20 border rounded-2xl space-y-3">
+                    <div className="flex justify-between items-center">
+                      <h4 className="font-semibold text-xs flex items-center gap-1.5">
+                        <span>⚡</span> Pick from Standard Component Library
+                      </h4>
+                      <span className="text-[10px] text-muted-foreground">Click any photo to attach</span>
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 max-h-56 overflow-y-auto pr-1">
+                      {[
+                        { name: "18650 Battery", url: "/products/rechargeable-18650-battery.jpg" },
+                        { name: "Battery Holder", url: "/products/battery-holder-18650.jpg" },
+                        { name: "7.4V LiPo Battery", url: "/products/lithium-battery-74v.jpg" },
+                        { name: "Pink Lithium Cell", url: "/products/pink-18650-lithium-cells.jpg" },
+                        { name: "10K Resistors", url: "/products/10k-ohm-resistors.jpg" },
+                        { name: "220R Resistors", url: "/products/220-ohm-resistors.jpg" },
+                        { name: "Resistor Kit", url: "/products/resistor-kit-pack.jpg" },
+                        { name: "SG90 Servo Motor", url: "/products/sg90-servo-motor.jpg" },
+                        { name: "BO Gear Motor", url: "/products/dc-gear-bo-motor-wheel.jpg" },
+                        { name: "5V Relay Module", url: "/products/relay-module-5v.jpg" },
+                        { name: "HC-SR04 Sonar", url: "/products/hc-sr04-ultrasonic.jpg" },
+                        { name: "DHT11 Temp/Hum", url: "/products/dht11-sensor.jpg" },
+                        { name: "LM35 Temp Sensor", url: "/products/lm35-temperature-sensor.jpg" },
+                        { name: "MQ-2 Gas Sensor", url: "/products/mq2-gas-sensor.jpg" },
+                        { name: "PIR Motion Sensor", url: "/products/pir-motion-sensor.jpg" },
+                        { name: "LDR Light Sensor", url: "/products/ldr-light-sensor.jpg" },
+                        { name: "Soil Moisture", url: "/products/soil-moisture-sensor.jpg" },
+                        { name: "Raindrops Sensor", url: "/products/rain-sensor-module.jpg" },
+                        { name: "Flame Detector", url: "/products/flame-detection-sensor.jpg" },
+                        { name: "HC-05 Bluetooth", url: "/products/hc05-bluetooth-module.jpg" },
+                        { name: "RC522 RFID Kit", url: "/products/rfid-rc522-kit.jpg" },
+                        { name: "Sound Sensor", url: "/products/sound-detection-sensor.jpg" },
+                        { name: "MB-102 Breadboard", url: "/products/mb102-breadboard.jpg" },
+                        { name: "Jumper Wires M-M", url: "/products/jumper-wire-male-male.jpg" },
+                        { name: "Jumper Wires M-F", url: "/products/jumper-wire-male-to-female.jpg" },
+                        { name: "USB Cable", url: "/products/usb-programming-cable.jpg" },
+                        { name: "OLED Display 0.96", url: "/products/oled-display-096.jpg" },
+                        { name: "Push Button", url: "/products/push-button-module.jpg" },
+                        { name: "RGB LED 5mm", url: "/products/rgb-led-5mm.jpg" },
+                        { name: "Dot Matrix PCB", url: "/products/dot-matrix-pcb.jpg" },
+                        { name: "Audio Amplifier", url: "/products/pam8403-amplifier.jpg" },
+                        { name: "Multimeter", url: "/products/digital-multimeter.jpg" },
+                        { name: "Soldering Kit", url: "/products/soldering-iron-kit.jpg" },
+                        { name: "Hot Glue Gun", url: "/products/hot-glue-gun.jpg" },
+                        { name: "Long Nose Plier", url: "/products/long-nose-plier.jpg" },
+                        { name: "Wire Stripper", url: "/products/wire-stripper-tool.jpg" },
+                        { name: "Precision Kit", url: "/products/precision-screwdriver-kit.jpg" },
+                        { name: "Project Box", url: "/products/plastic-project-box.jpg" },
+                        { name: "Insulation Tape", url: "/products/insulation-tape.jpg" },
+                        { name: "Zip Ties 100P", url: "/products/cable-zip-ties.jpg" },
+                        { name: "ESP32 Board", url: "/products/esp32-development-board.jpg" },
+                        { name: "Arduino UNO R3", url: "/products/arduino-uno-r3.jpg" },
+                        { name: "Robotic Arm", url: "/products/robotic-arm-kit.jpg" },
+                        { name: "Spider Robot", url: "/products/spider-robot-kit.jpg" },
+                        { name: "OTTO Robot", url: "/products/otto-bot-kit.jpg" },
+                        { name: "6WD Robot Chassis", url: "/products/6wheel-robot-kit.jpg" },
+                        { name: "3D Printer STEM", url: "/products/3d-printer-stem.jpg" },
+                      ].map((item) => (
+                        <button
+                          key={item.url}
+                          type="button"
+                          onClick={() => {
+                            if (!formData.images.some(img => img.url === item.url)) {
+                              setFormData(prev => ({
+                                ...prev,
+                                images: [
+                                  ...prev.images,
+                                  {
+                                    url: item.url,
+                                    alt_text: prev.name || item.name,
+                                    is_primary: prev.images.length === 0,
+                                    sort_order: prev.images.length,
+                                  },
+                                ],
+                              }));
+                              showFeedback(`✅ Attached ${item.name}!`);
+                            } else {
+                              showFeedback("ℹ️ Image already added.");
+                            }
+                          }}
+                          className="p-1.5 bg-background hover:bg-primary/10 border hover:border-primary/50 rounded-xl flex flex-col items-center gap-1 transition-all text-center group"
+                        >
+                          <div className="w-12 h-12 rounded-lg overflow-hidden bg-muted flex items-center justify-center">
+                            <img src={item.url} alt={item.name} className="w-full h-full object-cover group-hover:scale-110 transition-transform" />
+                          </div>
+                          <span className="text-[10px] text-foreground line-clamp-1 font-medium">{item.name}</span>
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
                   {/* Image Grid / Gallery */}
                   <div>
-                    <h4 className="font-semibold text-xs mb-2">Image Gallery ({formData.images.length})</h4>
+                    <h4 className="font-semibold text-xs mb-2">Attached Images ({formData.images.length})</h4>
                     {formData.images.length === 0 ? (
-                      <div className="text-center py-10 border border-dashed rounded-xl text-muted-foreground text-xs">
+                      <div className="text-center py-8 border border-dashed rounded-xl text-muted-foreground text-xs">
                         <ImageIcon className="w-8 h-8 mx-auto text-muted-foreground/50 mb-2" />
-                        No images added yet. Upload files or enter image URLs above.
+                        No custom images attached yet. The product will automatically use the smart component photo.
                       </div>
                     ) : (
                       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -886,7 +1030,7 @@ export function AdminProductsPanel() {
                                 className="w-full h-full object-cover group-hover:scale-105 transition-transform"
                                 onError={(e) => {
                                   (e.currentTarget as HTMLImageElement).onerror = null;
-                                  (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                                  (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(formData.name);
                                 }}
                               />
                             </div>
@@ -1118,7 +1262,7 @@ export function AdminProductsPanel() {
                               className="w-full h-full object-cover"
                               onError={(e) => {
                                 (e.currentTarget as HTMLImageElement).onerror = null;
-                                (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                                (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(product);
                               }}
                             />
                           </div>

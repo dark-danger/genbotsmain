@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api";
-import { getProductImage } from "@/lib/utils";
+import { getProductImage, getProductFallbackImage } from "@/lib/utils";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -108,7 +108,7 @@ export function ProductsSection() {
                         height={300}
                         onError={(e) => {
                           (e.currentTarget as HTMLImageElement).onerror = null;
-                          (e.currentTarget as HTMLImageElement).src = "/products/arduino-uno-r3.jpg";
+                          (e.currentTarget as HTMLImageElement).src = getProductFallbackImage(product);
                         }}
                       />
                       {product.is_featured && (
