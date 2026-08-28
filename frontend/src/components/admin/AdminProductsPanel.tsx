@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { productsApi, mediaApi } from "@/lib/api";
-import { getProductImage, resolveImageUrl, getProductFallbackImage } from "@/lib/utils";
+import { getProductImage, resolveImageUrl, getProductFallbackImage, compressImageToDataUrl } from "@/lib/utils";
 
 interface ProductImageItem {
   id?: string;
@@ -344,21 +344,38 @@ export function AdminProductsPanel() {
           alert(`File "${file.name}" is not an image.`);
           continue;
         }
-        const uploadFormData = new FormData();
-        uploadFormData.append("file", file);
-        uploadFormData.append("folder", "products");
-        uploadFormData.append("alt_text", formData.name || file.name);
 
-        const res = await mediaApi.upload(uploadFormData);
-        const uploadedUrl = res.data?.url || res.data?.file_url;
-        if (uploadedUrl) {
+        // 1. Generate optimized client-side Data URL (100% reliable on any hosting / Vercel)
+        let finalImageUrl = "";
+        try {
+          finalImageUrl = await compressImageToDataUrl(file, 1000, 1000, 0.88);
+        } catch {
+          // fallback
+        }
+
+        // 2. Try background mediaApi.upload if server supports static uploads
+        try {
+          const uploadFormData = new FormData();
+          uploadFormData.append("file", file);
+          uploadFormData.append("folder", "products");
+          uploadFormData.append("alt_text", formData.name || file.name);
+          const res = await mediaApi.upload(uploadFormData);
+          const serverUrl = res.data?.url || res.data?.file_url;
+          if (serverUrl && !serverUrl.includes("/tmp/")) {
+            finalImageUrl = serverUrl;
+          }
+        } catch {
+          // If server upload fails (e.g. serverless disk limitations), client Data URL is used seamlessly
+        }
+
+        if (finalImageUrl) {
           successCount++;
           setFormData((prev) => ({
             ...prev,
             images: [
               ...prev.images,
               {
-                url: uploadedUrl,
+                url: finalImageUrl,
                 alt_text: file.name,
                 is_primary: prev.images.length === 0,
                 sort_order: prev.images.length,
@@ -368,11 +385,11 @@ export function AdminProductsPanel() {
         }
       }
       if (successCount > 0) {
-        showFeedback(`🖼️ ${successCount} image(s) uploaded and attached successfully!`);
+        showFeedback(`🖼️ ${successCount} image(s) processed and attached successfully!`);
       }
     } catch (err: any) {
       console.error("Upload error:", err);
-      const errMsg = err.response?.data?.detail || err.message || "Failed to upload image. Check server connection.";
+      const errMsg = err.response?.data?.detail || err.message || "Failed to upload image.";
       alert(`Upload error: ${errMsg}`);
     } finally {
       setUploadingImage(false);

@@ -121,7 +121,7 @@ class ProductImage(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     product_id = Column(UUID(as_uuid=True), ForeignKey("products.id", ondelete="CASCADE"), nullable=False, index=True)
-    url = Column(String(500), nullable=False)
+    url = Column(Text, nullable=False)
     alt_text = Column(String(255), nullable=True)
     is_primary = Column(Boolean, default=False, nullable=False)
     sort_order = Column(Integer, default=0, nullable=False)
