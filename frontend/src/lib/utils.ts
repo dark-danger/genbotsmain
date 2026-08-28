@@ -65,8 +65,9 @@ export function getProductFallbackImage(nameOrProduct: unknown): string {
   const name = rawName.toLowerCase()
 
   // 1. Batteries & Power
+  if (name.includes("charger") || name.includes("b3") || name.includes("balance charger")) return "/products/lipo-battery-b3-charger.jpg"
   if (name.includes("holder") || name.includes("battery holder") || name.includes("slot")) return FALLBACK_IMAGES.battery_holder
-  if (name.includes("lipo") || name.includes("li-po") || name.includes("2200") || name.includes("7.4v") || name.includes("11.1v")) return FALLBACK_IMAGES.lipo
+  if (name.includes("lipo") || name.includes("li-po") || name.includes("2200") || name.includes("3s") || name.includes("7.4v") || name.includes("11.1v")) return "/products/lipo-battery-2200mah-3s.jpg"
   if (name.includes("battery") || name.includes("18650") || name.includes("lithium") || name.includes("cell") || name.includes("rechargeable") || name.includes("power")) return FALLBACK_IMAGES.battery
 
   // 2. Resistors & Passive Components
@@ -105,15 +106,16 @@ export function getProductFallbackImage(nameOrProduct: unknown): string {
   if (name.includes("sensor") || cat.includes("sensor") || cat.includes("iot")) return FALLBACK_IMAGES.ultrasonic
 
   // 5. Tools & Workshop
+  if (name.includes("stripper") || name.includes("wire stripper")) return "/products/automatic-wire-stripper.jpg"
+  if (name.includes("multimeter") || name.includes("tester") || name.includes("dt-830") || name.includes("dt830") || name.includes("voltmeter")) return "/products/dt830d-digital-multimeter.jpg"
   if (name.includes("amplifier") || name.includes("pam8403") || name.includes("audio")) return FALLBACK_IMAGES.amplifier
   if (name.includes("box") || name.includes("enclosure") || name.includes("case")) return FALLBACK_IMAGES.box
   if (name.includes("tape") || name.includes("insulation")) return FALLBACK_IMAGES.tape
   if (name.includes("zip") || name.includes("tie") || name.includes("fastener")) return FALLBACK_IMAGES.zip_ties
   if (name.includes("glue") || name.includes("stick") || name.includes("hot melt")) return FALLBACK_IMAGES.glue_gun
   if (name.includes("extension") || name.includes("multi-plug") || name.includes("socket")) return FALLBACK_IMAGES.extension
-  if (name.includes("plier") || name.includes("nose plier") || name.includes("stripper") || name.includes("cutter") || name.includes("screwdriver") || name.includes("tool")) return "/products/long-nose-plier.jpg"
+  if (name.includes("plier") || name.includes("nose plier") || name.includes("cutter") || name.includes("screwdriver") || name.includes("tool")) return "/products/long-nose-plier.jpg"
   if (name.includes("soldering") || name.includes("solder") || name.includes("iron")) return FALLBACK_IMAGES.tools
-  if (name.includes("multimeter") || name.includes("tester") || name.includes("dt-830") || name.includes("voltmeter")) return FALLBACK_IMAGES.multimeter
   if (name.includes("relay") || name.includes("home automation") || cat.includes("home")) return FALLBACK_IMAGES.relay
 
   // 6. Complete Robotics & Development Boards

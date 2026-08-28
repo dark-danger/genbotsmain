@@ -925,6 +925,10 @@ export function AdminProductsPanel() {
 
                     <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-6 gap-2.5 max-h-56 overflow-y-auto pr-1">
                       {[
+                        { name: "2200mAh 3S LiPo", url: "/products/lipo-battery-2200mah-3s.jpg" },
+                        { name: "B3 LiPo Charger", url: "/products/lipo-battery-b3-charger.jpg" },
+                        { name: "Auto Wire Stripper", url: "/products/automatic-wire-stripper.jpg" },
+                        { name: "DT830D Multimeter", url: "/products/dt830d-digital-multimeter.jpg" },
                         { name: "18650 Battery", url: "/products/rechargeable-18650-battery.jpg" },
                         { name: "Battery Holder", url: "/products/battery-holder-18650.jpg" },
                         { name: "7.4V LiPo Battery", url: "/products/lithium-battery-74v.jpg" },
