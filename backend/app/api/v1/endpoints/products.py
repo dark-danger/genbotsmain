@@ -168,6 +168,9 @@ SCHOOL_LAB_DATA = [
     {"name": "4-DOF Acrylic Programmable Robotic Arm Kit", "price": 2400.0, "category_slug": "robotics-kits", "image": "/products/robotic-arm-kit.jpg", "desc": "Laser-cut acrylic 4-axis industrial robotic arm kit with MG90S metal gear servos and claw gripper."},
     {"name": "6-Wheel Drive Heavy Duty All-Terrain Robot Chassis Kit", "price": 1200.0, "category_slug": "robotics-kits", "image": "/products/6wheel-robot-kit.jpg", "desc": "All-terrain 6WD aluminum alloy robot chassis platform with 6 high-torque BO motors and wheels."},
     {"name": "Desktop 3D Printer for Schools & STEM Labs", "price": 17000.0, "category_slug": "stem-kits", "image": "/products/3d-printer-stem.jpg", "desc": "High precision FDM desktop 3D printer with heated bed and auto-leveling for school robotics lab fabrication."},
+    {"name": "ESP32-CAM WiFi + Bluetooth Camera Module with OV2640", "price": 650.0, "category_slug": "esp32-products", "image": "/products/esp32-cam-module.jpg", "desc": "ESP32-CAM board with OV2640 camera, onboard flash LED, TF card slot, and WiFi+Bluetooth for smart video streaming and AI vision."},
+    {"name": "Ultrasonic Sensor Acrylic Bracket Cap for Smart Car", "price": 120.0, "category_slug": "robotics-kits", "image": "/products/ultrasonic-sensor-cap-bracket.jpg", "desc": "High quality blue acrylic mounting bracket cap holder specifically designed for HC-SR04 ultrasonic sensors on obstacle avoiding robot cars."},
+    {"name": "Smart Car Kit - 2 Chassis Boards Only", "price": 120.0, "category_slug": "robotics-kits", "image": "/products/car-kit-2-chassis-boards.jpg", "desc": "Dual acrylic chassis plates with pre-drilled mounting slots for 2WD/4WD DIY robot smart cars, BO motors, and sensor brackets."},
 ]
 
 

@@ -58,6 +58,10 @@ const PRODUCTS_INFO = [
   { file: 'jumper-wire-male-male.jpg', title: 'Male to Male Jumpers (40 Pcs)', category: 'Wiring', color: '#D97706', icon: '🌈' },
   { file: 'rgb-led-5mm.jpg', title: '5mm RGB LED Tri-Color', category: 'Optoelectronics', color: '#EC4899', icon: '💡' },
   { file: '220-ohm-resistors.jpg', title: '220Ω Resistors Pack', category: 'Resistor', color: '#0284C7', icon: '〰️' },
+  { file: 'esp32-cam-module.jpg', title: 'ESP32-CAM WiFi+BT Module', category: 'Camera Module', color: '#E11D48', icon: '📷' },
+  { file: 'ultrasonic-sensor-cap-bracket.jpg', title: 'Ultrasonic Sensor Cap Holder', category: 'Mounting Cap', color: '#0284C7', icon: '🛡️' },
+  { file: 'car-kit-2-chassis-boards.jpg', title: 'Smart Car 2 Chassis Boards', category: 'Chassis Kit', color: '#EAB308', icon: '🏎️' },
+
 
   // Page 3
   { file: '10k-ohm-resistors.jpg', title: '10KΩ Resistors Pack', category: 'Resistor', color: '#8B5CF6', icon: '〰️' },

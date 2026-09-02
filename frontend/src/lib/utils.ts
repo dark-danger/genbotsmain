@@ -106,6 +106,9 @@ export const FALLBACK_IMAGES: Record<string, string> = {
   otto_robot: "/products/otto-bot-kit.jpg",
   robot_6wd: "/products/6wheel-robot-kit.jpg",
   printer_3d: "/products/3d-printer-stem.jpg",
+  esp32_cam: "/products/esp32-cam-module.jpg",
+  ultrasonic_cap: "/products/ultrasonic-sensor-cap-bracket.jpg",
+  chassis_boards: "/products/car-kit-2-chassis-boards.jpg",
   default: "/products/esp32-development-board.jpg",
 }
 
@@ -118,6 +121,11 @@ export function getProductFallbackImage(nameOrProduct: unknown): string {
     ? String(catObj.slug || catObj.name || "").toLowerCase()
     : String(catObj || "").toLowerCase()
   const name = rawName.toLowerCase()
+
+  // New products specific matching
+  if (name.includes("esp32-cam") || name.includes("esp32 cam") || (name.includes("esp32") && name.includes("cam"))) return "/products/esp32-cam-module.jpg"
+  if (name.includes("chassis") || name.includes("chassy")) return "/products/car-kit-2-chassis-boards.jpg"
+  if ((name.includes("cap") || name.includes("bracket") || name.includes("holder") || name.includes("mount")) && name.includes("ultrasonic")) return "/products/ultrasonic-sensor-cap-bracket.jpg"
 
   // 1. Batteries & Power
   if (name.includes("charger") || name.includes("b3") || name.includes("balance charger")) return "/products/lipo-battery-b3-charger.jpg"
@@ -138,7 +146,7 @@ export function getProductFallbackImage(nameOrProduct: unknown): string {
 
   // 3. Motors & Actuators
   if (name.includes("servo") || name.includes("sg90") || name.includes("mg90") || name.includes("micro servo")) return FALLBACK_IMAGES.servo
-  if (name.includes("motor") || name.includes("bo motor") || name.includes("gear motor") || name.includes("wheel") || name.includes("chassis")) return FALLBACK_IMAGES.motor
+  if (name.includes("motor") || name.includes("bo motor") || name.includes("gear motor") || name.includes("wheel")) return FALLBACK_IMAGES.motor
 
   // 4. Sensors
   if (name.includes("ultrasonic") || name.includes("sonar") || name.includes("hc-sr04") || name.includes("distance sensor")) return FALLBACK_IMAGES.ultrasonic
