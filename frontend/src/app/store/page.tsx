@@ -172,13 +172,26 @@ export default function StorePage() {
 
           {/* Header */}
           <ScrollReveal>
-            <div className="mb-10 text-center md:text-left">
-              <h1 className="text-3xl md:text-4xl font-bold mb-2">
-                Our <span className="gradient-text">Store</span>
-              </h1>
-              <p className="text-muted-foreground">
-                Premium IoT, Robotics &amp; AI products for every maker
-              </p>
+            <div className="mb-10 text-center md:text-left flex flex-col md:flex-row md:items-end md:justify-between gap-4">
+              <div>
+                <div className="flex flex-wrap items-center gap-2 mb-2">
+                  <Badge variant="outline" className="rounded-full px-3 py-0.5 text-xs border-primary/30 text-primary">
+                    🚚 Pan-India Express Delivery
+                  </Badge>
+                  <Badge variant="secondary" className="rounded-full px-3 py-0.5 text-xs">
+                    📍 Sonipat &amp; NCR Hub
+                  </Badge>
+                  <Badge variant="secondary" className="rounded-full px-3 py-0.5 text-xs">
+                    ⚡ 65+ In-Stock Sensors
+                  </Badge>
+                </div>
+                <h1 className="text-3xl md:text-4xl font-bold mb-2">
+                  IoT Sensors, Robotics &amp; <span className="gradient-text">STEM Store</span>
+                </h1>
+                <p className="text-muted-foreground text-sm max-w-xl">
+                  Buy authentic IoT sensors, microcontrollers (Arduino, ESP32), and robotics hardware online. Fast shipping across Sonipat, Haryana, Delhi NCR, and all over India.
+                </p>
+              </div>
             </div>
           </ScrollReveal>
 

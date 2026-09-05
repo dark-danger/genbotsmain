@@ -131,15 +131,15 @@ export function OrganizationJsonLd() {
     "@context": "https://schema.org",
     "@graph": [
       {
-        "@type": "Organization",
+        "@type": ["Organization", "Brand"],
         "@id": "https://thegenbots.in/#organization",
         name: "GenBots",
-        alternateName: ["TheGenBots", "GenBots India", "GenBots STEM & Robotics"],
+        alternateName: ["TheGenBots", "GenBots India", "GenBots STEM & Robotics", "GenBots Sonipat"],
         url: "https://thegenbots.in",
         logo: "https://thegenbots.in/logo.png",
         image: "https://thegenbots.in/og-image.jpg",
         description:
-          "GenBots is an MSME registered Indian robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026. Provider of turnkey school robotics labs, Arduino/ESP32 hardware kits, and hands-on training.",
+          "GenBots is an MSME registered Indian robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026. Provider of turnkey school robotics labs, 65+ Arduino/ESP32 sensors and hardware kits, supplying Pan-India.",
         disambiguatingDescription:
           "GenBots (thegenbots.in) is an independent Indian STEM robotics & IoT hardware enterprise founded by Yash in Sonipat, Haryana (Govt. of India recognized MSME enterprise). It is completely independent and not affiliated with Genrobotics.",
         foundingDate: "2026-04",
@@ -149,12 +149,13 @@ export function OrganizationJsonLd() {
           jobTitle: "Founder & Lead Robotics Engineer",
         },
         knowsAbout: [
-          "STEM Robotics",
-          "IoT Hardware & Sensors",
-          "Arduino & ESP32 Microcontrollers",
-          "School STEM Lab Setup",
+          "IoT Sensors and Automation",
+          "STEM Robotics for Schools",
+          "Arduino & ESP32 Microcontroller Kits",
+          "School STEM Lab Setup India",
+          "Electronic Components Supplier Sonipat",
           "Hands-on Robotics Training",
-          "Home Automation",
+          "Pan-India Electronics Delivery",
         ],
         address: {
           "@type": "PostalAddress",
@@ -179,11 +180,73 @@ export function OrganizationJsonLd() {
         ],
       },
       {
+        "@type": ["LocalBusiness", "ElectronicsStore", "Store"],
+        "@id": "https://thegenbots.in/#localbusiness",
+        name: "GenBots - IoT Sensors, Robotics & STEM Lab Supplier",
+        alternateName: ["GenBots Sonipat", "GenBots Electronics Store Sonipat"],
+        url: "https://thegenbots.in",
+        telephone: "+91 92 110 67540",
+        email: "genbots000@gmail.com",
+        priceRange: "₹₹",
+        currenciesAccepted: "INR",
+        paymentAccepted: "Cash on Delivery, UPI, Net Banking, Credit Card, Debit Card",
+        image: "https://thegenbots.in/og-image.jpg",
+        logo: "https://thegenbots.in/logo.png",
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: "GenBots, Sonipat",
+          addressLocality: "Sonipat",
+          addressRegion: "Haryana",
+          postalCode: "131001",
+          addressCountry: "IN",
+        },
+        geo: {
+          "@type": "GeoCoordinates",
+          latitude: 28.9931,
+          longitude: 77.0151,
+        },
+        openingHoursSpecification: [
+          {
+            "@type": "OpeningHoursSpecification",
+            dayOfWeek: ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+            opens: "09:00",
+            closes: "19:00",
+          },
+        ],
+        areaServed: [
+          { "@type": "City", name: "Sonipat" },
+          { "@type": "AdministrativeArea", name: "Haryana" },
+          { "@type": "AdministrativeArea", name: "Delhi NCR" },
+          { "@type": "Country", name: "India" },
+        ],
+        hasOfferCatalog: {
+          "@type": "OfferCatalog",
+          name: "IoT Sensors, Microcontrollers & Robotics Kits",
+          itemListElement: [
+            {
+              "@type": "OfferCatalog",
+              name: "IoT Sensors in Sonipat & Pan-India",
+              description: "Ultrasonic, IR, PIR, DHT11 Temperature, Soil Moisture, Gas, Touch, and Color sensors with express delivery.",
+            },
+            {
+              "@type": "OfferCatalog",
+              name: "Microcontroller Boards",
+              description: "Arduino Uno, Mega, Nano, ESP32 Wi-Fi + Bluetooth, ESP8266, Raspberry Pi Pico.",
+            },
+            {
+              "@type": "OfferCatalog",
+              name: "Turnkey School Robotics Labs",
+              description: "Complete equipment, training, and curriculum for school STEM innovation labs.",
+            },
+          ],
+        },
+      },
+      {
         "@type": "WebSite",
         "@id": "https://thegenbots.in/#website",
         url: "https://thegenbots.in",
         name: "GenBots",
-        description: "IoT, Robotics & AI Solutions Provider | India",
+        description: "IoT Sensors, Robotics Kits & AI Solutions Provider | Sonipat & Pan India",
         publisher: { "@id": "https://thegenbots.in/#organization" },
         potentialAction: {
           "@type": "SearchAction",
