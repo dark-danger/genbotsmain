@@ -16,6 +16,20 @@ from app.services.telegram_bot import start_telegram_polling, stop_telegram_poll
 async def lifespan(app: FastAPI):
     """Application lifecycle management."""
     logger.info(f"Starting {settings.APP_NAME} v{settings.APP_VERSION}")
+
+    # Auto-migrate columns to TEXT for large Data URLs and media
+    try:
+        from app.core.database import engine
+        from sqlalchemy import text
+        async with engine.begin() as conn:
+            await conn.execute(text("ALTER TABLE product_images ALTER COLUMN url TYPE TEXT;"))
+            await conn.execute(text("ALTER TABLE product_images ALTER COLUMN alt_text TYPE TEXT;"))
+            await conn.execute(text("ALTER TABLE categories ALTER COLUMN image_url TYPE TEXT;"))
+            await conn.execute(text("ALTER TABLE brands ALTER COLUMN logo_url TYPE TEXT;"))
+            await conn.execute(text("ALTER TABLE media_files ALTER COLUMN url TYPE TEXT;"))
+    except Exception as e:
+        logger.warning(f"Schema auto-migration notice: {e}")
+
     # Start Telegram background listener for local development
     if not os.getenv("VERCEL"):
         try:

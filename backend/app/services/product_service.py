@@ -45,7 +45,18 @@ class ProductService:
             sku = f"{base_sku}-{counter}"
             counter += 1
 
+    async def _ensure_db_schema(self):
+        try:
+            from sqlalchemy import text
+            await self.db.execute(text("ALTER TABLE product_images ALTER COLUMN url TYPE TEXT;"))
+            await self.db.execute(text("ALTER TABLE product_images ALTER COLUMN alt_text TYPE TEXT;"))
+            await self.db.execute(text("ALTER TABLE categories ALTER COLUMN image_url TYPE TEXT;"))
+            await self.db.execute(text("ALTER TABLE brands ALTER COLUMN logo_url TYPE TEXT;"))
+        except Exception:
+            pass
+
     async def create_product(self, data: ProductCreate) -> Product:
+        await self._ensure_db_schema()
         slug = await self._generate_unique_slug(data.name, data.slug)
         sku = await self._generate_unique_sku(data.sku)
 
@@ -212,6 +223,7 @@ class ProductService:
         }
 
     async def update_product(self, product_id: UUID, data: dict) -> Optional[Product]:
+        await self._ensure_db_schema()
         product = await self.get_product_by_id(product_id)
         if not product:
             return None
