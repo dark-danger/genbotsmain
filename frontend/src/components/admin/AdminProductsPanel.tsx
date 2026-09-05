@@ -76,6 +76,131 @@ const initialFormState: ProductFormData = {
   specifications: [],
 };
 
+export function classifyProduct(name: string, categoryName: string = ""): { prefix: string; typeCode: number; categoryLabel: string; suggestedSku: string } {
+  const n = (name || "").toLowerCase().trim();
+  const c = (categoryName || "").toLowerCase().trim();
+
+  let prefix = "GEN";
+  let typeCode = 1;
+  let categoryLabel = "Robotics Hardware";
+
+  // 1. ESP Family
+  if (n.includes("esp32-cam") || (n.includes("esp") && n.includes("cam"))) {
+    prefix = "ESP";
+    typeCode = 2;
+    categoryLabel = "ESP32 Camera Module";
+  } else if (["esp32", "esp8266", "nodemcu", "esp-12"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "ESP";
+    typeCode = 1;
+    categoryLabel = "ESP Development Board";
+  } else if (n.includes("esp") && (n.includes("shield") || n.includes("relay") || n.includes("adapter"))) {
+    prefix = "ESP";
+    typeCode = 3;
+    categoryLabel = "ESP Expansion & Shield";
+  }
+  // 2. Arduino Family
+  else if (["arduino", "uno r3", "mega 2560", "nano v3", "pro mini"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "ARD";
+    typeCode = n.includes("shield") || n.includes("expansion") ? 2 : 1;
+    categoryLabel = typeCode === 2 ? "Arduino Shield" : "Arduino Board";
+  }
+  // 3. Official GenBots Projects & DIY STEM Kits
+  else if (["spider robot", "otto bot", "robotic arm", "chassis", "smart car", "quadruped", "robot kit", "stem kit", "biped"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "OFF";
+    typeCode = n.includes("arm") ? 2 : 1;
+    categoryLabel = "Official GenBots Project / Kit";
+  } else if (n.includes("3d printer")) {
+    prefix = "OFF";
+    typeCode = 3;
+    categoryLabel = "Lab 3D Printer";
+  }
+  // 4. Motors & Actuators
+  else if (["servo", "sg90", "mg995", "mg90s", "stepper", "bo motor", "gear motor", "motor driver", "l298n", "l293d"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "MOT";
+    typeCode = n.includes("driver") || n.includes("controller") ? 2 : 1;
+    categoryLabel = typeCode === 2 ? "Motor Driver" : "Robotic Motor & Servo";
+  }
+  // 5. Displays
+  else if (["oled", "lcd", "display", "screen", "tft", "i2c oled"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "DIS";
+    typeCode = 1;
+    categoryLabel = "Display Module";
+  }
+  // 6. Wireless Communication & Audio
+  else if (["bluetooth", "hc-05", "hc-06", "rfid", "rc522", "nrf24", "amplifier", "pam8403", "audio", "lora"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "COM";
+    typeCode = 1;
+    categoryLabel = "Communication & Audio";
+  }
+  // 7. Sensors
+  else if (["sensor", "ultrasonic", "flex", "ir obstacle", "hc-sr04", "bracket", "dht11", "dht22", "bmp180", "soil moisture", "flame", "gas", "smoke", "mq-", "sound", "vibration", "tilt", "line tracking", "touch", "water level", "reed", "hall effect", "light sensor", "ldr", "lm35", "radar"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "SEN";
+    typeCode = (n.includes("bracket") || n.includes("mount")) ? 3 : (["ultrasonic", "hc-sr04", "ir obstacle", "proximity", "line tracking", "radar", "rcwl"].some(k => n.includes(k)) ? 1 : 2);
+    categoryLabel = "Sensor Module";
+  }
+  // 8. Power & Batteries
+  else if (["lipo", "battery", "charger", "b3 pro", "18650", "power", "bms", "cell", "holder"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "PWR";
+    typeCode = n.includes("charger") || n.includes("b3") || n.includes("bms") ? 2 : 1;
+    categoryLabel = "Battery & Power";
+  }
+  // 9. Tools & Lab Equipment
+  else if (["soldering", "multimeter", "wire stripper", "screwdriver", "plier", "glue gun", "glue stick", "dt-830d"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "TOL";
+    typeCode = 1;
+    categoryLabel = "Lab & Assembly Tool";
+  }
+  // 10. Prototyping Parts & Components
+  else if (["jumper wire", "led", "resistor", "enclosure", "tape", "zip tie", "cable", "extension", "breadboard", "relay", "potentiometer", "switch", "pcb", "i-blink"].some(k => n.includes(k) || c.includes(k))) {
+    prefix = "PRT";
+    typeCode = 1;
+    categoryLabel = "Prototyping Component";
+  }
+
+  // Generate suggested sequence or base SKU
+  const suggestedSku = `GEN-${prefix}-${typeCode}-1`;
+
+  return { prefix, typeCode, categoryLabel, suggestedSku };
+}
+
+export function generateSeoContent(name: string, categoryName: string = "", shortDesc: string = ""): {
+  meta_title: string;
+  meta_description: string;
+  short_description: string;
+  tags: string;
+} {
+  const cleanName = (name || "").trim();
+  const { prefix, categoryLabel } = classifyProduct(cleanName, categoryName);
+
+  // 1. Meta Title (50-65 chars for Google CTR)
+  let meta_title = `Buy ${cleanName} | Best Price in India - GenBots`;
+  if (meta_title.length > 65) {
+    meta_title = `${cleanName} | Buy Online India - GenBots`;
+  }
+  if (meta_title.length > 65) {
+    meta_title = `${cleanName.slice(0, 48)}... | GenBots`;
+  }
+
+  // 2. Meta Description (145-160 chars high-intent)
+  let meta_description = `Buy original ${cleanName} (${categoryLabel}) at lowest price in India on GenBots.in. Genuine tested quality, fast nationwide delivery, pinouts & tutorials.`;
+  if (meta_description.length > 160) {
+    meta_description = `Buy original ${cleanName} online in India at GenBots.in. Genuine tested quality, fast shipping & developer project guides for IoT & robotics.`;
+  }
+  if (meta_description.length > 160) {
+    meta_description = meta_description.slice(0, 157) + "...";
+  }
+
+  // 3. Short Description
+  const short_description = shortDesc || `Original ${cleanName} with premium build quality, tested pinout compatibility, and fast nationwide dispatch from GenBots India.`;
+
+  // 4. Tags
+  const baseTags = ["robotics", "iot", "diy", "genbots", "india", "stem-education", prefix.toLowerCase()];
+  const cleanWords = cleanName.toLowerCase().replace(/[^a-z0-9 ]/g, "").split(" ").filter(w => w.length > 2);
+  const tags = Array.from(new Set([...cleanWords, ...baseTags])).slice(0, 10).join(", ");
+
+  return { meta_title, meta_description, short_description, tags };
+}
+
 export function AdminProductsPanel() {
   const queryClient = useQueryClient();
 
@@ -444,6 +569,45 @@ export function AdminProductsPanel() {
       processFiles(e.dataTransfer.files);
     }
   };
+  const handleAutoGenerateSku = () => {
+    if (!formData.name.trim()) {
+      showFeedback("⚠️ Please enter a Product Title first.");
+      return;
+    }
+    const catObj = categories.find((c: any) => c.id === formData.category_id);
+    const { prefix, typeCode, categoryLabel } = classifyProduct(formData.name, catObj?.name || "");
+
+    // Count how many products already have this prefix-type in existing list
+    const existingWithPrefix = allProducts.filter((p: any) =>
+      p.sku?.startsWith(`GEN-${prefix}-${typeCode}-`) && p.id !== formData.id
+    );
+    const nextSeq = existingWithPrefix.length + 1;
+    const generatedSku = `GEN-${prefix}-${typeCode}-${nextSeq}`;
+
+    setFormData((prev) => ({
+      ...prev,
+      sku: generatedSku,
+    }));
+    showFeedback(`⚡ Auto-Generated SKU: ${generatedSku} (${categoryLabel})`);
+  };
+
+  const handleAutoGenerateSeo = () => {
+    if (!formData.name.trim()) {
+      showFeedback("⚠️ Please enter a Product Title first.");
+      return;
+    }
+    const catObj = categories.find((c: any) => c.id === formData.category_id);
+    const seo = generateSeoContent(formData.name, catObj?.name || "", formData.short_description);
+
+    setFormData((prev) => ({
+      ...prev,
+      meta_title: seo.meta_title,
+      meta_description: seo.meta_description,
+      short_description: prev.short_description || seo.short_description,
+      tags: prev.tags || seo.tags,
+    }));
+    showFeedback("✨ Generated High-Ranking SEO Metadata & Tags!");
+  };
 
   return (
     <div className="space-y-6">
@@ -608,7 +772,17 @@ export function AdminProductsPanel() {
                 <div className="space-y-4">
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
-                      <label className="text-xs font-semibold block mb-1">Product Title *</label>
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-semibold">Product Title *</label>
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerateSeo}
+                          className="text-[11px] text-primary hover:underline flex items-center gap-1 font-semibold"
+                          title="Generate SEO Title, Meta Description & Keywords"
+                        >
+                          ✨ Auto-Fill AI SEO
+                        </button>
+                      </div>
                       <Input
                         value={formData.name}
                         onChange={(e) => setFormData({ ...formData, name: e.target.value })}
@@ -618,14 +792,34 @@ export function AdminProductsPanel() {
                       />
                     </div>
                     <div>
-                      <label className="text-xs font-semibold block mb-1">SKU (Unique Code) *</label>
-                      <Input
-                        value={formData.sku}
-                        onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
-                        placeholder="e.g. GEN-ESP32-DEV"
-                        required
-                        className="text-sm font-mono rounded-xl"
-                      />
+                      <div className="flex items-center justify-between mb-1">
+                        <label className="text-xs font-semibold">SKU (Unique Code) *</label>
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerateSku}
+                          className="text-[11px] text-emerald-600 dark:text-emerald-400 hover:underline flex items-center gap-1 font-semibold"
+                          title="Generate category-based SKU e.g. GEN-ESP-1-1"
+                        >
+                          ⚡ Auto-Generate SKU
+                        </button>
+                      </div>
+                      <div className="relative">
+                        <Input
+                          value={formData.sku}
+                          onChange={(e) => setFormData({ ...formData, sku: e.target.value })}
+                          placeholder="e.g. GEN-ESP-1-1"
+                          required
+                          className="text-sm font-mono rounded-xl pr-20"
+                        />
+                        <button
+                          type="button"
+                          onClick={handleAutoGenerateSku}
+                          className="absolute right-1.5 top-1/2 -translate-y-1/2 px-2 py-1 bg-muted hover:bg-muted/80 text-[10px] font-mono font-semibold rounded-md border text-muted-foreground"
+                          title="Format and auto-assign SKU"
+                        >
+                          GEN-AUTO
+                        </button>
+                      </div>
                     </div>
                   </div>
 
@@ -1199,36 +1393,87 @@ export function AdminProductsPanel() {
 
               {/* TAB 5: SEO & TAGS */}
               {activeFormTab === "seo" && (
-                <div className="space-y-4">
+                <div className="space-y-5">
+                  {/* AI SEO Generator Banner Card */}
+                  <div className="p-4 bg-gradient-to-r from-primary/10 via-background to-secondary/10 border border-primary/20 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+                    <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="text-base">🚀</span>
+                        <h4 className="text-xs font-bold text-foreground">Intelligent Search Engine Optimization</h4>
+                        <Badge variant="outline" className="text-[10px] text-primary border-primary/30">Google Rank Boost</Badge>
+                      </div>
+                      <p className="text-[11px] text-muted-foreground">
+                        Automatically generate meta tags, high-converting descriptions, and search keywords for top rankings.
+                      </p>
+                    </div>
+
+                    <Button
+                      type="button"
+                      size="sm"
+                      onClick={handleAutoGenerateSeo}
+                      className="gradient-bg text-white rounded-xl text-xs flex items-center gap-1.5 shadow-sm hover:shadow shrink-0"
+                    >
+                      <span>✨</span> Generate AI SEO Metadata
+                    </Button>
+                  </div>
+
                   <div>
-                    <label className="text-xs font-semibold block mb-1">SEO Meta Title</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold">SEO Meta Title</label>
+                      <span className={`text-[10px] font-mono ${formData.meta_title.length > 65 ? "text-amber-500 font-bold" : "text-muted-foreground"}`}>
+                        {formData.meta_title.length} / 65 chars (Optimal: 50-60)
+                      </span>
+                    </div>
                     <Input
                       value={formData.meta_title}
                       onChange={(e) => setFormData({ ...formData, meta_title: e.target.value })}
-                      placeholder="e.g. ESP32 NodeMCU Development Board | GenBots Official"
+                      placeholder="e.g. Buy ESP32 Development Board | Best Price in India - GenBots"
                       className="text-sm rounded-xl"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold block mb-1">SEO Meta Description</label>
+                    <div className="flex items-center justify-between mb-1">
+                      <label className="text-xs font-semibold">SEO Meta Description</label>
+                      <span className={`text-[10px] font-mono ${formData.meta_description.length > 160 ? "text-amber-500 font-bold" : "text-muted-foreground"}`}>
+                        {formData.meta_description.length} / 160 chars (Optimal: 140-155)
+                      </span>
+                    </div>
                     <Textarea
                       value={formData.meta_description}
                       onChange={(e) => setFormData({ ...formData, meta_description: e.target.value })}
                       rows={3}
-                      placeholder="Search engine optimized description under 160 characters..."
-                      className="text-sm rounded-xl"
+                      placeholder="Buy original ESP32 board online in India at GenBots.in. Genuine tested quality, fast shipping & developer guides for IoT & robotics..."
+                      className="text-sm rounded-xl resize-y"
                     />
                   </div>
 
                   <div>
-                    <label className="text-xs font-semibold block mb-1">Tags (Comma separated)</label>
+                    <label className="text-xs font-semibold block mb-1">Search Keywords &amp; Tags (Comma separated)</label>
                     <Input
                       value={formData.tags}
                       onChange={(e) => setFormData({ ...formData, tags: e.target.value })}
-                      placeholder="arduino, esp32, wifi, bluetooth, robotics, iot, sensor"
+                      placeholder="esp32, wifi, bluetooth, iot, robotics, arduino, stem-education, india"
                       className="text-sm rounded-xl"
                     />
+                  </div>
+
+                  {/* Google Search Live Preview Card */}
+                  <div className="p-4 bg-muted/20 border rounded-2xl space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-1">
+                      <span>🔍</span> Live Google Search SERP Preview
+                    </span>
+                    <div className="bg-background p-3.5 rounded-xl border space-y-1">
+                      <div className="text-[11px] text-emerald-600 dark:text-emerald-400 font-mono truncate">
+                        https://genbots.in/store/{formData.slug || (formData.name ? formData.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") : "product-slug")}
+                      </div>
+                      <div className="text-sm font-semibold text-blue-600 dark:text-blue-400 line-clamp-1 hover:underline cursor-pointer">
+                        {formData.meta_title || `${formData.name || "Product Name"} | Buy Online India - GenBots`}
+                      </div>
+                      <div className="text-xs text-muted-foreground line-clamp-2 leading-relaxed">
+                        {formData.meta_description || "Buy original robotics, IoT & STEM hardware online at best prices with fast delivery across India on GenBots.in."}
+                      </div>
+                    </div>
                   </div>
                 </div>
               )}

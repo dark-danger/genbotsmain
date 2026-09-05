@@ -31,11 +31,81 @@ class ProductService:
             slug = f"{raw_slug}-{counter}"
             counter += 1
 
-    async def _generate_unique_sku(self, requested_sku: Optional[str] = None) -> str:
-        from uuid import uuid4
+    @staticmethod
+    def classify_product(name: str) -> tuple[str, int, str]:
+        n = (name or "").lower().strip()
+
+        # 1. ESP Family
+        if "esp32-cam" in n or ("esp" in n and "cam" in n):
+            return ("ESP", 2, "ESP32 AI Camera Module")
+        elif any(k in n for k in ["esp32", "esp8266", "nodemcu", "esp-12"]):
+            return ("ESP", 1, "ESP IoT Development Board")
+        elif "esp" in n and ("shield" in n or "relay" in n or "adapter" in n):
+            return ("ESP", 3, "ESP Expansion & Shield")
+
+        # 2. Arduino Family
+        elif any(k in n for k in ["arduino", "uno r3", "mega 2560", "nano v3", "pro mini"]):
+            if "shield" in n or "expansion" in n:
+                return ("ARD", 2, "Arduino Shield & Expansion")
+            return ("ARD", 1, "Arduino Microcontroller Board")
+
+        # 3. Official GenBots Projects & DIY STEM Kits
+        elif any(k in n for k in ["spider robot", "otto bot", "robotic arm", "chassis", "smart car", "quadruped", "robot kit", "stem kit", "biped"]):
+            if "arm" in n:
+                return ("OFF", 2, "Programmable Robotic Arm")
+            return ("OFF", 1, "Official GenBots Robotics Kit")
+        elif "3d printer" in n:
+            return ("OFF", 3, "STEM Lab 3D Printer & Fabrication")
+
+        # 4. Motors & Actuators
+        elif any(k in n for k in ["servo", "sg90", "mg995", "mg90s", "stepper", "bo motor", "gear motor", "motor driver", "l298n", "l293d"]):
+            if "driver" in n or "controller" in n:
+                return ("MOT", 2, "Motor Driver & Speed Controller")
+            return ("MOT", 1, "Precision Servo & Robotic Motor")
+
+        # 5. Displays
+        elif any(k in n for k in ["oled", "lcd", "display", "screen", "tft", "i2c oled"]):
+            return ("DIS", 1, "High-Resolution Display Module")
+
+        # 6. Communication & Audio
+        elif any(k in n for k in ["bluetooth", "hc-05", "hc-06", "rfid", "rc522", "nrf24", "amplifier", "pam8403", "audio", "lora"]):
+            return ("COM", 1, "Wireless Communication & Audio Module")
+
+        # 7. Sensors
+        elif any(k in n for k in ["sensor", "ultrasonic", "flex", "ir obstacle", "hc-sr04", "bracket", "dht11", "dht22", "bmp180", "soil moisture", "flame", "gas", "smoke", "mq-", "sound", "vibration", "tilt", "line tracking", "touch", "water level", "reed", "hall effect", "light sensor", "ldr", "lm35", "radar"]):
+            if "bracket" in n or "mount" in n or "holder" in n:
+                return ("SEN", 3, "Sensor Mounting Bracket & Accessory")
+            elif any(k in n for k in ["ultrasonic", "hc-sr04", "ir obstacle", "proximity", "line tracking", "radar", "rcwl"]):
+                return ("SEN", 1, "Distance & Obstacle Proximity Sensor")
+            return ("SEN", 2, "Environmental & Analog Sensor")
+
+        # 8. Power & Batteries
+        elif any(k in n for k in ["lipo", "battery", "charger", "b3 pro", "18650", "power", "bms", "cell", "holder"]):
+            if "charger" in n or "b3" in n or "bms" in n:
+                return ("PWR", 2, "Intelligent LiPo Battery Charger")
+            return ("PWR", 1, "High-Discharge LiPo & Rechargeable Battery")
+
+        # 9. Tools & Laboratory Equipment
+        elif any(k in n for k in ["soldering", "multimeter", "wire stripper", "screwdriver", "plier", "glue gun", "glue stick", "dt-830d"]):
+            return ("TOL", 1, "Precision Electronics & Assembly Tool")
+
+        # 10. Prototyping Parts & Components
+        elif any(k in n for k in ["jumper wire", "led", "resistor", "enclosure", "tape", "zip tie", "cable", "extension", "breadboard", "relay", "potentiometer", "switch", "pcb", "i-blink"]):
+            return ("PRT", 1, "Circuit Prototyping & Lab Component")
+
+        return ("GEN", 1, "Robotics Hardware Module")
+
+    async def _generate_unique_sku(self, product_name: str = "", requested_sku: Optional[str] = None) -> str:
         base_sku = (requested_sku or "").strip()
         if not base_sku:
-            base_sku = f"GEN-{uuid4().hex[:6].upper()}"
+            prefix, type_code, _ = self.classify_product(product_name)
+            prefix_pattern = f"GEN-{prefix}-{type_code}-%"
+            existing_count_res = await self.db.execute(
+                select(func.count(Product.id)).where(Product.sku.like(prefix_pattern))
+            )
+            count = (existing_count_res.scalar() or 0) + 1
+            base_sku = f"GEN-{prefix}-{type_code}-{count}"
+
         sku = base_sku
         counter = 1
         while True:
@@ -44,6 +114,24 @@ class ProductService:
                 return sku
             sku = f"{base_sku}-{counter}"
             counter += 1
+
+    def _generate_default_seo(self, name: str, meta_title: Optional[str], meta_description: Optional[str], short_desc: Optional[str]) -> tuple[str, str]:
+        clean_name = (name or "").strip()
+        _, _, cat_label = self.classify_product(clean_name)
+
+        title = meta_title or f"Buy {clean_name} | Best Price in India - GenBots"
+        if len(title) > 65:
+            title = f"{clean_name} | Buy Online India - GenBots"
+        if len(title) > 65:
+            title = f"{clean_name[:48]}... | GenBots"
+
+        desc = meta_description or f"Buy original {clean_name} ({cat_label}) at lowest price in India on GenBots.in. Genuine tested quality, fast nationwide delivery, pinout guides & tutorials."
+        if len(desc) > 160:
+            desc = f"Buy original {clean_name} online in India at GenBots.in. Genuine tested quality, fast shipping & developer project guides for IoT & robotics."
+        if len(desc) > 160:
+            desc = desc[:157] + "..."
+
+        return title, desc
 
     async def _ensure_db_schema(self):
         try:
@@ -58,7 +146,10 @@ class ProductService:
     async def create_product(self, data: ProductCreate) -> Product:
         await self._ensure_db_schema()
         slug = await self._generate_unique_slug(data.name, data.slug)
-        sku = await self._generate_unique_sku(data.sku)
+        sku = await self._generate_unique_sku(data.name, data.sku)
+        meta_title, meta_description = self._generate_default_seo(
+            data.name, data.meta_title, data.meta_description, data.short_description
+        )
 
         product = Product(
             name=data.name, slug=slug, sku=sku,
@@ -72,8 +163,8 @@ class ProductService:
             track_inventory=data.track_inventory, allow_backorder=data.allow_backorder,
             weight=data.weight, dimensions=data.dimensions,
             status=data.status, is_featured=data.is_featured,
-            is_digital=data.is_digital, meta_title=data.meta_title,
-            meta_description=data.meta_description, tags=data.tags,
+            is_digital=data.is_digital, meta_title=meta_title,
+            meta_description=meta_description, tags=data.tags,
             warranty_info=data.warranty_info, return_policy=data.return_policy,
             shipping_info=data.shipping_info,
         )
