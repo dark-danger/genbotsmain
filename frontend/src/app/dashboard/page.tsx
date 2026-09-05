@@ -414,18 +414,52 @@ function FeedbackTab({
   }
 
   return (
-    <div className="max-w-2xl">
-      <div className="mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" /> Share Your Review & Feedback
-        </h2>
-        <p className="text-sm text-muted-foreground mt-1">
-          Review your robotics products, school lab kits, or general store experience.
-        </p>
+    <div className="max-w-2xl space-y-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold flex items-center gap-2">
+            <Star className="w-6 h-6 text-yellow-500 fill-yellow-500" /> Share Your Review &amp; Feedback
+          </h2>
+          <p className="text-sm text-muted-foreground mt-1">
+            Review your robotics products, school lab kits, or general store experience.
+          </p>
+        </div>
+
+        <a
+          href="https://www.google.com/search?q=GenBots+Robotics+India+reviews"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="shrink-0"
+        >
+          <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-sm">
+            ⭐ Rate Us on Google
+          </Button>
+        </a>
+      </div>
+
+      {/* Google Review Banner */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-amber-500/10 to-emerald-500/10 border border-primary/20 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+        <div>
+          <p className="text-xs font-bold text-foreground flex items-center gap-1.5">
+            <span>🌟</span> Want to share your experience publicly on Google?
+          </p>
+          <p className="text-[11px] text-muted-foreground mt-0.5">
+            Give GenBots a 5★ rating on Google Business to help more young innovators discover STEM robotics!
+          </p>
+        </div>
+        <a
+          href="https://www.google.com/search?q=GenBots+Robotics+India+reviews"
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <Button size="sm" variant="outline" className="text-xs rounded-xl font-semibold border-blue-500/30 text-blue-600 dark:text-blue-400 hover:bg-blue-500/10 shrink-0">
+            Open Google Reviews →
+          </Button>
+        </a>
       </div>
 
       {/* Review Type Selector */}
-      <div className="flex gap-2 p-1 bg-muted/60 rounded-xl mb-6 w-fit border">
+      <div className="flex gap-2 p-1 bg-muted/60 rounded-xl w-fit border">
         <button
           type="button"
           onClick={() => setReviewType("platform")}

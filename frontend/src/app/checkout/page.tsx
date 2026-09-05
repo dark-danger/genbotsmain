@@ -14,6 +14,7 @@ import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import { cartApi, ordersApi } from "@/lib/api";
 import { resolveImageUrl } from "@/lib/utils";
+import { PostPurchaseFeedbackModal } from "@/components/checkout/PostPurchaseFeedbackModal";
 import Link from "next/link";
 
 declare global {
@@ -29,6 +30,7 @@ export default function CheckoutPage() {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
   const [confirmedOrder, setConfirmedOrder] = useState<any>(null);
+  const [showFeedbackModal, setShowFeedbackModal] = useState(true);
 
   // Form state
   const [form, setForm] = useState({
@@ -183,30 +185,42 @@ export default function CheckoutPage() {
     return (
       <>
         <Navbar />
-        <main className="pt-24 pb-16 min-h-screen flex items-center justify-center bg-background">
-          <div className="text-center glass-card p-12 max-w-lg">
-            <div className="w-20 h-20 rounded-full bg-green-500/20 flex items-center justify-center mx-auto mb-6">
-              <CheckCircle className="w-10 h-10 text-green-500" />
+        {/* Post-Purchase Feedback & Google Rating Flash Card Modal */}
+        <PostPurchaseFeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          order={confirmedOrder}
+          user={user}
+        />
+
+        <main className="pt-24 pb-16 min-h-screen flex items-center justify-center bg-background px-4">
+          <div className="text-center glass-card p-8 sm:p-12 max-w-lg w-full space-y-6">
+            <div className="w-20 h-20 rounded-full bg-emerald-500/20 text-emerald-500 flex items-center justify-center mx-auto shadow-inner">
+              <CheckCircle className="w-10 h-10" />
             </div>
-            <h1 className="text-2xl font-bold mb-2">Order Confirmed! 🎉</h1>
-            <p className="text-muted-foreground mb-4">
-              Thank you for your purchase. Your order has been placed successfully.
-            </p>
+
+            <div>
+              <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-foreground">Order Confirmed! 🎉</h1>
+              <p className="text-sm text-muted-foreground">
+                Thank you for your purchase. Your order has been placed successfully.
+              </p>
+            </div>
+
             {confirmedOrder && (
-              <div className="bg-muted/50 rounded-xl p-4 mb-6 text-left space-y-2">
-                <p className="text-sm">
+              <div className="bg-muted/40 border rounded-2xl p-4 text-left space-y-2">
+                <p className="text-xs sm:text-sm">
                   <span className="text-muted-foreground">Order Number:</span>{" "}
-                  <span className="font-bold">{confirmedOrder.order_number}</span>
+                  <span className="font-bold text-foreground font-mono">{confirmedOrder.order_number}</span>
                 </p>
-                <p className="text-sm">
+                <p className="text-xs sm:text-sm">
                   <span className="text-muted-foreground">Total:</span>{" "}
-                  <span className="font-bold">
+                  <span className="font-bold text-foreground">
                     ₹{parseFloat(confirmedOrder.total_amount).toLocaleString("en-IN")}
                   </span>
                 </p>
-                <p className="text-sm">
-                  <span className="text-muted-foreground">Payment:</span>{" "}
-                  <span className="font-bold capitalize">
+                <p className="text-xs sm:text-sm">
+                  <span className="text-muted-foreground">Payment Method:</span>{" "}
+                  <span className="font-bold capitalize text-foreground">
                     {confirmedOrder.payment_method === "cod"
                       ? "Cash on Delivery"
                       : "Paid via Razorpay"}
@@ -214,14 +228,53 @@ export default function CheckoutPage() {
                 </p>
               </div>
             )}
-            <div className="flex gap-3 justify-center">
-              <Link href="/dashboard">
-                <Button className="gradient-bg text-white rounded-xl">
-                  View Orders
+
+            {/* Google Rating & Review Highlight Box */}
+            <div className="p-4 rounded-2xl bg-gradient-to-r from-blue-500/10 via-amber-500/10 to-emerald-500/10 border-2 border-primary/30 text-left space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                  <span>⭐</span> Loved your shopping experience?
+                </span>
+                <span className="text-[10px] font-bold text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20">
+                  5.0 ★ Rating
+                </span>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Help fellow robotics creators, students, and schools by leaving a quick 5-star review on Google!
+              </p>
+              <div className="flex items-center gap-2 pt-1">
+                <a
+                  href="https://www.google.com/search?q=GenBots+Robotics+India+reviews"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex-1"
+                >
+                  <Button
+                    size="sm"
+                    className="w-full bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold shadow-md flex items-center justify-center gap-1.5 h-9"
+                  >
+                    <span>⭐ Rate Us on Google</span>
+                  </Button>
+                </a>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => setShowFeedbackModal(true)}
+                  className="rounded-xl text-xs h-9"
+                >
+                  Write Feedback
+                </Button>
+              </div>
+            </div>
+
+            <div className="flex gap-3 justify-center pt-2">
+              <Link href="/dashboard" className="flex-1">
+                <Button className="w-full gradient-bg text-white rounded-xl text-xs font-semibold h-11">
+                  View Order in Dashboard
                 </Button>
               </Link>
-              <Link href="/store">
-                <Button variant="outline" className="rounded-xl">
+              <Link href="/store" className="flex-1">
+                <Button variant="outline" className="w-full rounded-xl text-xs h-11">
                   Continue Shopping
                 </Button>
               </Link>
