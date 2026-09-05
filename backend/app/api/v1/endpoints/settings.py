@@ -48,37 +48,59 @@ def _load_file_settings():
     return _in_memory_settings
 
 
+def get_settings():
+    """Synchronous helper for reading active settings."""
+    return _load_file_settings()
+
+
 @router.get("")
-async def fetch_settings(db: Optional[DbSession] = None):
+async def fetch_settings(db: DbSession):
     """Get current store and module visibility settings."""
     current = dict(DEFAULT_SETTINGS)
     current.update(_load_file_settings())
 
-    if db is not None:
-        try:
-            result = await db.execute(select(SiteSetting))
-            rows = result.scalars().all()
-            for r in rows:
-                if r.value_type == "boolean":
-                    current[r.key] = r.value.lower() in ("true", "1", "yes")
-                elif r.value_type == "json":
-                    try:
-                        current[r.key] = json.loads(r.value)
-                    except Exception:
-                        current[r.key] = r.value
-                else:
+    try:
+        result = await db.execute(select(SiteSetting))
+        rows = result.scalars().all()
+        for r in rows:
+            if r.value_type == "boolean":
+                current[r.key] = r.value.lower() in ("true", "1", "yes")
+            elif r.value_type == "json":
+                try:
+                    current[r.key] = json.loads(r.value)
+                except Exception:
                     current[r.key] = r.value
-        except Exception:
-            pass
+            else:
+                current[r.key] = r.value
+    except Exception:
+        pass
 
     _in_memory_settings.update(current)
     return current
 
 
 @router.post("")
-async def update_settings(data: dict, admin: CurrentAdmin, db: DbSession):
+async def update_settings(data: dict, db: DbSession, admin: CurrentAdmin):
     """Update store and module visibility settings."""
-    current = await fetch_settings(db)
+    current = dict(DEFAULT_SETTINGS)
+    current.update(_load_file_settings())
+
+    try:
+        result = await db.execute(select(SiteSetting))
+        rows = result.scalars().all()
+        for r in rows:
+            if r.value_type == "boolean":
+                current[r.key] = r.value.lower() in ("true", "1", "yes")
+            elif r.value_type == "json":
+                try:
+                    current[r.key] = json.loads(r.value)
+                except Exception:
+                    current[r.key] = r.value
+            else:
+                current[r.key] = r.value
+    except Exception:
+        pass
+
     current.update(data)
     _in_memory_settings.update(current)
 

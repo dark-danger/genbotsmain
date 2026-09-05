@@ -2991,6 +2991,7 @@ export default function AdminDashboard() {
 // ── Website Modules & Public Page Visibility Manager ─────────────────────────
 function ModuleVisibilitySettingsCard() {
   const queryClient = useQueryClient();
+  const [savingKey, setSavingKey] = useState<string | null>(null);
 
   const { data: settings, isLoading } = useQuery({
     queryKey: ["storeSettings"],
@@ -3005,6 +3006,11 @@ function ModuleVisibilitySettingsCard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["storeSettings"] });
       queryClient.invalidateQueries({ queryKey: ["siteSettings"] });
+      setSavingKey(null);
+    },
+    onError: (err: any) => {
+      setSavingKey(null);
+      alert(err.response?.data?.detail || "Failed to update module settings. Please ensure you are logged in as admin.");
     },
   });
 
@@ -3075,10 +3081,12 @@ function ModuleVisibilitySettingsCard() {
   ];
 
   const handleToggle = (key: string, currentVal: boolean) => {
+    setSavingKey(key);
     mutation.mutate({ [key]: !currentVal });
   };
 
   const handleToggleAll = (enable: boolean) => {
+    setSavingKey("all");
     const payload: Record<string, boolean> = {};
     modules.forEach((m) => {
       payload[m.key] = enable;
