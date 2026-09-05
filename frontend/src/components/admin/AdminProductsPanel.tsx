@@ -223,10 +223,100 @@ export function AdminProductsPanel() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [marginPercentInput, setMarginPercentInput] = useState<string>("30");
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [isBulkProcessing, setIsBulkProcessing] = useState(false);
 
   const showFeedback = (msg: string) => {
     setActionFeedback(msg);
     setTimeout(() => setActionFeedback(null), 3000);
+  };
+
+  const toggleSelectProduct = (id: string) => {
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  const toggleSelectAll = () => {
+    if (filteredProducts.length === 0) return;
+    const allFilteredIds = filteredProducts.map((p) => p.id);
+    const areAllSelected = allFilteredIds.every((id) => selectedIds.has(id));
+    if (areAllSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        allFilteredIds.forEach((id) => next.delete(id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        allFilteredIds.forEach((id) => next.add(id));
+        return next;
+      });
+    }
+  };
+
+  const selectAllVisible = () => {
+    const allFilteredIds = filteredProducts.map((p) => p.id);
+    setSelectedIds(new Set(allFilteredIds));
+  };
+
+  const clearSelection = () => {
+    setSelectedIds(new Set());
+  };
+
+  const handleBulkStatusChange = async (newStatus: "active" | "archived" | "draft") => {
+    if (selectedIds.size === 0) return;
+    setIsBulkProcessing(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await Promise.allSettled(
+        ids.map((id) => productsApi.update(id, { status: newStatus }))
+      );
+      queryClient.invalidateQueries({ queryKey: ["adminProductsList"] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["storeProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["homepageFeaturedProducts"] });
+      if (newStatus === "active") {
+        showFeedback(`👁️ Successfully unhid & published ${ids.length} products to store!`);
+      } else if (newStatus === "archived") {
+        showFeedback(`🙈 Successfully hid ${ids.length} products from store (Archived)!`);
+      } else {
+        showFeedback(`📝 Successfully changed ${ids.length} products to Draft!`);
+      }
+      clearSelection();
+    } catch (err: any) {
+      alert(err?.message || "Bulk operation failed");
+    } finally {
+      setIsBulkProcessing(false);
+    }
+  };
+
+  const handleBulkDelete = async () => {
+    if (selectedIds.size === 0) return;
+    const count = selectedIds.size;
+    if (!confirm(`Are you sure you want to permanently delete ${count} selected products? This action cannot be undone.`)) {
+      return;
+    }
+    setIsBulkProcessing(true);
+    try {
+      const ids = Array.from(selectedIds);
+      await Promise.allSettled(
+        ids.map((id) => productsApi.delete(id))
+      );
+      queryClient.invalidateQueries({ queryKey: ["adminProductsList"] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["storeProducts"] });
+      showFeedback(`🗑️ Permanently deleted ${count} products.`);
+      clearSelection();
+    } catch (err: any) {
+      alert(err?.message || "Bulk delete failed");
+    } finally {
+      setIsBulkProcessing(false);
+    }
   };
 
   // Real-time Margin & Cost Calculations
@@ -1683,6 +1773,135 @@ export function AdminProductsPanel() {
         </div>
       )}
 
+      {/* FLOATING STICKY BULK ACTION BAR */}
+      {selectedIds.size > 0 && (
+        <div className="sticky top-4 z-40 p-4 bg-card/95 backdrop-blur-md border-2 border-primary/40 rounded-2xl shadow-2xl flex flex-wrap items-center justify-between gap-4 animate-in fade-in slide-in-from-top-3 ring-4 ring-primary/10">
+          <div className="flex items-center gap-3">
+            <div className="w-8 h-8 rounded-xl gradient-bg flex items-center justify-center text-white font-bold text-xs shadow-md">
+              {selectedIds.size}
+            </div>
+            <div>
+              <span className="font-bold text-sm text-foreground flex items-center gap-2">
+                {selectedIds.size} {selectedIds.size === 1 ? "Product" : "Products"} Selected
+                <Badge variant="outline" className="text-[10px] text-primary border-primary/30">
+                  Bulk Actions Ready
+                </Badge>
+              </span>
+              <p className="text-[11px] text-muted-foreground">
+                Apply visibility change or deletion to all selected products in 1 click.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 flex-wrap">
+            {/* Bulk Unhide (Make Visible in Store) */}
+            <Button
+              size="sm"
+              onClick={() => handleBulkStatusChange("active")}
+              disabled={isBulkProcessing}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs flex items-center gap-1.5 shadow-sm font-semibold"
+            >
+              <Eye className="w-3.5 h-3.5" />
+              <span>Unhide Selected ({selectedIds.size})</span>
+            </Button>
+
+            {/* Bulk Hide (Archive from Store) */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange("archived")}
+              disabled={isBulkProcessing}
+              className="border-amber-500/40 text-amber-600 dark:text-amber-400 hover:bg-amber-500/10 rounded-xl text-xs flex items-center gap-1.5 font-semibold"
+            >
+              <EyeOff className="w-3.5 h-3.5" />
+              <span>Hide Selected ({selectedIds.size})</span>
+            </Button>
+
+            {/* Bulk Draft */}
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => handleBulkStatusChange("draft")}
+              disabled={isBulkProcessing}
+              className="border-border text-muted-foreground hover:text-foreground rounded-xl text-xs flex items-center gap-1.5"
+            >
+              <Archive className="w-3.5 h-3.5" />
+              <span>Mark Draft</span>
+            </Button>
+
+            {/* Bulk Delete */}
+            <Button
+              size="sm"
+              variant="destructive"
+              onClick={handleBulkDelete}
+              disabled={isBulkProcessing}
+              className="rounded-xl text-xs flex items-center gap-1.5 font-semibold"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              <span>Delete ({selectedIds.size})</span>
+            </Button>
+
+            {/* Clear Selection */}
+            <Button
+              size="sm"
+              variant="ghost"
+              onClick={clearSelection}
+              disabled={isBulkProcessing}
+              className="rounded-xl text-xs text-muted-foreground hover:text-foreground"
+            >
+              <X className="w-3.5 h-3.5 mr-1" /> Clear
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Quick Selection Shortcuts Bar */}
+      <div className="flex items-center justify-between px-1 text-xs text-muted-foreground flex-wrap gap-2">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="font-semibold text-foreground text-[11px]">Quick Select:</span>
+          <button
+            type="button"
+            onClick={selectAllVisible}
+            className="text-[11px] px-2 py-0.5 rounded-md bg-muted/60 hover:bg-primary/10 hover:text-primary transition-colors border text-muted-foreground font-medium"
+          >
+            Select All Visible ({filteredProducts.length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const activeIds = filteredProducts.filter(p => p.status === "active").map(p => p.id);
+              setSelectedIds(new Set(activeIds));
+            }}
+            className="text-[11px] px-2 py-0.5 rounded-md bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 hover:bg-emerald-500/20 transition-colors border border-emerald-500/20 font-medium"
+          >
+            Select All Active ({filteredProducts.filter(p => p.status === "active").length})
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              const hiddenIds = filteredProducts.filter(p => p.status === "archived" || p.status === "draft").map(p => p.id);
+              setSelectedIds(new Set(hiddenIds));
+            }}
+            className="text-[11px] px-2 py-0.5 rounded-md bg-amber-500/10 text-amber-600 dark:text-amber-400 hover:bg-amber-500/20 transition-colors border border-amber-500/20 font-medium"
+          >
+            Select All Hidden ({filteredProducts.filter(p => p.status === "archived" || p.status === "draft").length})
+          </button>
+          {selectedIds.size > 0 && (
+            <button
+              type="button"
+              onClick={clearSelection}
+              className="text-[11px] px-2 py-0.5 rounded-md bg-muted text-muted-foreground hover:text-destructive transition-colors font-medium underline"
+            >
+              Clear selection ({selectedIds.size})
+            </button>
+          )}
+        </div>
+
+        <div className="text-[11px] text-muted-foreground">
+          Showing <span className="font-bold text-foreground">{filteredProducts.length}</span> of {allProducts.length} items
+        </div>
+      </div>
+
       {/* PRODUCTS TABLE */}
       <div className="glass-card border rounded-2xl overflow-hidden shadow-sm">
         {isLoadingProducts ? (
@@ -1703,6 +1922,23 @@ export function AdminProductsPanel() {
             <table className="w-full text-left text-xs">
               <thead className="bg-muted/50 text-muted-foreground font-semibold border-b">
                 <tr>
+                  {/* Select All Checkbox */}
+                  <th className="py-3 px-3 w-10 text-center">
+                    <input
+                      type="checkbox"
+                      checked={filteredProducts.length > 0 && filteredProducts.every((p) => selectedIds.has(p.id))}
+                      ref={(el) => {
+                        if (el) {
+                          const someSelected = filteredProducts.some((p) => selectedIds.has(p.id));
+                          const allSelected = filteredProducts.length > 0 && filteredProducts.every((p) => selectedIds.has(p.id));
+                          el.indeterminate = someSelected && !allSelected;
+                        }
+                      }}
+                      onChange={toggleSelectAll}
+                      className="w-4 h-4 accent-primary rounded cursor-pointer transition-all"
+                      title="Select / Deselect all visible products"
+                    />
+                  </th>
                   <th className="py-3 px-4">Item</th>
                   <th className="py-3 px-4">SKU</th>
                   <th className="py-3 px-4">Category</th>
@@ -1716,6 +1952,7 @@ export function AdminProductsPanel() {
               </thead>
               <tbody className="divide-y divide-border">
                 {filteredProducts.map((product) => {
+                  const isSelected = selectedIds.has(product.id);
                   const imgUrl = getProductImage(product);
                   const isOutOfStock = product.stock_quantity <= 0;
                   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= (product.low_stock_threshold || 5);
@@ -1730,7 +1967,25 @@ export function AdminProductsPanel() {
                   const marginPct = costPrice > 0 ? Math.round(((sellingPrice - costPrice) / costPrice) * 100) : 0;
 
                   return (
-                    <tr key={product.id} className="hover:bg-muted/30 transition-colors">
+                    <tr
+                      key={product.id}
+                      className={`transition-colors ${
+                        isSelected
+                          ? "bg-primary/10 border-l-4 border-l-primary"
+                          : "hover:bg-muted/30"
+                      }`}
+                    >
+                      {/* Individual Select Checkbox */}
+                      <td className="py-3 px-3 text-center">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => toggleSelectProduct(product.id)}
+                          className="w-4 h-4 accent-primary rounded cursor-pointer transition-all"
+                          title={`Select ${product.name}`}
+                        />
+                      </td>
+
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl overflow-hidden bg-muted border shrink-0">
