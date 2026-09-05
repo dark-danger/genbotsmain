@@ -27,6 +27,8 @@ interface ProductItem {
   description?: string;
   stock_quantity?: number;
   is_featured?: boolean;
+  status?: string;
+  cost_price?: string | number;
   avg_rating?: number;
   review_count?: number;
   category?: { name: string; slug: string } | null;
@@ -133,6 +135,9 @@ export default function StorePage() {
   // Filter and Sort logic
   const filteredProducts = products
     .filter((product) => {
+      // Only show active / visible products in public store
+      if (product.status && product.status !== "active") return false;
+
       const matchesSearch =
         (product.name || "").toLowerCase().includes(deferredSearch.toLowerCase()) ||
         (product.description || "").toLowerCase().includes(deferredSearch.toLowerCase());

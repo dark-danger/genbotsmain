@@ -5,7 +5,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Edit2, Trash2, Copy, Archive, CheckCircle,
   Share2, Search, RefreshCw, Image as ImageIcon,
-  Upload, X, Star, Layers, Check, AlertCircle, Eye,
+  Upload, X, Star, Layers, Check, AlertCircle, Eye, EyeOff,
   TrendingUp, DollarSign, Percent, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -343,6 +343,26 @@ export function AdminProductsPanel() {
     },
     onError: (err: any) => {
       alert(err.response?.data?.detail || "Failed to delete product");
+    },
+  });
+
+  const toggleVisibilityMutation = useMutation({
+    mutationFn: async ({ id, newStatus }: { id: string; newStatus: "active" | "archived" }) => {
+      return productsApi.update(id, { status: newStatus });
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["adminProductsList"] });
+      queryClient.invalidateQueries({ queryKey: ["adminProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["storeProducts"] });
+      queryClient.invalidateQueries({ queryKey: ["homepageFeaturedProducts"] });
+      if (variables.newStatus === "active") {
+        showFeedback("👁️ Product is now Visible in Store (Unhidden)!");
+      } else {
+        showFeedback("🙈 Product is now Hidden from Store (Archived)!");
+      }
+    },
+    onError: (err: any) => {
+      alert(err.response?.data?.detail || "Failed to toggle product visibility");
     },
   });
 
@@ -716,17 +736,22 @@ export function AdminProductsPanel() {
       <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
         {/* Status Tabs */}
         <div className="md:col-span-6 flex gap-1.5 bg-muted/40 p-1 rounded-xl border">
-          {(["all", "active", "draft", "archived"] as const).map((tab) => (
+          {[
+            { key: "all" as const, label: "All Products", count: counts.all },
+            { key: "active" as const, label: "🟢 Visible", count: counts.active },
+            { key: "archived" as const, label: "🙈 Hidden", count: counts.archived },
+            { key: "draft" as const, label: "📝 Draft", count: counts.draft },
+          ].map((tab) => (
             <button
-              key={tab}
-              onClick={() => setActiveStatusTab(tab)}
-              className={`flex-1 py-1.5 px-3 rounded-lg text-xs font-semibold capitalize transition-all ${
-                activeStatusTab === tab
+              key={tab.key}
+              onClick={() => setActiveStatusTab(tab.key)}
+              className={`flex-1 py-1.5 px-2.5 rounded-lg text-xs font-semibold transition-all ${
+                activeStatusTab === tab.key
                   ? "bg-background text-primary shadow-sm"
                   : "text-muted-foreground hover:text-foreground"
               }`}
             >
-              {tab} ({counts[tab]})
+              {tab.label} ({tab.count})
             </button>
           ))}
         </div>
@@ -1787,18 +1812,72 @@ export function AdminProductsPanel() {
                         )}
                       </td>
 
+                      {/* Visibility & Status Column with 1-Click Toggle */}
                       <td className="py-3 px-4">
                         {product.status === "active" ? (
-                          <Badge className="bg-emerald-500 text-white text-[10px]">Active</Badge>
+                          <button
+                            type="button"
+                            onClick={() => toggleVisibilityMutation.mutate({ id: product.id, newStatus: "archived" })}
+                            disabled={toggleVisibilityMutation.isPending}
+                            title="Click to Hide Product from Store"
+                            className="group inline-flex items-center"
+                          >
+                            <Badge className="bg-emerald-500 hover:bg-emerald-600 text-white text-[10px] cursor-pointer flex items-center gap-1 shadow-sm transition-all group-hover:scale-105">
+                              <Eye className="w-3 h-3" /> Visible (Active)
+                            </Badge>
+                          </button>
                         ) : product.status === "draft" ? (
-                          <Badge variant="outline" className="text-[10px]">Draft</Badge>
+                          <button
+                            type="button"
+                            onClick={() => toggleVisibilityMutation.mutate({ id: product.id, newStatus: "active" })}
+                            disabled={toggleVisibilityMutation.isPending}
+                            title="Click to Unhide / Publish Product"
+                            className="group inline-flex items-center"
+                          >
+                            <Badge variant="outline" className="text-amber-500 border-amber-500/30 hover:bg-amber-500/10 text-[10px] cursor-pointer flex items-center gap-1 shadow-sm transition-all group-hover:scale-105">
+                              <EyeOff className="w-3 h-3" /> Draft (Hidden)
+                            </Badge>
+                          </button>
                         ) : (
-                          <Badge variant="secondary" className="text-[10px]">Archived</Badge>
+                          <button
+                            type="button"
+                            onClick={() => toggleVisibilityMutation.mutate({ id: product.id, newStatus: "active" })}
+                            disabled={toggleVisibilityMutation.isPending}
+                            title="Click to Unhide (Show in Store)"
+                            className="group inline-flex items-center"
+                          >
+                            <Badge variant="secondary" className="bg-muted hover:bg-muted/80 text-muted-foreground border text-[10px] cursor-pointer flex items-center gap-1 shadow-sm transition-all group-hover:scale-105">
+                              <EyeOff className="w-3 h-3 text-amber-500" /> Hidden (Archived)
+                            </Badge>
+                          </button>
                         )}
                       </td>
 
                       <td className="py-3 px-4 text-right">
                         <div className="flex items-center justify-end gap-1">
+                          {/* 1-Click Hide / Unhide Action Button */}
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            onClick={() => toggleVisibilityMutation.mutate({
+                              id: product.id,
+                              newStatus: product.status === "active" ? "archived" : "active"
+                            })}
+                            disabled={toggleVisibilityMutation.isPending}
+                            title={product.status === "active" ? "Hide Product from Store (Archive)" : "Unhide Product (Publish to Store)"}
+                            className={`h-8 w-8 rounded-lg ${
+                              product.status === "active"
+                                ? "text-amber-500 hover:text-amber-600 hover:bg-amber-500/10"
+                                : "text-emerald-500 hover:text-emerald-600 hover:bg-emerald-500/10"
+                            }`}
+                          >
+                            {product.status === "active" ? (
+                              <EyeOff className="w-3.5 h-3.5" />
+                            ) : (
+                              <Eye className="w-3.5 h-3.5" />
+                            )}
+                          </Button>
+
                           <Button
                             size="icon"
                             variant="ghost"
@@ -1843,28 +1922,6 @@ export function AdminProductsPanel() {
                           >
                             <Copy className="w-3.5 h-3.5 text-muted-foreground" />
                           </Button>
-
-                          {product.status === "active" ? (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => updateProductMutation.mutate({ id: product.id, data: { status: "archived" } })}
-                              title="Archive Product"
-                              className="h-8 w-8 rounded-lg hover:bg-muted"
-                            >
-                              <Archive className="w-3.5 h-3.5 text-amber-500" />
-                            </Button>
-                          ) : (
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              onClick={() => updateProductMutation.mutate({ id: product.id, data: { status: "active" } })}
-                              title="Activate Product"
-                              className="h-8 w-8 rounded-lg hover:bg-muted"
-                            >
-                              <CheckCircle className="w-3.5 h-3.5 text-emerald-500" />
-                            </Button>
-                          )}
 
                           <Button
                             size="icon"
