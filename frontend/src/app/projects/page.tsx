@@ -2,6 +2,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ExternalLink, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Projects", description: "Explore GenBots portfolio of IoT, AI, and robotics projects developed for clients and students." };
@@ -17,7 +18,7 @@ const projects = [
 
 export default function ProjectsPage() {
   return (
-    <>
+    <ModuleGuard moduleKey="projects" moduleName="Hardware & IoT Projects">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -69,6 +70,6 @@ export default function ProjectsPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }

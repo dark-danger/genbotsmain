@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { useParams } from "next/navigation";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 
 // ── Full blog content for each sensor ──────────────────────────
 const blogData: Record<string, any> = {
@@ -183,105 +184,107 @@ export default function BlogDetailPage() {
     return (
         <>
             <Navbar />
-            <main className="pt-24 pb-20" id="blog-detail">
-                {/* Hero / Cover */}
-                <div className="relative w-full h-[340px] md:h-[420px] overflow-hidden">
-                    <img
-                        src={blog.cover_image}
-                        alt={blog.title}
-                        className="w-full h-full object-cover"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
-                    <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 max-w-4xl mx-auto">
+            <ModuleGuard moduleKey="blog" moduleName="Engineering Blog & Articles">
+                <main className="pt-24 pb-20" id="blog-detail">
+                    {/* Hero / Cover */}
+                    <div className="relative w-full h-[340px] md:h-[420px] overflow-hidden">
+                        <img
+                            src={blog.cover_image}
+                            alt={blog.title}
+                            className="w-full h-full object-cover"
+                        />
+                        <div className="absolute inset-0 bg-gradient-to-t from-background via-background/60 to-transparent" />
+                        <div className="absolute bottom-0 left-0 right-0 p-6 md:p-10 max-w-4xl mx-auto">
+                            <ScrollReveal>
+                                <Badge className="mb-3 rounded-full gradient-bg text-white border-0">{blog.category}</Badge>
+                                <h1 className="text-2xl md:text-4xl font-bold mb-3 leading-tight">{blog.title}</h1>
+                                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                                    <span className="flex items-center gap-1.5"><User className="w-4 h-4" /> {blog.author_name}</span>
+                                    <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {new Date(blog.created_at).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
+                                    <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {blog.read_time}</span>
+                                    <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {blog.view_count.toLocaleString()} views</span>
+                                </div>
+                            </ScrollReveal>
+                        </div>
+                    </div>
+
+                    {/* Content */}
+                    <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-10">
+                        <article className="prose prose-lg dark:prose-invert max-w-none">
+                            {blog.sections.map((section: any, i: number) => (
+                                <ScrollReveal key={i} delay={i * 0.05}>
+                                    <section className="mb-10">
+                                        <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
+                                            <BookOpen className="w-5 h-5 text-primary flex-shrink-0" />
+                                            {section.heading}
+                                        </h2>
+                                        <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-[15px]">
+                                            {section.content.split('\n').map((line: string, li: number) => {
+                                                // Handle code blocks
+                                                if (line.trim().startsWith('```')) return null;
+
+                                                // Handle headings within content
+                                                if (line.startsWith('> ')) {
+                                                    return (
+                                                        <blockquote key={li} className="border-l-4 border-primary/50 pl-4 py-2 my-3 bg-primary/5 rounded-r-lg text-sm italic">
+                                                            {line.slice(2)}
+                                                        </blockquote>
+                                                    );
+                                                }
+
+                                                // Handle table rows
+                                                if (line.includes('|') && !line.includes('---')) {
+                                                    const cells = line.split('|').filter(c => c.trim());
+                                                    if (cells.length > 1) {
+                                                        return (
+                                                            <div key={li} className="flex gap-4 py-1.5 text-sm border-b border-border/30">
+                                                                <span className="font-semibold min-w-[180px]">{cells[0]?.replace(/\*\*/g, '').trim()}</span>
+                                                                <span>{cells[1]?.replace(/\*\*/g, '').trim()}</span>
+                                                                {cells[2] && <span>{cells[2]?.replace(/\*\*/g, '').trim()}</span>}
+                                                            </div>
+                                                        );
+                                                    }
+                                                }
+
+                                                // Handle list items
+                                                if (line.match(/^(\d+\.\s|[-•]\s|🤖|🅿️|📏|🚰|🔔|🏎️|🚗|🤚|📦|🚙|🌐)/)) {
+                                                    return <p key={li} className="ml-2 my-1.5">{line}</p>;
+                                                }
+
+                                                // Handle bold text and inline code
+                                                if (line.trim() === '') return <br key={li} />;
+                                                return <p key={li} className="my-1">{line}</p>;
+                                            })}
+                                        </div>
+                                    </section>
+                                </ScrollReveal>
+                            ))}
+                        </article>
+
+                        {/* Bottom CTA */}
                         <ScrollReveal>
-                            <Badge className="mb-3 rounded-full gradient-bg text-white border-0">{blog.category}</Badge>
-                            <h1 className="text-2xl md:text-4xl font-bold mb-3 leading-tight">{blog.title}</h1>
-                            <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                                <span className="flex items-center gap-1.5"><User className="w-4 h-4" /> {blog.author_name}</span>
-                                <span className="flex items-center gap-1.5"><Calendar className="w-4 h-4" /> {new Date(blog.created_at).toLocaleDateString("en-IN", { month: "long", day: "numeric", year: "numeric" })}</span>
-                                <span className="flex items-center gap-1.5"><Clock className="w-4 h-4" /> {blog.read_time}</span>
-                                <span className="flex items-center gap-1.5"><Eye className="w-4 h-4" /> {blog.view_count.toLocaleString()} views</span>
+                            <div className="glass-card p-8 mt-12 text-center">
+                                <h3 className="text-xl font-bold mb-2">Want to buy these sensors?</h3>
+                                <p className="text-muted-foreground mb-5">
+                                    GenBots offers all sensors, kits, and components at the best prices with fast delivery across India.
+                                </p>
+                                <div className="flex flex-col sm:flex-row gap-3 justify-center">
+                                    <Link href="/store">
+                                        <Button className="gradient-bg text-white rounded-xl px-6">
+                                            🛒 Visit Store
+                                        </Button>
+                                    </Link>
+                                    <Link href="/blog">
+                                        <Button variant="outline" className="rounded-xl px-6">
+                                            <ArrowLeft className="w-4 h-4 mr-2" /> More Articles
+                                        </Button>
+                                    </Link>
+                                </div>
                             </div>
                         </ScrollReveal>
                     </div>
-                </div>
-
-                {/* Content */}
-                <div className="max-w-4xl mx-auto px-4 sm:px-6 mt-10">
-                    <article className="prose prose-lg dark:prose-invert max-w-none">
-                        {blog.sections.map((section: any, i: number) => (
-                            <ScrollReveal key={i} delay={i * 0.05}>
-                                <section className="mb-10">
-                                    <h2 className="text-xl md:text-2xl font-bold mb-4 flex items-center gap-2">
-                                        <BookOpen className="w-5 h-5 text-primary flex-shrink-0" />
-                                        {section.heading}
-                                    </h2>
-                                    <div className="text-muted-foreground leading-relaxed whitespace-pre-line text-[15px]">
-                                        {section.content.split('\n').map((line: string, li: number) => {
-                                            // Handle code blocks
-                                            if (line.trim().startsWith('```')) return null;
-
-                                            // Handle headings within content
-                                            if (line.startsWith('> ')) {
-                                                return (
-                                                    <blockquote key={li} className="border-l-4 border-primary/50 pl-4 py-2 my-3 bg-primary/5 rounded-r-lg text-sm italic">
-                                                        {line.slice(2)}
-                                                    </blockquote>
-                                                );
-                                            }
-
-                                            // Handle table rows
-                                            if (line.includes('|') && !line.includes('---')) {
-                                                const cells = line.split('|').filter(c => c.trim());
-                                                if (cells.length > 1) {
-                                                    return (
-                                                        <div key={li} className="flex gap-4 py-1.5 text-sm border-b border-border/30">
-                                                            <span className="font-semibold min-w-[180px]">{cells[0]?.replace(/\*\*/g, '').trim()}</span>
-                                                            <span>{cells[1]?.replace(/\*\*/g, '').trim()}</span>
-                                                            {cells[2] && <span>{cells[2]?.replace(/\*\*/g, '').trim()}</span>}
-                                                        </div>
-                                                    );
-                                                }
-                                            }
-
-                                            // Handle list items
-                                            if (line.match(/^(\d+\.\s|[-•]\s|🤖|🅿️|📏|🚰|🔔|🏎️|🚗|🤚|📦|🚙|🌐)/)) {
-                                                return <p key={li} className="ml-2 my-1.5">{line}</p>;
-                                            }
-
-                                            // Handle bold text and inline code
-                                            if (line.trim() === '') return <br key={li} />;
-                                            return <p key={li} className="my-1">{line}</p>;
-                                        })}
-                                    </div>
-                                </section>
-                            </ScrollReveal>
-                        ))}
-                    </article>
-
-                    {/* Bottom CTA */}
-                    <ScrollReveal>
-                        <div className="glass-card p-8 mt-12 text-center">
-                            <h3 className="text-xl font-bold mb-2">Want to buy these sensors?</h3>
-                            <p className="text-muted-foreground mb-5">
-                                GenBots offers all sensors, kits, and components at the best prices with fast delivery across India.
-                            </p>
-                            <div className="flex flex-col sm:flex-row gap-3 justify-center">
-                                <Link href="/store">
-                                    <Button className="gradient-bg text-white rounded-xl px-6">
-                                        🛒 Visit Store
-                                    </Button>
-                                </Link>
-                                <Link href="/blog">
-                                    <Button variant="outline" className="rounded-xl px-6">
-                                        <ArrowLeft className="w-4 h-4 mr-2" /> More Articles
-                                    </Button>
-                                </Link>
-                            </div>
-                        </div>
-                    </ScrollReveal>
-                </div>
-            </main>
+                </main>
+            </ModuleGuard>
             <Footer />
         </>
     );

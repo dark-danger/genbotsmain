@@ -14,8 +14,21 @@ import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
+import { useSiteSettings } from "@/store/settings";
 
 const emptySubscribe = () => () => {};
+
+const hrefToModuleKey: Record<string, string> = {
+  "/store": "enable_store",
+  "/software": "enable_software",
+  "/services": "enable_services",
+  "/lab-setup": "enable_lab_setup",
+  "/projects": "enable_projects",
+  "/training": "enable_training",
+  "/blog": "enable_blog",
+  "/career": "enable_career",
+  "/contact": "enable_contact",
+};
 
 const mainNav = [
   { label: "Home", href: "/" },
@@ -43,6 +56,12 @@ export function Navbar() {
   );
   const { isAuthenticated } = useAuthStore();
   const { itemCount } = useCartStore();
+  const { isModuleEnabled } = useSiteSettings();
+
+  const visibleNav = mainNav.filter(item => {
+    const key = hrefToModuleKey[item.href];
+    return !key || isModuleEnabled(key);
+  });
 
   useEffect(() => {
     const handleScroll = () => setScrolled(window.scrollY > 20);
@@ -82,7 +101,7 @@ export function Navbar() {
 
           {/* Desktop Nav */}
           <nav className="hidden lg:flex items-center gap-1">
-            {mainNav.slice(0, 8).map((item) => (
+            {visibleNav.slice(0, 7).map((item) => (
               <Link
                 key={item.href}
                 href={item.href}
@@ -101,29 +120,31 @@ export function Navbar() {
                 )}
               </Link>
             ))}
-            {/* More dropdown for remaining items */}
-            <div className="relative group">
-              <button className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg transition-all flex items-center gap-1 hover:bg-primary/10">
-                More <ChevronDown className="w-3 h-3" />
-              </button>
-              <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
-                <div className="glass-card p-2 min-w-[180px]">
-                  {mainNav.slice(8).map((item) => (
-                    <Link
-                      key={item.href}
-                      href={item.href}
-                      className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${isActive(item.href)
-                          ? "text-primary bg-primary/10"
-                          : "text-muted-foreground hover:text-foreground hover:bg-muted"
-                        }`}
-                    >
-                      {item.icon && <item.icon className="w-4 h-4" />}
-                      {item.label}
-                    </Link>
-                  ))}
+            {/* More dropdown for remaining visible items */}
+            {visibleNav.length > 7 && (
+              <div className="relative group">
+                <button className="px-3 py-2 text-sm font-medium text-muted-foreground hover:text-foreground rounded-lg transition-all flex items-center gap-1 hover:bg-primary/10">
+                  More <ChevronDown className="w-3 h-3" />
+                </button>
+                <div className="absolute right-0 top-full pt-2 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200">
+                  <div className="glass-card p-2 min-w-[180px]">
+                    {visibleNav.slice(7).map((item) => (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        className={`flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${isActive(item.href)
+                            ? "text-primary bg-primary/10"
+                            : "text-muted-foreground hover:text-foreground hover:bg-muted"
+                          }`}
+                      >
+                        {item.icon && <item.icon className="w-4 h-4" />}
+                        {item.label}
+                      </Link>
+                    ))}
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
           </nav>
 
           {/* Right Actions */}
@@ -159,16 +180,18 @@ export function Navbar() {
               </Link>
             )}
 
-            <Link href="/cart" className="relative">
-              <Button size="icon" variant="ghost" className="rounded-xl">
-                <ShoppingCart className="w-4 h-4" />
-                {mounted && itemCount > 0 && (
-                  <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full gradient-bg text-white text-[10px] font-bold flex items-center justify-center shadow-lg">
-                    {itemCount > 99 ? "99+" : itemCount}
-                  </span>
-                )}
-              </Button>
-            </Link>
+            {isModuleEnabled("enable_store") && (
+              <Link href="/cart" className="relative">
+                <Button size="icon" variant="ghost" className="rounded-xl">
+                  <ShoppingCart className="w-4 h-4" />
+                  {mounted && itemCount > 0 && (
+                    <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full gradient-bg text-white text-[10px] font-bold flex items-center justify-center shadow-lg">
+                      {itemCount > 99 ? "99+" : itemCount}
+                    </span>
+                  )}
+                </Button>
+              </Link>
+            )}
 
             {/* Mobile Menu */}
             <Sheet open={mobileOpen} onOpenChange={setMobileOpen}>
@@ -190,7 +213,7 @@ export function Navbar() {
                     </div>
                   </div>
                   <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
-                    {mainNav.map((item) => (
+                    {visibleNav.map((item) => (
                       <Link
                         key={item.href}
                         href={item.href}

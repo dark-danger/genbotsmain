@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Clock, Users, Star } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import type { Metadata } from "next";
 
 export const metadata: Metadata = { title: "Training", description: "Enroll in IoT, robotics, and AI courses, bootcamps, and workshops by GenBots." };
@@ -18,7 +19,7 @@ const courses = [
 
 export default function TrainingPage() {
   return (
-    <>
+    <ModuleGuard moduleKey="training" moduleName="Training & STEM Workshops">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -53,6 +54,6 @@ export default function TrainingPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }

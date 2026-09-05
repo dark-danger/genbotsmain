@@ -2948,7 +2948,10 @@ export default function AdminDashboard() {
 
           {/* SETTINGS TAB */}
           {activeTab === "settings" && (
-            <div className="space-y-6 max-w-2xl">
+            <div className="space-y-6 max-w-4xl">
+              {/* Module Visibility Manager */}
+              <ModuleVisibilitySettingsCard />
+
               {/* GST Setting */}
               <GstToggleCard />
 
@@ -2980,6 +2983,187 @@ export default function AdminDashboard() {
           )}
 
         </main>
+      </div>
+    </div>
+  );
+}
+
+// ── Website Modules & Public Page Visibility Manager ─────────────────────────
+function ModuleVisibilitySettingsCard() {
+  const queryClient = useQueryClient();
+
+  const { data: settings, isLoading } = useQuery({
+    queryKey: ["storeSettings"],
+    queryFn: async () => {
+      const res = await settingsApi.get();
+      return res.data;
+    },
+  });
+
+  const mutation = useMutation({
+    mutationFn: (newSettings: Record<string, boolean>) => settingsApi.update(newSettings),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["storeSettings"] });
+      queryClient.invalidateQueries({ queryKey: ["siteSettings"] });
+    },
+  });
+
+  const modules = [
+    {
+      key: "enable_software",
+      title: "Software & AI Solutions",
+      route: "/software",
+      description: "AI platform, autonomous agents, and enterprise tools showcase.",
+      icon: "💻",
+    },
+    {
+      key: "enable_services",
+      title: "Services & Prototyping",
+      route: "/services",
+      description: "Custom robotics engineering, rapid prototyping, and CAD modeling.",
+      icon: "⚙️",
+    },
+    {
+      key: "enable_lab_setup",
+      title: "Lab Setup & Solutions",
+      route: "/lab-setup",
+      description: "Robotics and IoT lab infrastructure quote & consultation system.",
+      icon: "🔬",
+    },
+    {
+      key: "enable_projects",
+      title: "Projects & Showcase",
+      route: "/projects",
+      description: "Portfolio of industrial and research engineering projects.",
+      icon: "🚀",
+    },
+    {
+      key: "enable_training",
+      title: "Workshops & Training",
+      route: "/training",
+      description: "Hands-on robotics bootcamps, workshops, and certifications.",
+      icon: "🎓",
+    },
+    {
+      key: "enable_store",
+      title: "Store & Hardware Shop",
+      route: "/store",
+      description: "Product catalog, shopping cart, checkout, and inventory catalog.",
+      icon: "🛒",
+    },
+    {
+      key: "enable_blog",
+      title: "Engineering Blog & Tutorials",
+      route: "/blog",
+      description: "Technical tutorials, hardware guides, and articles.",
+      icon: "📝",
+    },
+    {
+      key: "enable_career",
+      title: "Careers & Hiring",
+      route: "/career",
+      description: "Open job roles, company culture, and application portal.",
+      icon: "💼",
+    },
+    {
+      key: "enable_contact",
+      title: "Contact & Inquiries",
+      route: "/contact",
+      description: "Customer contact form and consultation inquiries.",
+      icon: "📬",
+    },
+  ];
+
+  const handleToggle = (key: string, currentVal: boolean) => {
+    mutation.mutate({ [key]: !currentVal });
+  };
+
+  const handleToggleAll = (enable: boolean) => {
+    const payload: Record<string, boolean> = {};
+    modules.forEach((m) => {
+      payload[m.key] = enable;
+    });
+    mutation.mutate(payload);
+  };
+
+  return (
+    <div className="glass-card p-6 border bg-card/50">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 pb-6 border-b border-border/50">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <span className="text-xl">🎛️</span>
+            <h3 className="text-lg font-bold">Public Page &amp; Module Visibility</h3>
+            <Badge variant="outline" className="text-xs">Live Controls</Badge>
+          </div>
+          <p className="text-sm text-muted-foreground max-w-xl">
+            Turn modules ON or OFF instantly. When disabled, the module disappears from the navigation bar, mobile drawer, and footer. Direct visits display a friendly &quot;Under Development&quot; screen.
+          </p>
+        </div>
+
+        <div className="flex items-center gap-2">
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleToggleAll(true)}
+            disabled={isLoading || mutation.isPending}
+            className="text-xs h-8"
+          >
+            Enable All
+          </Button>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => handleToggleAll(false)}
+            disabled={isLoading || mutation.isPending}
+            className="text-xs h-8 text-destructive hover:text-destructive"
+          >
+            Disable All
+          </Button>
+        </div>
+      </div>
+
+      <div className="divide-y divide-border/40 mt-2">
+        {modules.map((mod) => {
+          const isEnabled = settings ? (settings[mod.key] !== false) : true;
+          return (
+            <div key={mod.key} className="py-4 flex items-center justify-between gap-4">
+              <div className="flex items-start gap-3">
+                <span className="text-2xl select-none mt-0.5">{mod.icon}</span>
+                <div>
+                  <div className="flex items-center gap-2">
+                    <h4 className="font-semibold text-sm">{mod.title}</h4>
+                    <code className="text-[11px] bg-muted px-1.5 py-0.5 rounded text-muted-foreground">{mod.route}</code>
+                    {isEnabled ? (
+                      <span className="text-[11px] font-medium text-emerald-500 bg-emerald-500/10 px-2 py-0.5 rounded-full">
+                        ● Visible
+                      </span>
+                    ) : (
+                      <span className="text-[11px] font-medium text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full">
+                        ○ Hidden / Dev Mode
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-0.5">{mod.description}</p>
+                </div>
+              </div>
+
+              <button
+                onClick={() => handleToggle(mod.key, isEnabled)}
+                disabled={isLoading || mutation.isPending}
+                className={`relative shrink-0 w-12 h-6 rounded-full transition-colors duration-300 focus:outline-none ${
+                  isEnabled ? "bg-emerald-500" : "bg-muted-foreground/30"
+                }`}
+                aria-label={`Toggle ${mod.title}`}
+              >
+                <span
+                  className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform duration-300 ${
+                    isEnabled ? "translate-x-6" : "translate-x-0"
+                  }`}
+                />
+              </button>
+            </div>
+          );
+        })}
       </div>
     </div>
   );

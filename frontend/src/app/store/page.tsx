@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import { productsApi, cartApi } from "@/lib/api";
 import { getProductImage, getProductFallbackImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
@@ -151,8 +152,9 @@ export default function StorePage() {
   return (
     <>
       <Navbar />
-      <main className="pt-24 pb-16 min-h-screen bg-background" id="main-content">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <ModuleGuard moduleKey="store" moduleName="Product Store & Hardware Catalog">
+        <main className="pt-24 pb-16 min-h-screen bg-background" id="main-content">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Header */}
           <ScrollReveal>
@@ -501,6 +503,7 @@ export default function StorePage() {
           </div>
         </div>
       )}
+      </ModuleGuard>
 
       <Footer />
     </>

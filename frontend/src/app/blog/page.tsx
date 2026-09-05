@@ -10,6 +10,7 @@ import { useQuery } from "@tanstack/react-query";
 import { blogApi } from "@/lib/api";
 import { useState } from "react";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 
 // Static published posts for GenBots blog platform
 const fallbackPosts = [
@@ -89,108 +90,126 @@ export default function BlogPage() {
   return (
     <>
       <Navbar />
-      <main className="pt-24 pb-16" id="main-content">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <ScrollReveal>
-            <div className="text-center mb-10">
-              <Badge variant="outline" className="mb-4 rounded-full px-4 py-1">📝 Blog</Badge>
-              <h1 className="text-4xl md:text-5xl font-bold mb-4">Our <span className="gradient-text">Blog</span></h1>
-              <p className="text-muted-foreground max-w-2xl mx-auto">
-                In-depth guides, tutorials, and insights on sensors, IoT, robotics, and AI.
-              </p>
-            </div>
-          </ScrollReveal>
-
-          {/* Search + Filters */}
-          <ScrollReveal delay={0.1}>
-            <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-10">
-              <div className="relative w-full md:w-80">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Search articles..."
-                  className="pl-9 rounded-xl"
-                  aria-label="Search blog articles"
-                />
+      <ModuleGuard moduleKey="blog" moduleName="Engineering Blog & Articles">
+        <main className="pt-28 pb-20 min-h-screen">
+          <div className="container mx-auto px-4 max-w-6xl">
+            {/* Header */}
+            <ScrollReveal>
+              <div className="text-center max-w-2xl mx-auto mb-12">
+                <Badge variant="outline" className="mb-3">
+                  Engineering Blog
+                </Badge>
+                <h1 className="text-3xl sm:text-4xl font-bold mb-3 tracking-tight">
+                  GenBots <span className="gradient-text">Tech Blog</span>
+                </h1>
+                <p className="text-muted-foreground text-sm sm:text-base">
+                  In-depth guides, tutorials, and insights on sensors, IoT, robotics, and AI.
+                </p>
               </div>
-              <div className="flex flex-wrap gap-2">
-                {categories.map(cat => (
-                  <Badge
-                    key={cat}
-                    variant={activeCategory === cat ? "default" : "outline"}
-                    className={`cursor-pointer transition-all ${activeCategory === cat ? "gradient-bg text-white border-0" : "hover:bg-primary/10"}`}
-                    onClick={() => setActiveCategory(cat)}
-                  >
-                    {cat}
-                  </Badge>
-                ))}
-              </div>
-            </div>
-          </ScrollReveal>
+            </ScrollReveal>
 
-          {/* Blog Grid */}
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-8">
-            {filtered.map((post: any, i: number) => (
-              <ScrollReveal key={post.id || post.slug} delay={i * 0.08}>
-                <Link href={`/blog/${post.slug}`}>
-                  <div className="glass-card overflow-hidden group hover:glow-sm hover:-translate-y-2 transition-all duration-300 h-full flex flex-col">
-                    {/* Cover Image */}
-                    <div className="h-52 relative overflow-hidden bg-gradient-to-br from-emerald-500/5 to-cyan-500/5">
-                      {post.cover_image ? (
-                        <img
-                          src={post.cover_image}
-                          alt={post.title}
-                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
-                        />
-                      ) : (
-                        <div className="w-full h-full flex items-center justify-center">
-                          <span className="text-5xl opacity-30 group-hover:scale-125 transition-transform duration-500" aria-hidden="true">📝</span>
+            {/* Search + Filters */}
+            <ScrollReveal delay={0.1}>
+              <div className="flex flex-col md:flex-row gap-4 items-center justify-between mb-10">
+                <div className="relative w-full md:w-80">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" aria-hidden="true" />
+                  <Input
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    placeholder="Search articles..."
+                    className="pl-9 rounded-xl"
+                    aria-label="Search blog articles"
+                  />
+                </div>
+                <div className="flex flex-wrap gap-2">
+                  {categories.map(cat => (
+                    <Badge
+                      key={cat}
+                      variant={activeCategory === cat ? "default" : "outline"}
+                      className="cursor-pointer capitalize rounded-lg px-3 py-1 text-xs transition-colors"
+                      onClick={() => setActiveCategory(cat)}
+                    >
+                      {cat}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            </ScrollReveal>
+
+            {/* Posts Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {filtered.map((post: any, i: number) => (
+                <ScrollReveal key={post.id} delay={i * 0.05}>
+                  <Link href={`/blog/${post.slug}`} className="group block h-full">
+                    <div className="glass-card overflow-hidden hover:border-primary/50 transition-all duration-300 h-full flex flex-col group-hover:-translate-y-1 group-hover:shadow-lg">
+                      {/* Blog Cover Image Preview */}
+                      <div className="aspect-video bg-gradient-to-br from-primary/15 via-muted/40 to-background border-b flex items-center justify-center p-6 relative overflow-hidden">
+                        <div className="absolute inset-0 bg-primary/5 group-hover:bg-primary/10 transition-colors" />
+                        <div className="text-center relative z-10">
+                          <span className="text-4xl select-none block mb-1">
+                            {post.category === "Microcontrollers" ? "🤖" :
+                             post.category === "Sensors" ? "📡" :
+                             post.category === "IoT" ? "🌐" :
+                             post.category === "Robotics" ? "🦾" :
+                             post.category === "AI" ? "🧠" : "⚡"}
+                          </span>
+                          <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {post.category || "Tutorial"}
+                          </span>
                         </div>
-                      )}
-                      {/* Gradient overlay */}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/40 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      {/* View count badge */}
-                      {post.view_count && (
-                        <span className="absolute top-3 right-3 text-[11px] font-medium text-white/90 bg-black/40 px-2.5 py-1 rounded-full backdrop-blur-md flex items-center gap-1">
-                          <Eye className="w-3 h-3" /> {post.view_count.toLocaleString()}
-                        </span>
-                      )}
-                      {/* Category badge on image */}
-                      <Badge className="absolute bottom-3 left-3 rounded-full gradient-bg text-white border-0 text-[10px] shadow-lg">
-                        {post.category || "General"}
-                      </Badge>
-                    </div>
+                        {post.view_count && (
+                          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 text-[11px] text-muted-foreground bg-background/80 backdrop-blur-sm px-2 py-0.5 rounded-full border">
+                            <Eye className="w-3 h-3" />
+                            {post.view_count.toLocaleString()}
+                          </div>
+                        )}
+                      </div>
 
-                    {/* Content */}
-                    <div className="p-6 flex-1 flex flex-col">
-                      <h2 className="font-bold text-lg mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-snug">{post.title}</h2>
-                      <p className="text-sm text-muted-foreground mb-4 line-clamp-3 flex-1">{post.excerpt}</p>
-                      <div className="flex items-center justify-between text-xs text-muted-foreground mt-auto pt-4 border-t border-border/50">
-                        <span className="flex items-center gap-1.5">
-                          <User className="w-3.5 h-3.5" aria-hidden="true" />{post.author_name || "GenBots"}
-                        </span>
-                        <span className="flex items-center gap-1.5">
-                          <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
-                          {new Date(post.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
-                        </span>
+                      <div className="p-5 flex flex-col flex-1">
+                        <div className="flex items-center gap-2 mb-2.5">
+                          <Badge variant="secondary" className="text-[10px] px-2 py-0.5 capitalize">
+                            {post.category || "Article"}
+                          </Badge>
+                          {post.status === "published" && (
+                            <span className="text-[10px] text-emerald-500 font-medium flex items-center gap-1">
+                              ● Live Guide
+                            </span>
+                          )}
+                        </div>
+
+                        <h2 className="font-semibold text-base mb-2 group-hover:text-primary transition-colors line-clamp-2 leading-snug">
+                          {post.title}
+                        </h2>
+                        <p className="text-muted-foreground text-xs line-clamp-3 mb-4 flex-1 leading-relaxed">
+                          {post.excerpt}
+                        </p>
+
+                        <div className="flex items-center justify-between text-xs text-muted-foreground border-t pt-3 mt-auto">
+                          <span className="flex items-center gap-1.5">
+                            <User className="w-3.5 h-3.5" aria-hidden="true" />{post.author_name || "GenBots"}
+                          </span>
+                          <span className="flex items-center gap-1.5">
+                            <Calendar className="w-3.5 h-3.5" aria-hidden="true" />
+                            {new Date(post.created_at).toLocaleDateString("en-IN", { month: "short", day: "numeric", year: "numeric" })}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </Link>
-              </ScrollReveal>
-            ))}
-          </div>
-
-          {filtered.length === 0 && (
-            <div className="text-center py-20">
-              <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-              <h3 className="font-semibold text-lg mb-2">No articles found</h3>
-              <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+                  </Link>
+                </ScrollReveal>
+              ))}
             </div>
-          )}
-        </div>
-      </main>
+
+            {filtered.length === 0 && (
+              <div className="text-center py-20">
+                <Tag className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold text-lg mb-2">No articles found</h3>
+                <p className="text-muted-foreground">Try adjusting your search or filter criteria.</p>
+              </div>
+            )}
+          </div>
+        </main>
+      </ModuleGuard>
       <Footer />
     </>
   );

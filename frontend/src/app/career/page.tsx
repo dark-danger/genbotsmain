@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Briefcase, MapPin, Clock, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -18,7 +19,7 @@ const jobs = [
 
 export default function CareerPage() {
   return (
-    <>
+    <ModuleGuard moduleKey="career" moduleName="Careers & Openings">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -58,15 +59,18 @@ export default function CareerPage() {
                       </div>
                       
                       <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground mb-4">
-                        <span className="flex items-center gap-1"><Briefcase className="w-4 h-4" /> {job.type}</span>
-                        <span className="flex items-center gap-1"><MapPin className="w-4 h-4" /> {job.location}</span>
-                        <span className="flex items-center gap-1"><Clock className="w-4 h-4" /> {job.exp}</span>
+                        <span className="flex items-center gap-1"><MapPin className="w-4 h-4 text-primary" />{job.location}</span>
+                        <span className="flex items-center gap-1"><Clock className="w-4 h-4 text-primary" />{job.type}</span>
+                        <span className="flex items-center gap-1"><Briefcase className="w-4 h-4 text-primary" />{job.exp}</span>
                       </div>
                       
-                      <p className="text-muted-foreground text-sm">{job.desc}</p>
+                      <p className="text-sm text-muted-foreground">{job.desc}</p>
                     </div>
-                    <div className="flex md:flex-col items-center md:items-end justify-between md:justify-center">
-                      <Button className="gradient-bg text-white rounded-xl">Apply Now</Button>
+                    
+                    <div className="flex md:flex-col justify-end gap-2 shrink-0">
+                      <Link href={`/career#apply-${job.id}`}>
+                        <Button className="gradient-bg text-white rounded-xl w-full">Apply Now <ArrowRight className="w-4 h-4 ml-1" /></Button>
+                      </Link>
                     </div>
                   </div>
                 ))}
@@ -76,6 +80,6 @@ export default function CareerPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }

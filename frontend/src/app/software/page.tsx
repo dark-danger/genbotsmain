@@ -3,6 +3,7 @@ import { Footer } from "@/components/layout/footer";
 import { Download, ExternalLink, Monitor } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import type { Metadata } from "next";
 import Link from "next/link";
 
@@ -17,7 +18,7 @@ const software = [
 
 export default function SoftwarePage() {
   return (
-    <>
+    <ModuleGuard moduleKey="software" moduleName="Software Solutions">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -66,6 +67,6 @@ export default function SoftwarePage() {
         </div>
       </main>
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }

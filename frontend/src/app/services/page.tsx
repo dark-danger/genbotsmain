@@ -2,6 +2,7 @@ import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { School, GraduationCap, Cpu, CircuitBoard, Brain, Factory, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import Link from "next/link";
 import type { Metadata } from "next";
 
@@ -21,7 +22,7 @@ const services = [
 
 export default function ServicesPage() {
   return (
-    <>
+    <ModuleGuard moduleKey="services" moduleName="Engineering & IoT Services">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -54,6 +55,6 @@ export default function ServicesPage() {
         </div>
       </main>
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }

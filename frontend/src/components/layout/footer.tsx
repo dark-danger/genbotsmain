@@ -5,28 +5,29 @@ import { Mail, Phone, MapPin, ArrowRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Separator } from "@/components/ui/separator";
+import { useSiteSettings } from "@/store/settings";
 
 const footerLinks = {
   Products: [
-    { label: "IoT Sensors", href: "/store?category=iot-sensors" },
-    { label: "Arduino Products", href: "/store?category=arduino-products" },
-    { label: "ESP32 Products", href: "/store?category=esp32-products" },
-    { label: "Robotics Kits", href: "/store?category=robotics-kits" },
-    { label: "STEM Kits", href: "/store?category=stem-kits" },
-    { label: "Home Automation", href: "/store?category=home-automation" },
+    { label: "IoT Sensors", href: "/store?category=iot-sensors", moduleKey: "enable_store" },
+    { label: "Arduino Products", href: "/store?category=arduino-products", moduleKey: "enable_store" },
+    { label: "ESP32 Products", href: "/store?category=esp32-products", moduleKey: "enable_store" },
+    { label: "Robotics Kits", href: "/store?category=robotics-kits", moduleKey: "enable_store" },
+    { label: "STEM Kits", href: "/store?category=stem-kits", moduleKey: "enable_store" },
+    { label: "Home Automation", href: "/store?category=home-automation", moduleKey: "enable_store" },
   ],
   Company: [
     { label: "About Us", href: "/about" },
-    { label: "Our Services", href: "/services" },
-    { label: "Projects", href: "/projects" },
-    { label: "Blog", href: "/blog" },
-    { label: "Careers", href: "/career" },
-    { label: "Contact", href: "/contact" },
+    { label: "Our Services", href: "/services", moduleKey: "enable_services" },
+    { label: "Projects", href: "/projects", moduleKey: "enable_projects" },
+    { label: "Blog", href: "/blog", moduleKey: "enable_blog" },
+    { label: "Careers", href: "/career", moduleKey: "enable_career" },
+    { label: "Contact", href: "/contact", moduleKey: "enable_contact" },
   ],
   Resources: [
-    { label: "Software", href: "/software" },
-    { label: "Training", href: "/training" },
-    { label: "Lab Setup", href: "/lab-setup" },
+    { label: "Software", href: "/software", moduleKey: "enable_software" },
+    { label: "Training", href: "/training", moduleKey: "enable_training" },
+    { label: "Lab Setup", href: "/lab-setup", moduleKey: "enable_lab_setup" },
     { label: "Documentation", href: "/docs" },
     { label: "Support", href: "/support" },
     { label: "FAQ", href: "/#faq" },
@@ -34,6 +35,8 @@ const footerLinks = {
 };
 
 export function Footer() {
+  const { isModuleEnabled } = useSiteSettings();
+
   return (
     <footer className="bg-card border-t border-border">
       {/* Newsletter Section */}
@@ -91,23 +94,27 @@ export function Footer() {
           </div>
 
           {/* Link Columns */}
-          {Object.entries(footerLinks).map(([title, links]) => (
-            <div key={title}>
-              <h4 className="font-semibold text-sm mb-4">{title}</h4>
-              <ul className="space-y-2.5">
-                {links.map((link) => (
-                  <li key={link.href}>
-                    <Link
-                      href={link.href}
-                      className="text-sm text-muted-foreground hover:text-primary transition-colors"
-                    >
-                      {link.label}
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          ))}
+          {Object.entries(footerLinks).map(([title, links]) => {
+            const filtered = links.filter((l: any) => !l.moduleKey || isModuleEnabled(l.moduleKey));
+            if (filtered.length === 0) return null;
+            return (
+              <div key={title}>
+                <h4 className="font-semibold text-sm mb-4">{title}</h4>
+                <ul className="space-y-2.5">
+                  {filtered.map((link) => (
+                    <li key={link.href}>
+                      <Link
+                        href={link.href}
+                        className="text-sm text-muted-foreground hover:text-primary transition-colors"
+                      >
+                        {link.label}
+                      </Link>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            );
+          })}
         </div>
       </div>
 

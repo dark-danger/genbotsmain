@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import { cmsApi } from "@/lib/api";
 
 const packages = [
@@ -117,7 +118,7 @@ ${formData.message || "No additional comments provided."}`;
   };
 
   return (
-    <>
+    <ModuleGuard moduleKey="lab_setup" moduleName="Robotics & STEM Lab Setup">
       <Navbar />
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
@@ -313,7 +314,7 @@ ${formData.message || "No additional comments provided."}`;
       )}
 
       <Footer />
-    </>
+    </ModuleGuard>
   );
 }
 

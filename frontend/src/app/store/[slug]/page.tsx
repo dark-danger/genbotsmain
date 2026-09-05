@@ -14,6 +14,7 @@ import { ProductJsonLd } from "@/components/seo/JsonLd";
 import { Navbar } from "@/components/layout/navbar";
 import { Footer } from "@/components/layout/footer";
 import { ScrollReveal } from "@/components/animations/ScrollAnimations";
+import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
 import { getProductImage, resolveImageUrl, getProductFallbackImage } from "@/lib/utils";
 import { useAuthStore } from "@/store/auth";
@@ -166,8 +167,9 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
         url={`https://genbots.in/store/${product.slug}`}
       />
       <Navbar />
-      <main className="min-h-screen bg-background pt-24 pb-16">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <ModuleGuard moduleKey="store" moduleName="Product Store & Hardware Catalog">
+        <main className="min-h-screen bg-background pt-24 pb-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
 
           {/* Breadcrumb */}
           <nav aria-label="Breadcrumb" className="mb-6">
@@ -568,6 +570,7 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
           </div>
         </div>
       </main>
+      </ModuleGuard>
       <Footer />
     </>
   );
