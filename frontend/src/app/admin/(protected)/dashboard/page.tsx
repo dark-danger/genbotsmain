@@ -9,7 +9,7 @@ import {
   Cpu, Briefcase, BookOpen, Tag, Bell, MessageSquare, Download, Upload,
   Eye, Copy, Archive, RotateCcw, AlertTriangle, Star, CheckCircle, FileText,
   Images, GraduationCap, TrendingUp, Activity, BarChart3, Radio, Smartphone, Monitor, Globe, Clock, ArrowUpRight,
-  School, Phone, MapPin, Share2, ExternalLink
+  School, Phone, MapPin, Share2, ExternalLink, Wallet, Coins, Boxes, PiggyBank, Sparkles, Percent
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -1064,24 +1064,149 @@ export default function AdminDashboard() {
               {statsLoading ? (
                 <div className="flex items-center justify-center py-20"><RefreshCw className="w-8 h-8 animate-spin text-primary" /></div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-                  {[
-                    { title: "Total Revenue", value: `₹${stats?.total_revenue || 0}`, icon: DollarSign },
-                    { title: "Total Orders", value: stats?.total_orders || 0, icon: ShoppingCart },
-                    { title: "Total Users", value: stats?.total_users || 0, icon: Users },
-                    { title: "Total Products", value: stats?.total_products || 0, icon: Package },
-                  ].map((stat, i) => (
-                    <div key={i} className="glass-card p-6 border bg-card/50">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-sm font-medium text-muted-foreground">{stat.title}</h3>
-                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                          <stat.icon className="w-4 h-4 text-primary" />
+                <>
+                  {/* TOP 3 PRIMARY FINANCIAL METRICS (Revenue, Invest, Profit) */}
+                  <div>
+                    <div className="flex items-center justify-between mb-3">
+                      <div>
+                        <h2 className="text-lg font-bold text-foreground flex items-center gap-2">
+                          <Coins className="w-5 h-5 text-emerald-500" />
+                          Financial Overview & Margins
+                        </h2>
+                        <p className="text-xs text-muted-foreground">
+                          Real-time breakdown of sales revenue, product procurement costs, and net realized profits.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="bg-emerald-500/10 text-emerald-500 border-emerald-500/30 text-xs px-2.5 py-1 flex items-center gap-1.5">
+                        <TrendingUp className="w-3.5 h-3.5" />
+                        Live Margin Tracking
+                      </Badge>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+                      {/* 1st CARD: TOTAL REVENUE */}
+                      <div className="glass-card p-6 border border-emerald-500/30 bg-gradient-to-br from-emerald-500/10 via-card/80 to-card shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-28 h-28 bg-emerald-500/10 rounded-full blur-2xl group-hover:bg-emerald-500/20 transition-all pointer-events-none" />
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <span className="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider">
+                              1. Total Revenue (कुल बिक्री)
+                            </span>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Total gross earnings from paid orders</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-2xl bg-emerald-500/15 border border-emerald-500/30 flex items-center justify-center text-emerald-500 shadow-sm">
+                            <Wallet className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                          ₹{parseFloat((stats?.total_revenue || 0).toString()).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                          <span className="text-foreground font-semibold">{stats?.total_orders || 0}</span> Total Orders Placed
                         </div>
                       </div>
-                      <div className="text-2xl font-bold mb-1">{stat.value}</div>
+
+                      {/* 2nd CARD: TOTAL INVESTMENT (ACTUAL COST) */}
+                      <div className="glass-card p-6 border border-blue-500/30 bg-gradient-to-br from-blue-500/10 via-card/80 to-card shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-28 h-28 bg-blue-500/10 rounded-full blur-2xl group-hover:bg-blue-500/20 transition-all pointer-events-none" />
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <span className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-wider">
+                              2. Total Investment (लागत / Cost)
+                            </span>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Actual purchase cost of sold products</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-2xl bg-blue-500/15 border border-blue-500/30 flex items-center justify-center text-blue-500 shadow-sm">
+                            <PiggyBank className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                          ₹{parseFloat((stats?.total_investment || 0).toString()).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                        </div>
+                        <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                          <span>Calculated from product cost prices (Actual)</span>
+                        </div>
+                      </div>
+
+                      {/* 3rd CARD: NET PROFIT */}
+                      <div className="glass-card p-6 border border-primary/40 bg-gradient-to-br from-primary/15 via-card/80 to-card shadow-lg relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-28 h-28 bg-primary/15 rounded-full blur-2xl group-hover:bg-primary/25 transition-all pointer-events-none" />
+                        <div className="flex items-center justify-between mb-4">
+                          <div>
+                            <span className="text-xs font-bold text-primary uppercase tracking-wider">
+                              3. Net Profit (शुद्ध लाभ)
+                            </span>
+                            <p className="text-[11px] text-muted-foreground mt-0.5">Realized margin profit (Revenue - Invest)</p>
+                          </div>
+                          <div className="w-11 h-11 rounded-2xl bg-primary/20 border border-primary/30 flex items-center justify-center text-primary shadow-sm">
+                            <Sparkles className="w-5 h-5" />
+                          </div>
+                        </div>
+                        <div className="flex items-baseline gap-3">
+                          <div className="text-3xl font-extrabold text-foreground tracking-tight">
+                            ₹{parseFloat((stats?.total_profit || 0).toString()).toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                          </div>
+                          <Badge className="bg-emerald-500 text-white font-bold text-xs px-2 py-0.5">
+                            +{stats?.profit_margin || 0}% Margin
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between mt-3 pt-3 border-t border-border/50 text-xs text-muted-foreground">
+                          <span>Profit Return Rate:</span>
+                          <span className="font-bold text-emerald-500">
+                            {stats?.total_investment > 0
+                              ? `+${Math.round(((stats.total_profit) / stats.total_investment) * 100)}% ROI`
+                              : `${stats?.profit_margin || 0}% Margin`}
+                          </span>
+                        </div>
+                      </div>
                     </div>
-                  ))}
-                </div>
+                  </div>
+
+                  {/* SECONDARY CATALOG & STORE VALUATION STRIP */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="glass-card p-4 border bg-card/60 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-muted-foreground">Total Active Products</span>
+                        <Package className="w-4 h-4 text-muted-foreground" />
+                      </div>
+                      <div className="text-xl font-bold text-foreground">{stats?.total_products || 0} Listed</div>
+                      <p className="text-[11px] text-muted-foreground mt-1">Available in store catalog</p>
+                    </div>
+
+                    <div className="glass-card p-4 border bg-card/60 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-muted-foreground">In-Stock Inventory Cost</span>
+                        <Boxes className="w-4 h-4 text-blue-500" />
+                      </div>
+                      <div className="text-xl font-bold text-foreground">
+                        ₹{parseFloat((stats?.inventory_investment || 0).toString()).toLocaleString("en-IN")}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">Total invested capital in stock</p>
+                    </div>
+
+                    <div className="glass-card p-4 border bg-card/60 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-muted-foreground">Inventory Retail Worth</span>
+                        <DollarSign className="w-4 h-4 text-emerald-500" />
+                      </div>
+                      <div className="text-xl font-bold text-foreground">
+                        ₹{parseFloat((stats?.inventory_retail_value || 0).toString()).toLocaleString("en-IN")}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">Expected selling value</p>
+                    </div>
+
+                    <div className="glass-card p-4 border bg-card/60 rounded-xl">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-xs font-semibold text-muted-foreground">Projected Stock Profit</span>
+                        <TrendingUp className="w-4 h-4 text-primary" />
+                      </div>
+                      <div className="text-xl font-bold text-emerald-500">
+                        +₹{parseFloat((stats?.inventory_potential_profit || 0).toString()).toLocaleString("en-IN")}
+                      </div>
+                      <p className="text-[11px] text-muted-foreground mt-1">Unrealized profit upon full sell-out</p>
+                    </div>
+                  </div>
+                </>
               )}
 
               {/* Recent Orders */}

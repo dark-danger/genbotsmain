@@ -5,7 +5,8 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Plus, Edit2, Trash2, Copy, Archive, CheckCircle,
   Share2, Search, RefreshCw, Image as ImageIcon,
-  Upload, X, Star, Layers, Check, AlertCircle, Eye
+  Upload, X, Star, Layers, Check, AlertCircle, Eye,
+  TrendingUp, DollarSign, Percent, Sparkles
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -58,6 +59,7 @@ const initialFormState: ProductFormData = {
   sku: "",
   price: "",
   compare_at_price: "",
+  cost_price: "",
   tax_rate: "18.00",
   stock_quantity: "50",
   low_stock_threshold: "5",
@@ -220,9 +222,49 @@ export function AdminProductsPanel() {
   const [actionFeedback, setActionFeedback] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
+  const [marginPercentInput, setMarginPercentInput] = useState<string>("30");
+
   const showFeedback = (msg: string) => {
     setActionFeedback(msg);
     setTimeout(() => setActionFeedback(null), 3000);
+  };
+
+  // Real-time Margin & Cost Calculations
+  const handleCostPriceChange = (costVal: string) => {
+    const cost = parseFloat(costVal) || 0;
+    const margin = parseFloat(marginPercentInput) || 0;
+    const computedPrice = cost > 0 ? (cost * (1 + margin / 100)).toFixed(2) : formData.price;
+    setFormData((prev) => ({
+      ...prev,
+      cost_price: costVal,
+      price: computedPrice,
+    }));
+  };
+
+  const handleMarginChange = (marginVal: string) => {
+    setMarginPercentInput(marginVal);
+    const cost = parseFloat(formData.cost_price || "0") || 0;
+    const margin = parseFloat(marginVal) || 0;
+    if (cost > 0) {
+      const computedPrice = (cost * (1 + margin / 100)).toFixed(2);
+      setFormData((prev) => ({
+        ...prev,
+        price: computedPrice,
+      }));
+    }
+  };
+
+  const handleSellingPriceChange = (priceVal: string) => {
+    const price = parseFloat(priceVal) || 0;
+    const cost = parseFloat(formData.cost_price || "0") || 0;
+    if (cost > 0 && price >= cost) {
+      const computedMargin = (((price - cost) / cost) * 100).toFixed(1);
+      setMarginPercentInput(computedMargin);
+    }
+    setFormData((prev) => ({
+      ...prev,
+      price: priceVal,
+    }));
   };
 
   // Queries
@@ -361,6 +403,15 @@ export function AdminProductsPanel() {
       value: s.value,
     }));
 
+    const initialCost = product.cost_price ? product.cost_price.toString() : "";
+    const numPrice = parseFloat(product.price?.toString() || "0");
+    const numCost = parseFloat(initialCost || "0");
+    if (numCost > 0 && numPrice >= numCost) {
+      setMarginPercentInput((((numPrice - numCost) / numCost) * 100).toFixed(1));
+    } else {
+      setMarginPercentInput("30");
+    }
+
     setFormData({
       id: product.id,
       name: product.name || "",
@@ -368,6 +419,7 @@ export function AdminProductsPanel() {
       sku: product.sku || "",
       price: product.price?.toString() || "0",
       compare_at_price: product.compare_at_price ? product.compare_at_price.toString() : "",
+      cost_price: initialCost,
       tax_rate: product.tax_rate?.toString() || "18.00",
       stock_quantity: product.stock_quantity?.toString() || "0",
       low_stock_threshold: product.low_stock_threshold?.toString() || "5",
@@ -443,6 +495,7 @@ export function AdminProductsPanel() {
       sku: formData.sku.trim(),
       price: parseFloat(formData.price) || 0,
       compare_at_price: formData.compare_at_price ? parseFloat(formData.compare_at_price) : null,
+      cost_price: formData.cost_price ? parseFloat(formData.cost_price) : null,
       tax_rate: parseFloat(formData.tax_rate) || 18.00,
       stock_quantity: parseInt(formData.stock_quantity) || 0,
       low_stock_threshold: parseInt(formData.low_stock_threshold) || 5,
@@ -917,21 +970,125 @@ export function AdminProductsPanel() {
 
               {/* TAB 2: PRICING & INVENTORY */}
               {activeFormTab === "pricing" && (
-                <div className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    <div>
-                      <label className="text-xs font-semibold block mb-1">Selling Price (₹ INR) *</label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={formData.price}
-                        onChange={(e) => setFormData({ ...formData, price: e.target.value })}
-                        placeholder="e.g. 199.00"
-                        required
-                        className="text-sm font-semibold rounded-xl"
-                      />
+                <div className="space-y-5">
+                  {/* Smart Cost & Profit Margin Calculator Card */}
+                  <div className="p-4 bg-gradient-to-br from-emerald-500/10 via-background to-blue-500/10 border border-emerald-500/20 rounded-2xl space-y-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-border/50 pb-3">
+                      <div>
+                        <h4 className="text-xs font-bold text-foreground flex items-center gap-1.5">
+                          <span>💰</span> Product Investment &amp; Profit Margin Calculator
+                        </h4>
+                        <p className="text-[11px] text-muted-foreground">
+                          Enter actual product cost and desired profit percentage to calculate selling price automatically.
+                        </p>
+                      </div>
+                      <Badge variant="outline" className="text-[10px] text-emerald-500 border-emerald-500/30">
+                        Live 2-Way Calculator
+                      </Badge>
                     </div>
 
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      {/* 1. Actual Cost Price (Investment) */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-semibold">Actual Purchase / Cost Price (₹) *</label>
+                          <span className="text-[10px] text-muted-foreground font-medium">Investment</span>
+                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={formData.cost_price}
+                          onChange={(e) => handleCostPriceChange(e.target.value)}
+                          placeholder="e.g. 100.00"
+                          className="text-sm font-semibold rounded-xl bg-background"
+                        />
+                      </div>
+
+                      {/* 2. Margin Percentage */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-semibold">Target Profit Margin (%)</label>
+                          <span className="text-[10px] font-bold text-emerald-500">+{marginPercentInput}%</span>
+                        </div>
+                        <div className="relative">
+                          <Input
+                            type="number"
+                            step="0.1"
+                            value={marginPercentInput}
+                            onChange={(e) => handleMarginChange(e.target.value)}
+                            placeholder="e.g. 30"
+                            className="text-sm font-semibold rounded-xl bg-background pr-8"
+                          />
+                          <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground font-bold">%</span>
+                        </div>
+                      </div>
+
+                      {/* 3. Final Selling Price */}
+                      <div>
+                        <div className="flex items-center justify-between mb-1">
+                          <label className="text-xs font-semibold">Customer Selling Price (₹) *</label>
+                          <span className="text-[10px] text-primary font-bold">Store Price</span>
+                        </div>
+                        <Input
+                          type="number"
+                          step="0.01"
+                          value={formData.price}
+                          onChange={(e) => handleSellingPriceChange(e.target.value)}
+                          placeholder="e.g. 130.00"
+                          required
+                          className="text-sm font-bold rounded-xl bg-background text-primary"
+                        />
+                      </div>
+                    </div>
+
+                    {/* Quick Margin Preset Chips */}
+                    <div className="flex items-center gap-2 flex-wrap pt-1">
+                      <span className="text-[11px] font-medium text-muted-foreground">Quick Margin Presets:</span>
+                      {["15", "25", "35", "50", "75", "100"].map((preset) => (
+                        <button
+                          key={preset}
+                          type="button"
+                          onClick={() => handleMarginChange(preset)}
+                          className={`px-2.5 py-0.5 rounded-lg text-[11px] font-semibold transition-all border ${
+                            marginPercentInput === preset
+                              ? "gradient-bg text-white border-transparent shadow-sm"
+                              : "bg-background text-muted-foreground hover:text-foreground hover:border-primary/50"
+                          }`}
+                        >
+                          +{preset}%
+                        </button>
+                      ))}
+                    </div>
+
+                    {/* Profit Breakdown Metric Strip */}
+                    {parseFloat(formData.cost_price || "0") > 0 && parseFloat(formData.price || "0") >= parseFloat(formData.cost_price || "0") && (
+                      <div className="p-3 bg-background/80 rounded-xl border grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                        <div>
+                          <span className="text-muted-foreground text-[10px] block">Unit Investment:</span>
+                          <strong className="text-foreground text-sm">₹{parseFloat(formData.cost_price || "0").toFixed(2)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-[10px] block">Unit Profit:</span>
+                          <strong className="text-emerald-500 text-sm">+₹{(parseFloat(formData.price || "0") - parseFloat(formData.cost_price || "0")).toFixed(2)}</strong>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-[10px] block">Margin Return:</span>
+                          <strong className="text-blue-500 text-sm">
+                            {(((parseFloat(formData.price || "0") - parseFloat(formData.cost_price || "0")) / parseFloat(formData.cost_price || "1")) * 100).toFixed(1)}%
+                          </strong>
+                        </div>
+                        <div>
+                          <span className="text-muted-foreground text-[10px] block">Batch ({formData.stock_quantity || 0} units) Profit:</span>
+                          <strong className="text-emerald-600 dark:text-emerald-400 text-sm font-extrabold">
+                            +₹{((parseFloat(formData.price || "0") - parseFloat(formData.cost_price || "0")) * (parseInt(formData.stock_quantity) || 0)).toLocaleString("en-IN")}
+                          </strong>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* MRP & Stock Details */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Compare-at (Original MRP ₹)</label>
                       <Input
@@ -939,24 +1096,11 @@ export function AdminProductsPanel() {
                         step="0.01"
                         value={formData.compare_at_price}
                         onChange={(e) => setFormData({ ...formData, compare_at_price: e.target.value })}
-                        placeholder="e.g. 299.00 (optional discount)"
+                        placeholder="e.g. 199.00 (optional discount)"
                         className="text-sm rounded-xl"
                       />
                     </div>
 
-                    <div>
-                      <label className="text-xs font-semibold block mb-1">GST / Tax Rate (%)</label>
-                      <Input
-                        type="number"
-                        value={formData.tax_rate}
-                        onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })}
-                        placeholder="18.00"
-                        className="text-sm rounded-xl"
-                      />
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div>
                       <label className="text-xs font-semibold block mb-1">Available Stock Units *</label>
                       <Input
@@ -979,23 +1123,36 @@ export function AdminProductsPanel() {
                         className="text-sm rounded-xl"
                       />
                     </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="text-xs font-semibold block mb-1">GST / Tax Rate (%)</label>
+                      <Input
+                        type="number"
+                        value={formData.tax_rate}
+                        onChange={(e) => setFormData({ ...formData, tax_rate: e.target.value })}
+                        placeholder="18.00"
+                        className="text-sm rounded-xl"
+                      />
+                    </div>
 
                     <div>
-                      <label className="text-xs font-semibold block mb-1">Weight (in kg)</label>
+                      <label className="text-xs font-semibold block mb-1">Product Weight (kg)</label>
                       <Input
                         type="number"
                         step="0.01"
                         value={formData.weight}
                         onChange={(e) => setFormData({ ...formData, weight: e.target.value })}
-                        placeholder="0.15"
+                        placeholder="0.25"
                         className="text-sm rounded-xl"
                       />
                     </div>
                   </div>
 
-                  {formData.compare_at_price && parseFloat(formData.compare_at_price) > parseFloat(formData.price || "0") && (
-                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-emerald-600 text-xs font-medium flex items-center gap-2">
-                      <Check className="w-4 h-4" />
+                  {parseFloat(formData.compare_at_price) > parseFloat(formData.price) && (
+                    <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 rounded-xl text-xs text-emerald-600 dark:text-emerald-400 flex items-center gap-2">
+                      <TrendingUp className="w-4 h-4 shrink-0" />
                       <span>
                         Calculated Discount: {Math.round(((parseFloat(formData.compare_at_price) - parseFloat(formData.price)) / parseFloat(formData.compare_at_price)) * 100)}% OFF (Customer saves ₹{(parseFloat(formData.compare_at_price) - parseFloat(formData.price)).toFixed(2)})
                       </span>
@@ -1524,7 +1681,9 @@ export function AdminProductsPanel() {
                   <th className="py-3 px-4">Item</th>
                   <th className="py-3 px-4">SKU</th>
                   <th className="py-3 px-4">Category</th>
-                  <th className="py-3 px-4">Price</th>
+                  <th className="py-3 px-4">Cost (Invest)</th>
+                  <th className="py-3 px-4">Selling Price</th>
+                  <th className="py-3 px-4">Margin %</th>
                   <th className="py-3 px-4">Stock</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4 text-right">Actions</th>
@@ -1535,6 +1694,15 @@ export function AdminProductsPanel() {
                   const imgUrl = getProductImage(product);
                   const isOutOfStock = product.stock_quantity <= 0;
                   const isLowStock = product.stock_quantity > 0 && product.stock_quantity <= (product.low_stock_threshold || 5);
+
+                  const sellingPrice = parseFloat(product.price?.toString() || "0");
+                  const costPrice = parseFloat(
+                    product.cost_price != null
+                      ? product.cost_price.toString()
+                      : (sellingPrice * 0.70).toFixed(2)
+                  );
+                  const profitPerUnit = Math.max(0, sellingPrice - costPrice);
+                  const marginPct = costPrice > 0 ? Math.round(((sellingPrice - costPrice) / costPrice) * 100) : 0;
 
                   return (
                     <tr key={product.id} className="hover:bg-muted/30 transition-colors">
@@ -1572,13 +1740,39 @@ export function AdminProductsPanel() {
                         {product.category?.name || "General"}
                       </td>
 
+                      {/* Cost / Invest Price */}
+                      <td className="py-3 px-4">
+                        <span className="font-medium text-muted-foreground">
+                          ₹{costPrice.toLocaleString("en-IN")}
+                        </span>
+                      </td>
+
+                      {/* Selling Price */}
                       <td className="py-3 px-4 font-bold text-foreground">
-                        ₹{parseFloat(product.price || "0").toLocaleString("en-IN")}
+                        ₹{sellingPrice.toLocaleString("en-IN")}
                         {product.compare_at_price && (
                           <span className="block text-[10px] text-muted-foreground line-through font-normal">
                             ₹{parseFloat(product.compare_at_price).toLocaleString("en-IN")}
                           </span>
                         )}
+                      </td>
+
+                      {/* Margin % & Profit */}
+                      <td className="py-3 px-4">
+                        <div className="flex flex-col gap-0.5">
+                          <Badge variant="outline" className={`text-[10px] w-fit font-bold ${
+                            marginPct >= 30 
+                              ? "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/30" 
+                              : marginPct > 0 
+                              ? "bg-blue-500/10 text-blue-600 dark:text-blue-400 border-blue-500/30" 
+                              : "bg-muted text-muted-foreground"
+                          }`}>
+                            +{marginPct}%
+                          </Badge>
+                          <span className="text-[10px] text-muted-foreground">
+                            +₹{profitPerUnit.toLocaleString("en-IN")} profit
+                          </span>
+                        </div>
                       </td>
 
                       <td className="py-3 px-4">

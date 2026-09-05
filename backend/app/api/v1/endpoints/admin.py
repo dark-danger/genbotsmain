@@ -48,7 +48,7 @@ async def get_admin_me(current_admin: AdminUser):
 
 @router.get("/dashboard")
 async def get_dashboard_stats(db: DbSession, admin: AdminUser):
-    """Get admin dashboard analytics."""
+    """Get admin dashboard analytics with Revenue, Investment, and Net Profit metrics."""
     query = select(
         select(func.count(User.id)).scalar_subquery().label("total_users"),
         select(func.count(Product.id)).scalar_subquery().label("total_products"),
@@ -68,11 +68,43 @@ async def get_dashboard_stats(db: DbSession, admin: AdminUser):
     result = (await db.execute(query)).fetchone()
     stats = result._asdict()
 
+    # 1. Calculate Actual Investment / Cost of Sold Goods
+    sold_cost_q = select(
+        func.coalesce(
+            func.sum(OrderItem.quantity * func.coalesce(Product.cost_price, Product.price * 0.70)),
+            0
+        )
+    ).select_from(OrderItem).join(Product, OrderItem.product_id == Product.id).join(Order, OrderItem.order_id == Order.id).where(
+        or_(Order.payment_status == "paid", Order.status == "delivered"),
+        Order.status.notin_(["cancelled", "refunded"]),
+        Order.payment_status != "refunded"
+    )
+    total_investment = float((await db.execute(sold_cost_q)).scalar() or 0)
+    total_revenue = float(stats["total_revenue"])
+    total_profit = max(0.0, total_revenue - total_investment)
+    profit_margin = round((total_profit / total_revenue * 100), 1) if total_revenue > 0 else 0.0
+
+    # 2. Store Inventory Valuation (Current Stock Investment vs Retail Worth)
+    inv_cost_q = select(
+        func.coalesce(func.sum(func.coalesce(Product.cost_price, Product.price * 0.70) * Product.stock_quantity), 0),
+        func.coalesce(func.sum(Product.price * Product.stock_quantity), 0)
+    ).where(Product.status == "active")
+    inv_res = (await db.execute(inv_cost_q)).fetchone()
+    inv_invest = float(inv_res[0] or 0)
+    inv_retail = float(inv_res[1] or 0)
+    inv_profit = max(0.0, inv_retail - inv_invest)
+
     return {
         "total_users": stats["total_users"],
         "total_products": stats["total_products"],
         "total_orders": stats["total_orders"],
-        "total_revenue": float(stats["total_revenue"]),
+        "total_revenue": total_revenue,
+        "total_investment": total_investment,
+        "total_profit": total_profit,
+        "profit_margin": profit_margin,
+        "inventory_investment": inv_invest,
+        "inventory_retail_value": inv_retail,
+        "inventory_potential_profit": inv_profit,
         "pending_orders": stats["pending_orders"],
         "total_blog_posts": stats["total_blog_posts"],
         "total_software": stats["total_software"],
