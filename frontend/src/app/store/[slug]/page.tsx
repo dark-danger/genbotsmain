@@ -48,18 +48,27 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
     queryFn: async () => {
       try {
         const res = await productsApi.getBySlug(slug);
-        if (res.data) return res.data;
-        const fallback = INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+        if (res.data) {
+          if (res.data.status && res.data.status !== "active") {
+            return null;
+          }
+          return res.data;
+        }
+        const fallback = INNOVATION_LAB_65_PRODUCTS.find(
+          (p) => (p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug) && p.status === "active"
+        );
         return fallback || null;
       } catch {
-        const fallback = INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+        const fallback = INNOVATION_LAB_65_PRODUCTS.find(
+          (p) => (p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug) && p.status === "active"
+        );
         return fallback || null;
       }
     },
-    staleTime: 30000,
+    staleTime: 5000,
   });
 
-  const product = apiProduct || INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+  const product = apiProduct;
   const currentImage = activeImage || (product ? getProductImage(product) : "");
 
   // Check if product is in wishlist

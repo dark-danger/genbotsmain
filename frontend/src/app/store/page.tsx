@@ -56,27 +56,27 @@ export default function StorePage() {
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [addedIds, setAddedIds] = useState<Set<string>>(new Set());
 
-  // Fetch products from API
+  // Fetch products from API (strictly active products for public store)
   const { data: apiProducts, isLoading } = useQuery<ProductItem[]>({
     queryKey: ["storeProducts"],
     queryFn: async () => {
       try {
-        const res = await productsApi.list({ page_size: 150 });
-        const items = res.data?.items || res.data || [];
-        if (Array.isArray(items) && items.length > 0) {
-          return items;
+        const res = await productsApi.list({ page_size: 150, status: "active" });
+        const items = res.data?.items || res.data;
+        if (Array.isArray(items)) {
+          return items.filter((p: any) => p.status === "active" || p.status === undefined);
         }
-        return INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[];
+        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[];
       } catch {
-        return INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[];
+        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[];
       }
     },
-    staleTime: 30000,
+    staleTime: 5000,
   });
 
-  const products: ProductItem[] = apiProducts && apiProducts.length > 0 
-    ? apiProducts 
-    : (INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[]);
+  const products: ProductItem[] = Array.isArray(apiProducts)
+    ? apiProducts
+    : (INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[]);
 
   // Extract unique categories and brands from data
   const categories = [

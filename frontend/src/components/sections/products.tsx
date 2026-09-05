@@ -27,21 +27,21 @@ export function ProductsSection() {
     queryFn: async () => {
       try {
         const res = await productsApi.featured(8);
-        const items = res.data || [];
-        if (Array.isArray(items) && items.length > 0) return items;
-        return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
-      } catch {
-        try {
-          const fallbackRes = await productsApi.list({ page_size: 8, status: "active" });
-          const items = fallbackRes.data?.items || [];
-          if (Array.isArray(items) && items.length > 0) return items;
-          return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
-        } catch {
-          return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
+        const items = res.data;
+        if (Array.isArray(items)) {
+          return items.filter((p: any) => p.status === "active" || p.status === undefined);
         }
+        const fallbackRes = await productsApi.list({ page_size: 8, status: "active" });
+        const fallbackItems = fallbackRes.data?.items || fallbackRes.data;
+        if (Array.isArray(fallbackItems)) {
+          return fallbackItems.filter((p: any) => p.status === "active" || p.status === undefined);
+        }
+        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active").slice(0, 8);
+      } catch {
+        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active").slice(0, 8);
       }
     },
-    staleTime: 60000,
+    staleTime: 5000,
   });
 
   // GSAP stagger animation for product cards

@@ -336,6 +336,8 @@ async def update_product(product_id: UUID, data: dict, db: DbSession, admin: Adm
     if not product:
         raise HTTPException(status_code=404, detail="Product not found")
     
+    await db.commit()
+    
     # Invalidate cache on modification
     global_cache.clear()
     
