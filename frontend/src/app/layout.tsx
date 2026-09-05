@@ -11,18 +11,33 @@ const inter = Inter({
 
 export const metadata: Metadata = {
   title: {
-    default: "GenBots: IoT, Robotics & AI Solutions Provider | India",
+    default: "GenBots: STEM Robotics, IoT Sensors & Lab Setup | India",
     template: "%s | GenBots",
   },
   description:
-    "MSME registered robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026. Turnkey school labs, verified hardware kits, and hands-on robotics training.",
+    "Official website of GenBots (thegenbots.in). MSME registered Indian STEM robotics & IoT enterprise founded by Yash in April 2026. Turnkey school robotics lab setups, 65+ electronic sensors, Arduino & ESP32 kits, and hands-on online robotics training.",
   keywords: [
-    "IoT", "Robotics", "AI", "Arduino", "ESP32", "Sensors",
-    "STEM Kits", "Robotics Lab", "Home Automation", "GenBots",
-    "IoT Sensors India", "Robotics Kits India", "Lab Setup", "MSME Robotics India"
+    "GenBots",
+    "TheGenBots",
+    "thegenbots.in",
+    "GenBots India",
+    "GenBots Yash",
+    "STEM Robotics Lab Setup India",
+    "School Robotics Lab Setup",
+    "Turnkey IoT Lab Setup",
+    "Buy Arduino Sensors India",
+    "ESP32 Projects and Kits",
+    "Electronics Components Online India",
+    "Robotics Kits for Schools",
+    "MSME Registered Robotics Enterprise",
+    "Sonipat Robotics Components",
+    "Online Robotics Training India",
+    "Hands-on STEM Kits",
+    "Microcontroller Boards India"
   ],
   authors: [{ name: "Yash (Founder, GenBots)" }],
   creator: "Yash",
+  publisher: "GenBots",
   metadataBase: new URL("https://thegenbots.in"),
   alternates: {
     canonical: "/",
@@ -44,8 +59,8 @@ export const metadata: Metadata = {
     locale: "en_IN",
     url: "https://thegenbots.in",
     siteName: "GenBots",
-    title: "GenBots - IoT, Robotics & AI Solutions Provider",
-    description: "Premium IoT & Robotics products for makers, students, and enterprises.",
+    title: "GenBots - STEM Robotics, IoT Sensors & School Lab Setup",
+    description: "Official GenBots platform by Yash. Turnkey STEM robotics labs, 65+ hardware sensors, Arduino/ESP32 kits, and practical robotics education in India.",
     images: [
       {
         url: "https://thegenbots.in/og-image.jpg",
@@ -57,8 +72,8 @@ export const metadata: Metadata = {
   },
   twitter: {
     card: "summary_large_image",
-    title: "GenBots - IoT, Robotics & AI Solutions Provider",
-    description: "Premium IoT & Robotics products for makers, students, and enterprises.",
+    title: "GenBots - STEM Robotics, IoT Sensors & School Lab Setup",
+    description: "Official GenBots platform by Yash. Turnkey STEM robotics labs, 65+ hardware sensors, Arduino/ESP32 kits, and practical robotics education in India.",
     creator: "@genbots",
     images: ["https://thegenbots.in/og-image.jpg"],
   },

@@ -38,7 +38,7 @@ export function ProductJsonLd({
       priceCurrency: currency,
       price: price.toFixed(2),
       availability: `https://schema.org/${availability}`,
-      url,
+      url: url || `https://thegenbots.in/store/${sku}`,
     },
     ...(rating && reviewCount
       ? {
@@ -89,7 +89,7 @@ export function BlogJsonLd({
     publisher: {
       "@type": "Organization",
       name: "GenBots",
-      logo: { "@type": "ImageObject", url: "https://genbots.in/logo.png" },
+      logo: { "@type": "ImageObject", url: "https://thegenbots.in/logo.png" },
     },
     ...(image ? { image } : {}),
     ...(url ? { mainEntityOfPage: { "@type": "WebPage", "@id": url } } : {}),
@@ -129,34 +129,72 @@ export function FaqJsonLd({ faqs }: FaqJsonLdProps) {
 export function OrganizationJsonLd() {
   const jsonLd = {
     "@context": "https://schema.org",
-    "@type": "Organization",
-    name: "GenBots",
-    url: "https://genbots.in",
-    logo: "https://genbots.in/logo.jpg",
-    description:
-      "MSME registered Indian robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026.",
-    foundingDate: "2026-04",
-    founder: {
-      "@type": "Person",
-      name: "Yash",
-      jobTitle: "Founder & Lead Robotics Engineer",
-    },
-    sameAs: [
-      "https://wa.me/919211067540",
+    "@graph": [
+      {
+        "@type": "Organization",
+        "@id": "https://thegenbots.in/#organization",
+        name: "GenBots",
+        alternateName: ["TheGenBots", "GenBots India", "GenBots STEM & Robotics"],
+        url: "https://thegenbots.in",
+        logo: "https://thegenbots.in/logo.png",
+        image: "https://thegenbots.in/og-image.jpg",
+        description:
+          "GenBots is an MSME registered Indian robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026. Provider of turnkey school robotics labs, Arduino/ESP32 hardware kits, and hands-on training.",
+        disambiguatingDescription:
+          "GenBots (thegenbots.in) is an independent Indian STEM robotics & IoT hardware enterprise founded by Yash in Sonipat, Haryana (Govt. of India recognized MSME enterprise). It is completely independent and not affiliated with Genrobotics.",
+        foundingDate: "2026-04",
+        founder: {
+          "@type": "Person",
+          name: "Yash",
+          jobTitle: "Founder & Lead Robotics Engineer",
+        },
+        knowsAbout: [
+          "STEM Robotics",
+          "IoT Hardware & Sensors",
+          "Arduino & ESP32 Microcontrollers",
+          "School STEM Lab Setup",
+          "Hands-on Robotics Training",
+          "Home Automation",
+        ],
+        address: {
+          "@type": "PostalAddress",
+          addressLocality: "Sonipat",
+          addressRegion: "Haryana",
+          postalCode: "131001",
+          addressCountry: "IN",
+        },
+        contactPoint: [
+          {
+            "@type": "ContactPoint",
+            telephone: "+91 92 110 67540",
+            contactType: "customer support",
+            email: "genbots000@gmail.com",
+            availableLanguage: ["English", "Hindi"],
+            areaServed: "IN",
+          },
+        ],
+        sameAs: [
+          "https://wa.me/919211067540",
+          "https://thegenbots.in",
+        ],
+      },
+      {
+        "@type": "WebSite",
+        "@id": "https://thegenbots.in/#website",
+        url: "https://thegenbots.in",
+        name: "GenBots",
+        description: "IoT, Robotics & AI Solutions Provider | India",
+        publisher: { "@id": "https://thegenbots.in/#organization" },
+        potentialAction: {
+          "@type": "SearchAction",
+          target: {
+            "@type": "EntryPoint",
+            urlTemplate: "https://thegenbots.in/store?search={search_term_string}",
+          },
+          "query-input": "required name=search_term_string",
+        },
+      },
     ],
-    address: {
-      "@type": "PostalAddress",
-      addressLocality: "Sonipat",
-      addressRegion: "Haryana",
-      postalCode: "131001",
-      addressCountry: "IN",
-    },
-    contactPoint: {
-      "@type": "ContactPoint",
-      telephone: "+91 92 110 67540",
-      contactType: "customer service",
-      availableLanguage: ["English", "Hindi"],
-    },
   };
 
   return (
@@ -166,3 +204,4 @@ export function OrganizationJsonLd() {
     />
   );
 }
+
