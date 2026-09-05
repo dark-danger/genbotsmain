@@ -20,7 +20,7 @@ import { useAdminAuthStore } from "@/store/adminAuth";
 import {
   adminApi, productsApi, blogApi, softwareApi, servicesApi, projectsApi, cmsApi, mediaApi, trainingApi, settingsApi, publicApi
 } from "@/lib/api";
-import { generateInvoice, generatePurchaseOrder, resolveImageUrl, getProductImage } from "@/lib/utils";
+import { generateInvoice, generatePurchaseOrder, resolveImageUrl, getProductImage, compressImageToDataUrl } from "@/lib/utils";
 import { AdminProductsPanel } from "@/components/admin/AdminProductsPanel";
 
 export default function AdminDashboard() {
@@ -721,13 +721,37 @@ export default function AdminDashboard() {
     setUploadingFile(true);
     setUploadError("");
 
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", target.startsWith("product") ? "products" : target);
-
     try {
-      const res = await mediaApi.upload(formData);
-      const fileUrl = res.data.url;
+      let fileUrl = "";
+      if (file.type.startsWith("image/")) {
+        try {
+          fileUrl = await compressImageToDataUrl(file, 800, 800, 0.85);
+        } catch {
+          fileUrl = await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.onerror = () => res("");
+            r.readAsDataURL(file);
+          });
+        }
+      }
+
+      // Background upload to server
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", target.startsWith("product") ? "products" : target);
+        const res = await mediaApi.upload(formData);
+        if (!fileUrl) {
+          fileUrl = res.data.url;
+        }
+      } catch {
+        // If server disk upload fails, Data URL is used seamlessly
+      }
+
+      if (!fileUrl) {
+        throw new Error("Could not process file for upload");
+      }
 
       if (target === "product-primary") {
         setNewProduct(prev => ({
@@ -748,12 +772,11 @@ export default function AdminDashboard() {
       } else if (target === "course-cover") {
         setNewCourse(prev => ({ ...prev, cover_image: fileUrl }));
       }
-      alert("File uploaded successfully and optimized!");
+      alert("File uploaded and attached successfully!");
     } catch (err: any) {
-      setUploadError(err.response?.data?.detail || "Upload failed. Check file type and size constraints.");
+      setUploadError(err.response?.data?.detail || err.message || "Upload failed.");
     } finally {
       setUploadingFile(false);
-      // Reset the file input so same file can be uploaded again if needed
       e.target.value = "";
     }
   };
@@ -762,22 +785,43 @@ export default function AdminDashboard() {
     const file = e.target.files?.[0];
     if (!file) return;
     setUploadingFile(true);
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("folder", "products");
 
     try {
-      const res = await mediaApi.upload(formData);
-      const fileUrl = res.data.url;
+      let fileUrl = "";
+      if (file.type.startsWith("image/")) {
+        try {
+          fileUrl = await compressImageToDataUrl(file, 800, 800, 0.85);
+        } catch {
+          fileUrl = await new Promise((res) => {
+            const r = new FileReader();
+            r.onload = () => res(r.result as string);
+            r.onerror = () => res("");
+            r.readAsDataURL(file);
+          });
+        }
+      }
+
+      try {
+        const formData = new FormData();
+        formData.append("file", file);
+        formData.append("folder", "products");
+        const res = await mediaApi.upload(formData);
+        if (!fileUrl) {
+          fileUrl = res.data.url;
+        }
+      } catch {
+        // Fallback to Data URL
+      }
+
       setEditingProduct((prev: any) => ({
         ...prev,
         images: isPrimary
           ? [{ url: fileUrl, is_primary: true, sort_order: 0 }, ...(prev.images || []).map((i: any) => ({ ...i, is_primary: false }))]
           : [...(prev.images || []), { url: fileUrl, is_primary: !(prev.images && prev.images.length > 0), sort_order: (prev.images || []).length }]
       }));
-      alert("Image uploaded successfully!");
+      alert("Image attached successfully!");
     } catch (err: any) {
-      alert(err.response?.data?.detail || "Upload failed");
+      alert(err.response?.data?.detail || err.message || "Upload failed");
     } finally {
       setUploadingFile(false);
       e.target.value = "";
