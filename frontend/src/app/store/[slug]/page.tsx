@@ -17,6 +17,7 @@ import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import { productsApi, cartApi, wishlistApi } from "@/lib/api";
 import { getProductImage, resolveImageUrl, getProductFallbackImage } from "@/lib/utils";
+import { INNOVATION_LAB_65_PRODUCTS } from "@/lib/data";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 
@@ -45,13 +46,20 @@ export default function ProductPage({ params }: { params: Promise<{ slug: string
   const { data: apiProduct, isLoading, error } = useQuery({
     queryKey: ["productDetail", slug],
     queryFn: async () => {
-      const res = await productsApi.getBySlug(slug);
-      return res.data;
+      try {
+        const res = await productsApi.getBySlug(slug);
+        if (res.data) return res.data;
+        const fallback = INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+        return fallback || null;
+      } catch {
+        const fallback = INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
+        return fallback || null;
+      }
     },
     staleTime: 30000,
   });
 
-  const product = apiProduct;
+  const product = apiProduct || INNOVATION_LAB_65_PRODUCTS.find(p => p.slug === slug || p.name.toLowerCase().replace(/[^a-z0-9]+/g, "-") === slug);
   const currentImage = activeImage || (product ? getProductImage(product) : "");
 
   // Check if product is in wishlist

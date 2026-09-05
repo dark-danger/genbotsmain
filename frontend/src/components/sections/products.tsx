@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { useQuery } from "@tanstack/react-query";
 import { productsApi } from "@/lib/api";
 import { getProductImage, getProductFallbackImage } from "@/lib/utils";
+import { INNOVATION_LAB_65_PRODUCTS } from "@/lib/data";
 import { gsap } from "gsap";
 import { ScrollTrigger } from "gsap/ScrollTrigger";
 
@@ -26,10 +27,18 @@ export function ProductsSection() {
     queryFn: async () => {
       try {
         const res = await productsApi.featured(8);
-        return res.data;
+        const items = res.data || [];
+        if (Array.isArray(items) && items.length > 0) return items;
+        return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
       } catch {
-        const fallbackRes = await productsApi.list({ page_size: 8, status: "active" });
-        return fallbackRes.data?.items || [];
+        try {
+          const fallbackRes = await productsApi.list({ page_size: 8, status: "active" });
+          const items = fallbackRes.data?.items || [];
+          if (Array.isArray(items) && items.length > 0) return items;
+          return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
+        } catch {
+          return INNOVATION_LAB_65_PRODUCTS.slice(0, 8);
+        }
       }
     },
     staleTime: 60000,

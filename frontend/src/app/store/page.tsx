@@ -12,6 +12,7 @@ import { ScrollReveal } from "@/components/animations/ScrollAnimations";
 import { ModuleGuard } from "@/components/layout/ModuleGuard";
 import { productsApi, cartApi } from "@/lib/api";
 import { getProductImage, getProductFallbackImage } from "@/lib/utils";
+import { INNOVATION_LAB_65_PRODUCTS, StaticProductItem } from "@/lib/data";
 import { useAuthStore } from "@/store/auth";
 import { useCartStore } from "@/store/cart";
 import Link from "next/link";
@@ -57,13 +58,23 @@ export default function StorePage() {
   const { data: apiProducts, isLoading } = useQuery<ProductItem[]>({
     queryKey: ["storeProducts"],
     queryFn: async () => {
-      const res = await productsApi.list({ page_size: 100 });
-      return res.data?.items || res.data || [];
+      try {
+        const res = await productsApi.list({ page_size: 150 });
+        const items = res.data?.items || res.data || [];
+        if (Array.isArray(items) && items.length > 0) {
+          return items;
+        }
+        return INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[];
+      } catch {
+        return INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[];
+      }
     },
     staleTime: 30000,
   });
 
-  const products: ProductItem[] = apiProducts && apiProducts.length > 0 ? apiProducts : [];
+  const products: ProductItem[] = apiProducts && apiProducts.length > 0 
+    ? apiProducts 
+    : (INNOVATION_LAB_65_PRODUCTS as unknown as ProductItem[]);
 
   // Extract unique categories and brands from data
   const categories = [
