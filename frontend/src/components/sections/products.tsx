@@ -86,7 +86,7 @@ export function ProductsSection() {
             Featured <span className="gradient-text">Products</span>
           </h2>
           <p className="text-muted-foreground max-w-2xl mx-auto">
-            Premium IoT, robotics, and AI products trusted by 10,000+ makers and educators.
+            Authentic IoT, robotics, and STEM kits trusted by partner schools and 200+ trained learners.
           </p>
         </motion.div>
 

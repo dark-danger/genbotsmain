@@ -5,12 +5,12 @@ import { Shield, Truck, HeadphonesIcon, Award, Zap, Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 const features = [
-  { icon: Shield, title: "Quality Assured", desc: "Every product undergoes rigorous testing before shipping" },
-  { icon: Truck, title: "Fast Delivery", desc: "Free shipping on orders above ₹999 across India" },
-  { icon: HeadphonesIcon, title: "24/7 Support", desc: "Dedicated technical support for all products" },
-  { icon: Award, title: "Certified Products", desc: "ISO certified manufacturing and quality control" },
-  { icon: Zap, title: "Innovation First", desc: "Cutting-edge technology in every product we build" },
-  { icon: Users, title: "Community Driven", desc: "Join 10,000+ makers in our learning community" },
+  { icon: Shield, title: "Quality Tested", desc: "Every microcontroller and sensor is individually bench-tested" },
+  { icon: Truck, title: "Fast Shipping", desc: "Reliable delivery across India with careful packaging" },
+  { icon: HeadphonesIcon, title: "Maker Support", desc: "Direct guidance and technical support from our lead engineer" },
+  { icon: Award, title: "MSME Registered", desc: "Recognized micro-enterprise under Govt. of India" },
+  { icon: Zap, title: "Innovation First", desc: "Curated kits designed for real-world school & IoT projects" },
+  { icon: Users, title: "200+ Learners", desc: "Empowering 200+ students through hands-on online workshops" },
 ];
 
 export function WhyChooseSection() {

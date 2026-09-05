@@ -18,7 +18,7 @@ export function CtaSection() {
             <div className="relative z-10">
               <Rocket className="w-12 h-12 mx-auto mb-6 opacity-90" />
               <h2 className="text-3xl md:text-4xl font-bold mb-4">Ready to Innovate?</h2>
-              <p className="text-white/80 max-w-lg mx-auto mb-8 text-lg">Join thousands of makers, students, and enterprises building the future with GenBots.</p>
+              <p className="text-white/80 max-w-lg mx-auto mb-8 text-lg">Join 200+ students, partner schools, and young innovators building the future with GenBots.</p>
               <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
                 <Link href="/store">
                   <Button size="lg" className="bg-white text-emerald-700 hover:bg-white/90 rounded-xl px-8 h-12 font-semibold">

@@ -9,12 +9,10 @@ import type { Metadata } from "next";
 export const metadata: Metadata = { title: "Training", description: "Enroll in IoT, robotics, and AI courses, bootcamps, and workshops by GenBots." };
 
 const courses = [
-  { title: "IoT Fundamentals Bootcamp", slug: "iot-fundamentals", type: "Bootcamp", level: "Beginner", duration: "4 weeks", price: "₹4,999", instructor: "Dr. Rahul Sharma", students: 156, rating: 4.8, featured: true },
-  { title: "Advanced Robotics Workshop", slug: "advanced-robotics", type: "Workshop", level: "Advanced", duration: "2 days", price: "₹2,999", instructor: "Prof. Anita Desai", students: 89, rating: 4.9 },
-  { title: "AI & ML Certification", slug: "ai-ml-certification", type: "Certification", level: "Intermediate", duration: "8 weeks", price: "₹9,999", instructor: "Dr. Vikram Singh", students: 234, rating: 4.7 },
-  { title: "Arduino Programming 101", slug: "arduino-programming", type: "Online", level: "Beginner", duration: "3 weeks", price: "₹1,999", instructor: "Priya Mehta", students: 412, rating: 4.6 },
-  { title: "ESP32 & MQTT Masterclass", slug: "esp32-mqtt-masterclass", type: "Online", level: "Intermediate", duration: "5 weeks", price: "₹3,999", instructor: "Amit Kumar", students: 178, rating: 4.8 },
-  { title: "PCB Design Workshop", slug: "pcb-design-workshop", type: "Workshop", level: "Intermediate", duration: "3 days", price: "₹4,499", instructor: "Sneha Kapoor", students: 67, rating: 4.9 },
+  { title: "Hands-on Arduino & Sensor Bootcamp", slug: "arduino-bootcamp", type: "Online Bootcamp", level: "Beginner", duration: "3 weeks", price: "₹1,999", instructor: "Yash (Founder, GenBots)", students: 78, rating: 4.9, featured: true },
+  { title: "ESP32 & IoT Smart Automation", slug: "esp32-iot-automation", type: "Live Workshop", level: "Intermediate", duration: "4 weeks", price: "₹2,999", instructor: "Yash (Founder, GenBots)", students: 54, rating: 4.9 },
+  { title: "School Robotics & Obstacle Avoidance", slug: "school-robotics", type: "Hands-on Lab", level: "Beginner", duration: "2 weeks", price: "₹1,499", instructor: "Yash (Founder, GenBots)", students: 46, rating: 4.8 },
+  { title: "Microcontroller Circuit Building", slug: "circuit-building", type: "Practical Workshop", level: "Beginner to Intermediate", duration: "2 weeks", price: "₹1,799", instructor: "Yash (Founder, GenBots)", students: 32, rating: 4.9 },
 ];
 
 export default function TrainingPage() {
@@ -24,10 +22,11 @@ export default function TrainingPage() {
       <main className="pt-24 pb-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-14">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4">Training <span className="gradient-text">Programs</span></h1>
-            <p className="text-muted-foreground max-w-2xl mx-auto">Learn from industry experts with hands-on courses in IoT, robotics, and AI.</p>
+            <Badge variant="outline" className="mb-3 rounded-full px-4 py-1 text-xs">200+ Students Trained Online</Badge>
+            <h1 className="text-4xl md:text-5xl font-bold mb-4">Hands-on Robotics <span className="gradient-text">Training</span></h1>
+            <p className="text-muted-foreground max-w-2xl mx-auto">Learn directly from Yash (Founder & Lead Engineer) with practical hardware kits, live coding, and step-by-step project builds.</p>
           </div>
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <div className="grid md:grid-cols-2 lg:grid-cols-2 max-w-4xl mx-auto gap-6">
             {courses.map((course) => (
               <div key={course.slug} className="glass-card overflow-hidden hover:glow-sm hover:-translate-y-1 transition-all">
                 <div className="h-44 bg-gradient-to-br from-emerald-500/10 to-cyan-500/10 flex items-center justify-center relative">

@@ -72,7 +72,7 @@ export function HeroSection() {
             role="status"
           >
             <Sparkles className="w-4 h-4 text-emerald-500" aria-hidden="true" />
-            <span className="gradient-text">India&apos;s Leading IoT &amp; Robotics Company</span>
+            <span className="gradient-text">MSME Registered • STEM &amp; Robotics Labs</span>
           </motion.div>
 
           {/* Heading */}
@@ -115,7 +115,7 @@ export function HeroSection() {
             transition={{ duration: 0.6, delay: 0.2 }}
             className="text-lg md:text-xl text-muted-foreground max-w-2xl mx-auto mb-10"
           >
-            Premium IoT &amp; Robotics products for makers, students, and enterprises.
+            Authentic IoT &amp; Robotics products for makers, students, and schools.
             Learn . Build . Innovate — with GenBots by your side.
           </motion.p>
 
@@ -147,10 +147,10 @@ export function HeroSection() {
             className="mt-16 grid grid-cols-2 md:grid-cols-4 gap-4 max-w-3xl mx-auto"
           >
             {[
-              { icon: "🔌", label: "500+ Products", color: "from-emerald-500/20 to-emerald-600/10" },
-              { icon: "🏫", label: "200+ Schools", color: "from-cyan-500/20 to-cyan-600/10" },
-              { icon: "🤖", label: "50+ Lab Setups", color: "from-emerald-400/20 to-emerald-500/10" },
-              { icon: "⭐", label: "10K+ Customers", color: "from-cyan-400/20 to-cyan-500/10" },
+              { icon: "🔌", label: "65+ Hardware Items", color: "from-emerald-500/20 to-emerald-600/10" },
+              { icon: "🏫", label: "5+ School Labs Setup", color: "from-cyan-500/20 to-cyan-600/10" },
+              { icon: "🎓", label: "200+ Students Trained", color: "from-emerald-400/20 to-emerald-500/10" },
+              { icon: "📜", label: "MSME Registered", color: "from-cyan-400/20 to-cyan-500/10" },
             ].map((item) => (
               <motion.div
                 key={item.label}

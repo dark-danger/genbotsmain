@@ -15,14 +15,14 @@ export const metadata: Metadata = {
     template: "%s | GenBots",
   },
   description:
-    "GenBots delivers cutting-edge IoT, robotics, and AI solutions for industries, education, and innovation. Shop products, explore services, and join training programs.",
+    "MSME registered robotics, IoT & STEM innovation lab enterprise founded by Yash in April 2026. Turnkey school labs, verified hardware kits, and hands-on robotics training.",
   keywords: [
     "IoT", "Robotics", "AI", "Arduino", "ESP32", "Sensors",
     "STEM Kits", "Robotics Lab", "Home Automation", "GenBots",
-    "IoT Sensors India", "Robotics Kits India", "Lab Setup",
+    "IoT Sensors India", "Robotics Kits India", "Lab Setup", "MSME Robotics India"
   ],
-  authors: [{ name: "GenBots" }],
-  creator: "GenBots",
+  authors: [{ name: "Yash (Founder, GenBots)" }],
+  creator: "Yash",
   metadataBase: new URL("https://thegenbots.in"),
   alternates: {
     canonical: "/",

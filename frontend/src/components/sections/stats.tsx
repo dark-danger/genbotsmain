@@ -4,12 +4,12 @@ import { useInView } from "framer-motion";
 import { useRef } from "react";
 
 const stats = [
-  { value: "500+", label: "Products Available", icon: "📦" },
-  { value: "200+", label: "Schools Served", icon: "🏫" },
-  { value: "50+", label: "Lab Setups Done", icon: "🔬" },
-  { value: "10K+", label: "Happy Customers", icon: "⭐" },
-  { value: "25+", label: "Software Products", icon: "💻" },
-  { value: "100+", label: "Projects Delivered", icon: "🚀" },
+  { value: "65+", label: "Sensors & Modules", icon: "📦" },
+  { value: "5+", label: "School Labs Setup", icon: "🏫" },
+  { value: "200+", label: "Students Trained Online", icon: "🎓" },
+  { value: "Govt MSME", label: "Registered Enterprise", icon: "🏛️" },
+  { value: "April 2026", label: "Founded by Yash", icon: "🚀" },
+  { value: "100%", label: "Hands-on Practical", icon: "⚡" },
 ];
 
 export function StatsSection() {
