@@ -29,7 +29,7 @@ router = APIRouter(prefix="/products", tags=["Products"])
 async def list_products(
     db: DbSession,
     page: int = Query(1, ge=1),
-    page_size: int = Query(20, ge=1, le=100),
+    page_size: int = Query(20, ge=1, le=500),
     category: Optional[str] = None,
     brand: Optional[str] = None,
     search: Optional[str] = None,

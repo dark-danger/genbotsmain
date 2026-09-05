@@ -61,22 +61,20 @@ export default function StorePage() {
     queryKey: ["storeProducts"],
     queryFn: async () => {
       try {
-        const res = await productsApi.list({ page_size: 150, status: "active" });
+        const res = await productsApi.list({ page_size: 100, status: "active" });
         const items = res.data?.items || res.data;
         if (Array.isArray(items)) {
           return items.filter((p: any) => p.status === "active" || p.status === undefined);
         }
-        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[];
+        return [];
       } catch {
-        return INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[];
+        return [];
       }
     },
     staleTime: 5000,
   });
 
-  const products: ProductItem[] = Array.isArray(apiProducts)
-    ? apiProducts
-    : (INNOVATION_LAB_65_PRODUCTS.filter(p => p.status === "active") as unknown as ProductItem[]);
+  const products: ProductItem[] = Array.isArray(apiProducts) ? apiProducts : [];
 
   // Extract unique categories and brands from data
   const categories = [
