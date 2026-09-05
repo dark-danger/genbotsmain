@@ -3090,7 +3090,7 @@ export default function AdminDashboard() {
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Support Email Address</label>
-                    <Input type="email" defaultValue="support@genbots.com" />
+                    <Input type="email" defaultValue="genbots000@gmail.com" />
                   </div>
                   <div className="space-y-2">
                     <label className="text-sm font-medium">Default Currency</label>

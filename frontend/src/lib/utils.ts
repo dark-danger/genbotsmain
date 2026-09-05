@@ -408,11 +408,10 @@ export const generateDocumentHtml = (order: Record<string, any>, docType: "invoi
     <div class="parties">
       <div class="party">
         <div class="party-label">${isInvoice ? "From (Seller)" : "Buyer (GenBots)"}</div>
-        <div class="party-name">GenBots Technology Pvt Ltd</div>
+        <div class="party-name">GenBots (MSME Enterprise)</div>
         <div class="party-detail">
-          GenBots Technology Park<br>
           Sonipat, Haryana 131001, India<br>
-          Email: billing@genbots.in<br>
+          Email: genbots000@gmail.com<br>
           Phone: +91 92 110 67540
         </div>
       </div>

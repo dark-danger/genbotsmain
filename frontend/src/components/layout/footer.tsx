@@ -81,8 +81,8 @@ export function Footer() {
               Learn . Build . Innovate — Innovating the Future through IoT, Robotics & AI.
             </p>
             <div className="space-y-2">
-              <a href="mailto:contact@genbots.in" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
-                <Mail className="w-4 h-4" /> contact@genbots.in
+              <a href="mailto:genbots000@gmail.com" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
+                <Mail className="w-4 h-4" /> genbots000@gmail.com
               </a>
               <a href="tel:+919211067540" className="flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors">
                 <Phone className="w-4 h-4" /> +91 92 110 67540

@@ -224,7 +224,7 @@ async def seed_database():
         settings = [
             SiteSetting(key="site_name", value="GenBots", group="general"),
             SiteSetting(key="tagline", value="Innovating the Future through IoT, Robotics & AI", group="general"),
-            SiteSetting(key="email", value="contact@genbots.in", group="contact"),
+            SiteSetting(key="email", value="genbots000@gmail.com", group="contact"),
             SiteSetting(key="phone", value="+91 99961 71216", group="contact"),
             SiteSetting(key="address", value="GenBots Technology Park, Sonipat, Haryana, 131001, India", group="contact"),
             SiteSetting(key="whatsapp", value="+91 99961 71216", group="contact"),
